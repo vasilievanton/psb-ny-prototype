@@ -46,7 +46,7 @@ function ForestGame(canvas, hooks){
   const ctx=canvas.getContext('2d');
   const head=new Image(); head.src=A.m_star; // Старший сын — бюст маскота + дорисованные ноги/руки
   const LH=400, GROUND=328, PX=96;
-  let LW=800, sc=1, dpr=1, raf=0, last=0, alive=true;
+  let LW=800, TOP=0, sc=1, dpr=1, raf=0, last=0, alive=true;
   const S={run:false,done:false,lives:3,out:false,t:0,dist:0,stage:1,gifts:0,score:0,cleared:0,py:GROUND,vy:0,ground:true,stun:0,inv:0,boost:false,objs:[],parts:[],next:520,banner:0};
   const STAGES=20, STAGE_LEN=2000;
   const stageEnd=s=>s*STAGE_LEN, speed=s=>280+(s-1)*12;
@@ -57,9 +57,13 @@ function ForestGame(canvas, hooks){
   const farT=[...Array(30)].map((_,i)=>({x:i*48+rnd(-10,10),h:rnd(60,110)}));
   const nearT=[...Array(16)].map((_,i)=>({x:i*130+rnd(-30,30),h:rnd(120,190),lamp:Math.random()<.18}));
   function resize(){
-    const w=canvas.clientWidth||canvas.parentElement.clientWidth; const h=Math.max(230,Math.min(440,Math.round(w*0.5)));
+    // высота поля — от ширины (data-ratio) и не больше свободного места на экране (data-maxh)
+    // в игровом режиме поле занимает свободное место между панелью и кнопками; ширина обзора не меньше data-lw — сверху добавляется небо
+    const w=canvas.clientWidth||canvas.parentElement.clientWidth, ratio=+(canvas.dataset.ratio||.5), box=canvas.closest('.gm-mid');
+    const maxH=box&&box.clientHeight>0?box.clientHeight-16:+(canvas.dataset.maxh||440), minLW=+(canvas.dataset.lw||0);
+    const h=Math.max(180,Math.min(maxH,Math.round(w*ratio)));
     dpr=Math.min(2,window.devicePixelRatio||1); canvas.width=Math.round(w*dpr); canvas.height=Math.round(h*dpr); canvas.style.height=h+'px';
-    sc=h/LH; LW=w/sc;
+    sc=h/LH; if(minLW&&w/sc<minLW)sc=w/minLW; LW=w/sc; TOP=Math.max(0,h/sc-LH);
   }
   resize(); window.addEventListener('resize',resize);
   function jump(){ if(!S.run) return; if(S.ground){S.vy=-920;S.ground=false;} }
@@ -143,8 +147,6 @@ function ForestGame(canvas, hooks){
     if(head.complete&&head.naturalWidth)ctx.drawImage(head,-bw/2,top-bh+14,bw,bh); else {ctx.fillStyle='#b98a5e';ctx.beginPath();ctx.arc(0,top-24,26,0,7);ctx.fill();}
     arm(27,ground?sw*.9:.9,'#2650b8');
   }
-  function heart(x,y,on){ctx.save();ctx.translate(x,y);ctx.fillStyle=on?'#e8473f':'rgba(255,255,255,.22)';if(on){ctx.shadowColor='rgba(255,90,80,.7)';ctx.shadowBlur=8;}
-    ctx.beginPath();ctx.moveTo(0,8);ctx.bezierCurveTo(-14,-2,-9,-13,0,-6);ctx.bezierCurveTo(9,-13,14,-2,0,8);ctx.fill();ctx.restore();}
   function gift(x,y,c,t){
     const cols=['#d8423a','#2f56c8','#e9bd68','#7a46c8','#d8423a'];
     const b=Math.sin(t*4+x*.02)*3; y+=b;
@@ -173,13 +175,14 @@ function ForestGame(canvas, hooks){
     }
   }
   function draw(){
-    ctx.setTransform(dpr*sc,0,0,dpr*sc,0,0);
+    ctx.setTransform(dpr*sc,0,0,dpr*sc,0,dpr*sc*TOP);
+    const SH=LH+TOP;
     const t=S.t, d=S.dist;
-    const sky=ctx.createLinearGradient(0,0,0,LH);sky.addColorStop(0,'#081233');sky.addColorStop(.6,'#1a2f6b');sky.addColorStop(1,'#2b4590');
-    ctx.fillStyle=sky;ctx.fillRect(0,0,LW,LH);
-    for(const s of stars){ctx.globalAlpha=.4+.6*Math.abs(Math.sin(t*1.2+s.p));ctx.fillStyle='#fff';ctx.fillRect(s.x*LW,s.y*LH,s.r,s.r);} ctx.globalAlpha=1;
+    const sky=ctx.createLinearGradient(0,-TOP,0,LH);sky.addColorStop(0,'#060e2c');sky.addColorStop(.62,'#1a2f6b');sky.addColorStop(1,'#2b4590');
+    ctx.fillStyle=sky;ctx.fillRect(0,-TOP,LW,SH);
+    for(const s of stars){ctx.globalAlpha=.4+.6*Math.abs(Math.sin(t*1.2+s.p));ctx.fillStyle='#fff';ctx.fillRect(s.x*LW,s.y*SH-TOP,s.r,s.r);} ctx.globalAlpha=1;
     // aurora
-    ctx.save();ctx.globalCompositeOperation='lighter';
+    ctx.save();ctx.globalCompositeOperation='lighter';ctx.translate(0,-TOP*.55);
     for(let b=0;b<2;b++){
       const g=ctx.createLinearGradient(0,30,0,190);g.addColorStop(0,'rgba(80,255,200,0)');g.addColorStop(.5,b?'rgba(90,170,255,.16)':'rgba(80,255,190,.2)');g.addColorStop(1,'rgba(80,255,200,0)');
       ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(0,160);
@@ -189,8 +192,8 @@ function ForestGame(canvas, hooks){
     }
     ctx.restore();
     // moon
-    const mx=LW*.82; ctx.fillStyle='rgba(255,240,200,.12)';ctx.beginPath();ctx.arc(mx,64,48,0,7);ctx.fill();
-    ctx.fillStyle='#fff3cf';ctx.beginPath();ctx.arc(mx,64,24,0,7);ctx.fill();ctx.fillStyle='#1a2c66';ctx.beginPath();ctx.arc(mx+10,58,22,0,7);ctx.fill();
+    const mx=LW*.82, my=64-TOP*.7; ctx.fillStyle='rgba(255,240,200,.12)';ctx.beginPath();ctx.arc(mx,my,48,0,7);ctx.fill();
+    ctx.fillStyle='#fff3cf';ctx.beginPath();ctx.arc(mx,my,24,0,7);ctx.fill();ctx.fillStyle='#14245a';ctx.beginPath();ctx.arc(mx+10,my-6,22,0,7);ctx.fill();
     // mountains
     ctx.fillStyle='#152660';ctx.beginPath();ctx.moveTo(0,GROUND-40);
     const mo=(d*.08)%1680; for(let k=0;k<2;k++) for(const m of mtn){const x=m.x+k*1680-mo; ctx.lineTo(x,GROUND-60-m.h);ctx.lineTo(x+60,GROUND-60);} ctx.lineTo(LW,GROUND);ctx.lineTo(0,GROUND);ctx.fill();
@@ -221,14 +224,9 @@ function ForestGame(canvas, hooks){
     } ctx.globalAlpha=1;
     // falling snow
     ctx.fillStyle='rgba(255,255,255,.85)';
-    for(const f of flakes){const y=(f.y*LH+t*f.v)%LH; const x=((f.x*LW-d*.3*f.w*.2+Math.sin(t+f.w)*10)%LW+LW)%LW; ctx.beginPath();ctx.arc(x,y,f.r,0,7);ctx.fill();}
-    // progress
-    const tot=stageEnd(STAGES); ctx.fillStyle='rgba(8,18,51,.55)';ctx.fillRect(16,14,LW-32,6);
-    ctx.fillStyle='#f3c96b';ctx.fillRect(16,14,(LW-32)*Math.min(1,d/tot),6);
-    for(let i=1;i<STAGES;i++){ctx.fillStyle='rgba(255,243,201,.55)';ctx.fillRect(16+(LW-32)*stageEnd(i)/tot-1,11,2,12);}
-    for(let i=0;i<3;i++){heart(28+i*30,46,i<S.lives);}
-    if(S.banner>0){ctx.globalAlpha=Math.min(1,S.banner*1.5);ctx.fillStyle='rgba(8,18,51,.7)';ctx.fillRect(LW/2-130,LH/2-70,260,64);
-      ctx.fillStyle='#fde7a8';ctx.font='800 30px "Playfair Display", Georgia, serif';ctx.textAlign='center';ctx.fillText('Этап '+S.stage+' из '+STAGES,LW/2,LH/2-28);ctx.textAlign='left';ctx.globalAlpha=1;}
+    for(const f of flakes){const y=(f.y*SH+t*f.v)%SH-TOP; const x=((f.x*LW-d*.3*f.w*.2+Math.sin(t+f.w)*10)%LW+LW)%LW; ctx.beginPath();ctx.arc(x,y,f.r,0,7);ctx.fill();}
+    if(S.banner>0){ctx.globalAlpha=Math.min(1,S.banner*1.5);ctx.fillStyle='rgba(8,18,51,.7)';ctx.fillRect(LW/2-130,(LH-TOP)/2-70,260,64);
+      ctx.fillStyle='#fde7a8';ctx.font='800 30px "Playfair Display", Georgia, serif';ctx.textAlign='center';ctx.fillText('Этап '+S.stage+' из '+STAGES,LW/2,(LH-TOP)/2-28);ctx.textAlign='left';ctx.globalAlpha=1;}
   }
   function loop(ts){
     if(!alive) return;
