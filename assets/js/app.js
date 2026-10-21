@@ -40,6 +40,9 @@ const STAR_SM=ICON_STAR.replace('width="16" height="16"','width="12" height="12"
 const ICON_GIFT='<svg viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="12" rx="1.5" fill="#d8423a"/><rect x="2" y="7" width="20" height="4" rx="1" fill="#e5574d"/><rect x="10.5" y="7" width="3" height="14" fill="#f6d27a"/><path d="M12 7C9 2 5 4 7 7M12 7c3-5 7-3 5 0" stroke="#f6d27a" stroke-width="2" fill="none"/></svg>';
 const ICON_BANK='<svg viewBox="0 0 24 24"><path d="M12 2 2 7v2h20V7z" fill="#f3c96b"/><rect x="4" y="10" width="2.5" height="8" fill="#f3c96b"/><rect x="10.75" y="10" width="2.5" height="8" fill="#f3c96b"/><rect x="17.5" y="10" width="2.5" height="8" fill="#f3c96b"/><rect x="2" y="19" width="20" height="3" fill="#f3c96b"/></svg>';
 function hearts(n){return [0,1,2].map(i=>`<svg viewBox="0 0 24 24" class="${i<n?'on':''}"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z"/></svg>`).join('');}
+// Логотип ПСБ для тёмного фона — из брендбука банка (Лого_RGB → Без дескриптора → dark theme). Не перекрашивать
+const LOGO='<svg class="psb-logo" xmlns="http://www.w3.org/2000/svg" viewBox="719.99 477.87 479.43 125" role="img" aria-label="ПСБ"><path fill="#ff6200" d="M803.15,477.87l-41.49,41.78h41.49v83.22l41.84-41.43v-83.57h-41.84Z"/><path fill="#8d87ff" d="M761.83,602.87l41.49-41.78h-41.49v-83.22l-41.84,41.43v83.57h41.84Z"/><path fill="#fff" d="M1160.4,573.06h-24.01v-24.69h24.01c9.14,0,13.39,3.92,13.39,12.26s-4.24,12.42-13.39,12.42ZM1110.43,483.31v114.44h51.27c24.33,0,37.72-13.41,37.72-37.11s-13.39-36.95-37.72-36.95h-25.31v-15.2h55.69v-25.18h-81.65ZM1019.31,540.37c0-20.11,11.1-33.84,26.94-33.84,11.92,0,21.23,7.68,23.35,20.27h27.11c-2.78-27.47-23.35-45.77-50.46-45.77-31.68,0-54.05,24.85-54.05,59.34s22.37,59.34,54.05,59.34c27.44,0,48.17-18.96,50.62-46.76h-27.27c-1.63,13.24-11.11,21.25-23.35,21.25-15.84,0-26.94-13.73-26.94-33.84ZM887.37,483.31v114.44h26.62v-88.77h38.21v88.77h26.45v-114.44h-91.28Z"/></svg>';
+const PSB=`<span class="psb">${LOGO}</span><i class="vr" aria-hidden="true"></i>`;
 const ICON_HEART='<svg viewBox="0 0 24 24"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z" fill="#e8473f"/></svg>';
 
 /* ===== Состояние ===== */
@@ -198,7 +201,7 @@ function tabbar(){const a=tabOf(st.view);return `<nav class="tabbar">${TABS.map(
 function header(){
   const u=st.user, a=tabOf(st.view);
   return `<header class="top"><div class="bar">
-    <a class="brand" href="${href('route')}"><i class="sm"></i><span class="bt"><b>Новогодняя ночь</b><small>длиной в страну · ПСБ</small></span></a>
+    ${PSB}<a class="brand" href="${href('route')}"><i class="sm"></i><span class="bt"><b>Новогодняя ночь</b><small>длиной в страну</small></span></a>
     <nav class="nav">${TABS.map(t=>`<a class="${a===t[0]?'on':''}" href="${href(t[0])}" title="${t[1]}"${a===t[0]?' aria-current="page"':''}>${t[3]}</a>`).join('')}</nav>
     <div class="spacer"></div>
     <span class="chip date hide-l">${fmt(st.day,true)} · ${nyLeft()}</span>
@@ -232,7 +235,7 @@ const ROUTE_BTN={t:'На маршрут',act:'go',v:'route'};
 const FAMILY=[['m_mikhail','Медведь Михаил','Он и есть Дед Мороз. Ему вы и помогаете'],['m_zhena','Жена','Читает детям сказки народов России'],['m_star','Старший сын','Бежит по лесу и собирает подарки'],['m_mlad','Младший сын','Расспрашивает местных, приносит слова и узоры'],['m_doch','Дочь','Наряжает ёлку шарами из ваших фото']];
 function vCover(){
   return {raw:`<div class="cover-wrap">${frame(`<div class="cv">
-    <div class="cv-top">ПСБ · для сотрудников банка</div>
+    <div class="cv-top">${PSB}<span>для сотрудников банка</span></div>
     <h1 class="cv-title"><span>Новогодняя ночь</span><span>длиной в страну</span></h1>
     <div class="cv-rule"></div>
     <div class="cv-win"><img src="${A.hero}" alt="Сотрудники входят в новогоднюю сказку"></div>
@@ -254,7 +257,7 @@ function vPrologue(){
     const L=`${pt('Завязка','Одна ночь — одиннадцать полуночей','h1')}${b11}${tale(PRO_T1,true)}${tale(PRO_T2)}<img class="vign" src="${A.bear_lamp}" alt="">`;
     const R=`${pt('Кто встретит вас на пути','Семья Деда Мороза')}${famHTML('xl')}
       <div class="cta"><button class="btn btn-gold btn-lg" data-act="${st.user?'enter':'startAuth'}">${st.user?'Вернуться в сказку':'Стать помощником Деда Мороза'} ${svg('arrow','width="18" height="18"')}</button></div>`;
-    return {raw:`<div class="topstrip"><a class="brand" href="${href('cover')}" title="К обложке"><i class="sm"></i><span class="bt"><b>Новогодняя ночь</b><small>ПСБ · для сотрудников банка</small></span></a><div class="spacer"></div>
+    return {raw:`<div class="topstrip">${PSB}<a class="brand" href="${href('cover')}" title="К обложке"><i class="sm"></i><span class="bt"><b>Новогодняя ночь</b><small>для сотрудников банка</small></span></a><div class="spacer"></div>
       ${st.user?`<button class="btn btn-ghost btn-sm" data-act="enter">Продолжить: ${esc(st.user.nick)}</button>`:`<button class="btn btn-ghost btn-sm" data-act="toLogin">Войти по коду</button>`}</div>${book(L,R,{pn:1})}`};
   }
   // Телефон: три страницы, листаются свайпом
@@ -1005,7 +1008,7 @@ function lockView(title,text,img){
 /* ===== Рендер ===== */
 const VIEWS={route:vRoute,profile:vProfile,quiz:vQuiz,forest:vForest,tree:vTree,final:vFinal,serial:vSerial,chapter:vChapter,fulltale:vFullTale,izba:vIzba,chest:vChest,rating:vRating};
 const MOUNTS={forest:()=>{if(DESK||ui.fmode)mountForest();},chapter:mountChapter,izba:mountIzba};
-const FOOT='<p class="foot">Прототип платформы · Deep × ПСБ · контент и цифры — примеры</p>';
+const FOOT=`<div class="foot"><span class="psb">${LOGO}</span><p>Прототип платформы · Deep × ПСБ · контент и цифры — примеры</p></div>`;
 function render(){
   clearTimers();
   const app=$('#app'); ui.bar=null;
@@ -1209,5 +1212,6 @@ function guard(){
 // Вернулись кнопкой «Назад» из кэша браузера — перечитываем состояние, оно могло измениться на другой странице
 window.addEventListener('pageshow',e=>{if(!e.persisted)return;try{st=Object.assign(fresh(),JSON.parse(localStorage.getItem(KEY)||'null')||{});}catch(err){}if(guard())return;applyPage();ui.fmode=false;ui.logout=false;render();});
 // Переход через 900 px (поворот планшета, изменение окна) — перерисовываем под другой режим
-const onMQ=e=>{if(e.matches===DESK)return;DESK=e.matches;ui.sheet=null;if(DESK)ui.fmode=false;render();};
+// Короткие ложные срабатывания (масштаб, снимок экрана, промежуточные размеры окна) игнорируем: перерисовка — только если режим держится 150 мс
+let mqT;const onMQ=()=>{clearTimeout(mqT);mqT=setTimeout(()=>{const m=MQ.matches;if(m===DESK)return;DESK=m;ui.sheet=null;if(DESK)ui.fmode=false;render();},150);};
 if(MQ.addEventListener)MQ.addEventListener('change',onMQ);else MQ.addListener(onMQ);

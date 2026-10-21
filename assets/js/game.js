@@ -342,15 +342,27 @@ function treeSVG(mineSrc, balls, seed){
 }
 
 /* ===== Карточка героя (PNG) ===== */
+// Логотип ПСБ для тёмного фона (брендбук): контуры знака и шрифтовой части. h — высота, x/y — левый верхний угол
+const PSB_PATHS=[['#ff6200','M803.15,477.87l-41.49,41.78h41.49v83.22l41.84-41.43v-83.57h-41.84Z'],['#8d87ff','M761.83,602.87l41.49-41.78h-41.49v-83.22l-41.84,41.43v83.57h41.84Z'],
+  ['#fff','M1160.4,573.06h-24.01v-24.69h24.01c9.14,0,13.39,3.92,13.39,12.26s-4.24,12.42-13.39,12.42ZM1110.43,483.31v114.44h51.27c24.33,0,37.72-13.41,37.72-37.11s-13.39-36.95-37.72-36.95h-25.31v-15.2h55.69v-25.18h-81.65ZM1019.31,540.37c0-20.11,11.1-33.84,26.94-33.84,11.92,0,21.23,7.68,23.35,20.27h27.11c-2.78-27.47-23.35-45.77-50.46-45.77-31.68,0-54.05,24.85-54.05,59.34s22.37,59.34,54.05,59.34c27.44,0,48.17-18.96,50.62-46.76h-27.27c-1.63,13.24-11.11,21.25-23.35,21.25-15.84,0-26.94-13.73-26.94-33.84ZM887.37,483.31v114.44h26.62v-88.77h38.21v88.77h26.45v-114.44h-91.28Z']];
+const PSB_W=479.43/125;
+function drawPsbLogo(ctx,x,y,h){const k=h/125;ctx.save();ctx.translate(x,y);ctx.scale(k,k);ctx.translate(-719.99,-477.87);PSB_PATHS.forEach(([f,d])=>{ctx.fillStyle=f;ctx.fill(new Path2D(d));});ctx.restore();}
+const UI_FONT='"PSB Lavr", Arial, sans-serif';
 function wrapText(ctx,text,x,y,maxW,lh){const words=text.split(' ');let line='';for(const w of words){const t=line?line+' '+w:w;if(ctx.measureText(t).width>maxW&&line){ctx.fillText(line,x,y);line=w;y+=lh;}else line=t;}if(line)ctx.fillText(line,x,y);return y;}
 async function renderHeroCard(u, stats, ballSrc){
   const W=900,H=1200;const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
+  // шрифты должны успеть загрузиться, иначе canvas нарисует запасные
+  if(document.fonts&&document.fonts.load)await Promise.all(['700 56px "PSB Lavr"','500 22px "PSB Lavr"','400 22px "PSB Lavr"','800 64px "Playfair Display"','italic 400 26px "PT Serif"','400 26px "PT Serif"'].map(f=>document.fonts.load(f).catch(()=>{})));
   const bg=await loadImg((typeof AI!=='undefined'&&AI.bg)||A.bg);
   ctx.drawImage(bg,0,0,bg.width,bg.height,-300,0,H*bg.width/bg.height,H);
-  ctx.fillStyle='rgba(8,16,44,.55)';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='rgba(0,22,92,.5)';ctx.fillRect(0,0,W,H);
+  // рассвет у нижнего края — фирменный градиент ПСБ
+  const dawn=ctx.createRadialGradient(W/2,H+140,40,W/2,H+140,720);
+  dawn.addColorStop(0,'rgba(255,103,52,.42)');dawn.addColorStop(.38,'rgba(255,181,161,.16)');dawn.addColorStop(.62,'rgba(159,132,255,.14)');dawn.addColorStop(1,'rgba(0,31,116,0)');
+  ctx.fillStyle=dawn;ctx.fillRect(0,0,W,H);
   ctx.strokeStyle=goldGrad(ctx,0,0,W,H);ctx.lineWidth=6;ctx.strokeRect(30,30,W-60,H-60);ctx.lineWidth=2;ctx.strokeRect(44,44,W-88,H-88);
   ctx.textAlign='center';
-  ctx.fillStyle='#e9bd68';ctx.font='700 22px "PT Serif", Georgia, serif';ctx.fillText('КАРТОЧКА ГЕРОЯ',W/2,120);
+  ctx.fillStyle='#e9bd68';ctx.font='500 22px '+UI_FONT;if('letterSpacing' in ctx)ctx.letterSpacing='3px';ctx.fillText('КАРТОЧКА ГЕРОЯ',W/2,120);if('letterSpacing' in ctx)ctx.letterSpacing='0px';
   ctx.fillStyle='#f3ecdc';ctx.font='italic 400 26px "PT Serif", Georgia, serif';ctx.fillText('Новогодняя ночь длиной в страну',W/2,160);
   // avatar
   const ay=330;ctx.fillStyle='#13235f';ctx.beginPath();ctx.arc(W/2,ay,120,0,7);ctx.fill();
@@ -359,9 +371,14 @@ async function renderHeroCard(u, stats, ballSrc){
   ctx.font='800 64px "Playfair Display", Georgia, serif';ctx.fillStyle='#fde7a8';ctx.fillText(u.nick,W/2,550);
   if(u.city){ctx.font='400 26px "PT Serif", Georgia, serif';ctx.fillStyle='#c9d0ea';ctx.fillText(u.city,W/2,596);}
   const cells=[[stats.words,'слов разгадано'],[stats.gifts,'подарков собрано'],[stats.points,'баллов']];
-  cells.forEach(([v,l],i)=>{const x=150+i*300;ctx.fillStyle='rgba(16,30,80,.75)';ctx.fillRect(x-120,650,240,150);ctx.strokeStyle='rgba(233,190,104,.6)';ctx.lineWidth=2;ctx.strokeRect(x-120,650,240,150);
-    ctx.fillStyle='#fde7a8';ctx.font='800 56px "Playfair Display", Georgia, serif';ctx.fillText(String(v),x,735);ctx.fillStyle='#c9d0ea';ctx.font='400 22px "PT Serif", Georgia, serif';ctx.fillText(l,x,775);});
+  cells.forEach(([v,l],i)=>{const x=190+i*260;ctx.fillStyle='rgba(8,32,110,.78)';ctx.fillRect(x-110,650,220,150);ctx.strokeStyle='rgba(233,190,104,.6)';ctx.lineWidth=2;ctx.strokeRect(x-110,650,220,150);
+    ctx.fillStyle='#fde7a8';ctx.font='700 56px '+UI_FONT;ctx.fillText(String(v),x,735);ctx.fillStyle='#c9d0ea';ctx.font='400 22px '+UI_FONT;ctx.fillText(l,x,775);});
   if(ballSrc){const b=await loadImg(ballSrc);ctx.drawImage(b,W/2-110,830,220,257);}
-  ctx.fillStyle='#9aa6cf';ctx.font='italic 400 20px "PT Serif", Georgia, serif';ctx.fillText('ПСБ · помощник Деда Мороза Михаила',W/2,H-80);
+  // подпись: логотип ПСБ (охранное поле — половина высоты знака) | помощник Деда Мороза Михаила
+  const cap='помощник Деда Мороза Михаила';ctx.font='italic 400 22px "PT Serif", Georgia, serif';
+  const lh=30,lw=lh*PSB_W,gap=lh/2,tw=ctx.measureText(cap).width,x0=W/2-(lw+gap*2+1+tw)/2,yb=H-82;
+  drawPsbLogo(ctx,x0,yb-lh,lh);
+  ctx.fillStyle='rgba(233,189,104,.55)';ctx.fillRect(x0+lw+gap,yb-lh,1,lh);
+  ctx.textAlign='left';ctx.fillStyle='#b9c3e6';ctx.fillText(cap,x0+lw+gap*2+1,yb-6);ctx.textAlign='center';
   return c.toDataURL('image/png');
 }
