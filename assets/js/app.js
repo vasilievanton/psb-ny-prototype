@@ -50,14 +50,29 @@ function fresh(day){return {screen:'prologue',view:'route',day:day==null?14:day,
 let st;try{st=Object.assign(fresh(),JSON.parse(localStorage.getItem(KEY)||'null')||{});}catch(e){st=fresh();}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){try{const c=Object.assign({},st,{tree:Object.assign({},st.tree,{ball:null})});localStorage.setItem(KEY,JSON.stringify(c));}catch(e2){}}}
 const AUTH0=()=>({code:null,email:'',err:'',sentTo:null});
+// Имитация сервера: участники по персональному коду. На платформе это база на бэкенде (README, раздел 11)
+const REGKEY='psb-ny-proto-codes';
+const REG={all(){try{return JSON.parse(localStorage.getItem(REGKEY)||'{}')||{};}catch(e){return {};}},
+  get(c){return this.all()[c]||null;},
+  put(s){if(!s||!s.user)return;const a=this.all();a[s.user.code]=s;try{localStorage.setItem(REGKEY,JSON.stringify(a));}catch(e){try{a[s.user.code]=Object.assign({},s,{tree:Object.assign({},s.tree,{ball:null})});localStorage.setItem(REGKEY,JSON.stringify(a));}catch(e2){}}}};
+function snapshot(){const {user,quiz,forest,tree,serial,chest,final,log,qrun}=st;return JSON.parse(JSON.stringify({user,quiz,forest,tree,serial,chest,final,log,qrun:qrun||null}));}
+// Код можно ввести в любом регистре, без дефисов и без «PSB»; кириллические двойники латинских букв
+// (набрали в русской раскладке) заменяем на латиницу
+const CYR={'А':'A','В':'B','Е':'E','К':'K','М':'M','Н':'H','О':'O','Р':'P','С':'C','Т':'T','Х':'X','У':'Y'};
+function normCode(v){let x=String(v||'').toUpperCase().replace(/[АВЕКМНОРСТХУ]/g,c=>CYR[c]).replace(/[^A-Z0-9]/g,'');
+  if(x.length===8)x='PSB'+x;
+  return x.length===11&&x.startsWith('PSB')?`PSB-${x.slice(3,7)}-${x.slice(7)}`:x;}
 const ui={auth:AUTH0(),nick:null,pending:null,city:'',treeSide:0,quiz:null,quizRound:null,bookOpen:false,turn:false,
   tree:{step:0,src:null,style:0,ball:null},chapter:null,izba:{cur:null,playing:false,pos:0},chest:{err:'',spinning:false,reel:null},demo:false,
-  sheet:null,seg:{rt:'top',pf:'points',ft:0},fmode:false,pro:0,bar:null};
+  sheet:null,seg:{rt:'top',pf:'points',ft:0},fmode:false,pro:0,bar:null,login:{code:'',err:''},logout:false,pmail:false,pmailVal:''};
 /* ===== Страницы ===== */
 // Каждый экран — отдельная HTML-страница. Общее состояние живёт в localStorage, переходы — обычные ссылки.
 const PAGE=document.body.dataset.page||'cover';
-const PAGES={cover:'index.html',prologue:'prologue.html',nick:'hero.html',auth:'code.html',route:'route.html',quiz:'quiz.html',forest:'forest.html',tree:'tree.html',final:'final.html',chest:'chest.html',serial:'serial.html',chapter:'chapter.html',fulltale:'tale.html',izba:'izba.html',rating:'rating.html',profile:'profile.html'};
+const PAGES={cover:'index.html',prologue:'prologue.html',nick:'hero.html',auth:'code.html',login:'login.html',route:'route.html',quiz:'quiz.html',forest:'forest.html',tree:'tree.html',final:'final.html',chest:'chest.html',serial:'serial.html',chapter:'chapter.html',fulltale:'tale.html',izba:'izba.html',rating:'rating.html',profile:'profile.html'};
 const QS=new URLSearchParams(location.search);
+// Режим вёрстки: телефон (основной) или компьютер — от 900 px
+const MQ=window.matchMedia('(min-width:900px)');
+let DESK=MQ.matches;
 // Сессионные флаги, которые переходят на следующую страницу: анимация перелистывания и всплывающее сообщение
 const SS={get(k){try{return JSON.parse(sessionStorage.getItem('psb-'+k));}catch(e){return null;}},set(k,v){try{sessionStorage.setItem('psb-'+k,JSON.stringify(v));}catch(e){}},del(k){try{sessionStorage.removeItem('psb-'+k);}catch(e){}}};
 function href(view,q){return (PAGES[view]||'route.html')+(q||'');}
@@ -98,9 +113,12 @@ function genCode(prefix){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for
 function v(m,f){return st.user&&st.user.g?f:m;}
 function ensureUser(){if(!st.user){st.user={email:'',nick:'Серый Волк',g:0,city:'Москва',code:genCode('PSB'),confirmed:true};save();}}
 
+/* ===== Вёрстка: телефон и компьютер =====
+   Основная вёрстка — мобильная: экран-страница в компактной рамке, нижнее меню, кнопки действий у нижнего края.
+   От 900 px — десктоп: развороты книги в полной рамке-тереме, меню в шапке, «Что дальше» на правой странице.
+   Каждый экран описывается один раз: L — левая страница, R — правая (на телефоне идут подряд), acts — кнопки «что дальше». */
 
-/* ===== Мобильная вёрстка: кирпичики ===== */
-// Рамка-терем целиком (арка, башенки, снежные углы) — только на обложке
+// Рамка-терем целиком (арка, башенки, кронштейны, снежные углы): обложка и все развороты на десктопе
 function frame(inner,mod){
   return `<div class="tm ${mod||''}">
   <div class="tm-top" aria-hidden="true"><i class="mold"></i><i class="twl"></i><i class="arch"></i><i class="twr"></i></div>
@@ -108,13 +126,40 @@ function frame(inner,mod){
   <div class="tm-bot" aria-hidden="true"><i class="mold"></i><i class="gem"></i></div>
   <i class="snl" aria-hidden="true"></i><i class="snr" aria-hidden="true"></i></div>`;
 }
-// Страница экрана: компактная рамка-терем — карниз с солнцем-луной, золотые столбы по бокам, карниз с самоцветом
+// Телефон: страница в компактной рамке — карниз с солнцем-луной, золотые столбы, карниз с самоцветом
 function page(inner,o={}){
   return `<section class="pf ${o.cls||''}"><div class="pf-top" aria-hidden="true"><i class="m"></i>${o.sun===false?'':'<i class="sun"></i>'}</div>
     <div class="pf-in">${inner}</div><div class="pf-bot" aria-hidden="true"><i class="m"></i><i class="gem"></i></div></section>`;
 }
+// Десктоп: разворот из двух страниц с корешком; full — блок на весь разворот под страницами (игровое поле)
+function book(L,R,o={}){
+  const pn=o.pn, n=k=>pn?`<div class="pnum">${k}</div>`:'';
+  const hasFull=o.full!=null;
+  return frame(`<div class="spread two ${o.cls||''}">
+    <section class="pg pl">${L}${hasFull?'':n(pn)}</section>
+    <section class="pg pr">${R}${hasFull?'':n(pn+1)}</section>
+    ${hasFull?`<div class="pg-full">${o.full}</div>${pn?`<div class="pnums">${n(pn)}${n(pn+1)}</div>`:''}`:''}
+  </div>`);
+}
+// Десктоп: одиночная страница — закрытые разделы, чек-лист финала
+function leaf(C,o={}){return frame(`<div class="spread one ${o.cls||''}"><section class="pg">${C}</section></div>`,'narrow');}
+// Сборка экрана под текущий режим
+function compose(v){
+  if(typeof v==='string')return v;
+  if(v.raw!=null)return v.raw;
+  const pre=v.pre||'',post=v.post||'';
+  if(!DESK){
+    const M=v.M!=null?v.M:v.one!=null?v.one:(v.L||'')+(v.R||'');
+    return pre+page(M,{cls:v.cls,sun:v.sun})+actbar(v.acts||[],v.note)+(v.sheet||'')+post;
+  }
+  const acts=((v.dacts!==undefined?v.dacts:v.acts)||[]).filter(Boolean);
+  const nbH=acts.length?nextBar(acts,v.dnote!==undefined?v.dnote:v.note,v.nbt):'';
+  if(v.L==null&&v.one!=null)return pre+leaf(v.one+nbH,{cls:v.cls})+post;
+  return pre+book(v.L||'',(v.R||'')+nbH,{pn:v.pn,cls:v.cls,full:v.full})+post;
+}
+
 // Неразрывные связки: тире и «·» не начинают строку, короткие слова и цифры не висят в конце строки
-function nb(t){const w=String(t).split(' ');return w.map((x,i)=>i<w.length-1?x+(/^[А-Яа-яЁё\d]{1,2}$/.test(x)||/^[—–·]$/.test(w[i+1])?' ':' '):x).join('');}
+function nb(t){const w=String(t).split(' ');return w.map((x,i)=>i<w.length-1?x+(/^[А-Яа-яЁё\d]{1,2}$/.test(x)||/^[—–·]$/.test(w[i+1])?' ':' '):x).join('');}
 // Заголовок: золотое тиснение, звёзды «приклеены» к первому и последнему слову
 function pt(t,sub,tag){
   tag=tag||'h2';
@@ -123,6 +168,8 @@ function pt(t,sub,tag){
     :`<span class="nw">${star}${esc(w[0])}</span> ${w.slice(1,-1).map(esc).join(' ')}${w.length>2?' ':''}<span class="nw">${esc(w[w.length-1])}${star}</span>`;
   return `<header class="pt"><${tag} class="ttl"><span class="g">${inner}</span></${tag}><div class="rule"></div>${sub?`<div class="sub">${nb(sub)}</div>`:''}</header>`;
 }
+// Заголовок только на десктопе (на телефоне раздел назван в верхней панели)
+function dpt(t,sub,tag){return DESK?pt(t,sub,tag):'';}
 function lbl(t,cls){return `<div class="lbl ${cls||''}"><span>${t}</span></div>`;}
 function say(img,who,text,cls){return `<div class="say ${cls||''}"><span class="face"><img src="${A[img]}" alt=""></span><div class="bubble"><b>${who}:</b> ${text}</div></div>`;}
 function por(k,size){return `<span class="por ${size||''}"><img src="${A[k]}" alt=""></span>`;}
@@ -133,7 +180,9 @@ function tale(text,cap){
   return `<p class="tale cap"><span class="drop" aria-hidden="true"><b>${esc(s[0])}</b></span><span class="sr">${esc(s[0])}</span>${esc(s.slice(1))}</p>`;
 }
 function flowers(){return '<i class="fl tl"></i><i class="fl tr"></i><i class="fl bl"></i><i class="fl br"></i>';}
-// Верхняя панель: на корневых экранах — солнце и раздел, на вложенных — «назад»
+
+/* ===== Навигация ===== */
+// Телефон: верхняя панель — на главных разделах солнце и раздел, на вложенных — «назад»
 function bar(title,sub,back){ui.bar={title,sub,back};}
 function appbar(o){
   const left=o.back?`<a class="ab-back" href="${href(o.back)}" aria-label="Назад">${svg('back')}</a>`:`<a class="ab-sun" href="${href('route')}" aria-label="Маршрут"><i class="sm"></i></a>`;
@@ -143,60 +192,85 @@ function appbar(o){
 const TABS=[['route','Маршрут','route','Маршрут'],['serial','Сказка-сериал','book','Сериал'],['izba','Пряничная избушка','house','Избушка'],['rating','Турнирная таблица','trophy','Рейтинг'],['profile','Личный кабинет','user','Кабинет']];
 const ROOTS=['route','serial','izba','rating','profile'];
 function tabOf(v){if(['serial','chapter','fulltale'].includes(v))return 'serial';if(['izba','rating','profile'].includes(v))return v;return 'route';}
+// Телефон: нижнее меню на пяти главных разделах
 function tabbar(){const a=tabOf(st.view);return `<nav class="tabbar">${TABS.map(t=>`<a class="${a===t[0]?'on':''}" href="${href(t[0])}"${a===t[0]?' aria-current="page"':''}>${svg(t[2])}<span>${t[3]}</span></a>`).join('')}</nav>`;}
-// Кнопка: {t, act|href, v, i, s, gold, disabled}
+// Десктоп: шапка с меню, датой, баллами и кабинетом
+function header(){
+  const u=st.user, a=tabOf(st.view);
+  return `<header class="top"><div class="bar">
+    <a class="brand" href="${href('route')}"><i class="sm"></i><span class="bt"><b>Новогодняя ночь</b><small>длиной в страну · ПСБ</small></span></a>
+    <nav class="nav">${TABS.map(t=>`<a class="${a===t[0]?'on':''}" href="${href(t[0])}" title="${t[1]}"${a===t[0]?' aria-current="page"':''}>${t[3]}</a>`).join('')}</nav>
+    <div class="spacer"></div>
+    <span class="chip date hide-l">${fmt(st.day,true)} · ${nyLeft()}</span>
+    <span class="chip pts" title="Баллы в турнирной таблице">${ICON_STAR} <b>${num(pts().total)}</b></span>
+    <a class="avabtn" href="${href('profile')}" title="Личный кабинет"><span class="nm">${esc(u.nick)}</span>${ava(u.nick,38,true)}</a>
+  </div></header>`;
+}
+// Десктоп: ссылка «назад» над разворотом
+const CRUMB={route:'Маршрут',serial:'Сказка-сериал',prologue:'Пролог',nick:'Имя героя',cover:'Обложка'};
+function crumb(to){return `<a class="crumb" href="${href(to)}">${svg('back')}<span>${CRUMB[to]||'Назад'}</span></a>`;}
+// Кнопка: {t, act|href, v, i, s, k, gold, disabled, noarrow, cls}
 function btn(b){
   const cls=`btn ${b.gold?'btn-gold':'btn-ghost'} ${b.cls||''}`;
-  if(b.href)return `<a class="${cls}" href="${b.href}">${b.t}</a>`;
+  if(b.href)return `<a class="${cls}" href="${b.href}">${b.t}${b.gold&&!b.noarrow?' '+svg('arrow','width="18" height="18"'):''}</a>`;
   const data=['v','i','s','k'].map(k=>b[k]!=null?` data-${k}="${b[k]}"`:'').join('');
   return `<button class="${cls}" data-act="${b.act}"${data}${b.disabled?' disabled':''}>${b.t}${b.gold&&!b.noarrow?' '+svg('arrow','width="18" height="18"'):''}</button>`;
 }
-// Липкая панель действий внизу экрана: главная кнопка + второстепенная
+// Телефон: кнопки действий закреплены у нижнего края экрана
 function actbar(items,note){items=items.filter(Boolean);if(!items.length)return '';return `<div class="actbar">${note?`<p class="ab-note">${note}</p>`:''}<div class="ab-row">${items.map(btn).join('')}</div></div>`;}
-// Шторка снизу
+// Десктоп: блок «Что дальше» в конце правой страницы
+function nextBar(items,note,title){items=items.filter(Boolean);return `<div class="nextbar">${title===false?'':lbl(title||'Что дальше')}<div class="nb">${items.map(btn).join('')}</div>${note?`<p class="note">${note}</p>`:''}</div>`;}
+// Телефон: шторка снизу
 function sheet(inner,o={}){return `<div class="sheet-bg" data-act="${o.close||'sheetClose'}"></div><div class="sheet ${o.cls||''}" role="dialog" aria-modal="true"><i class="grab" aria-hidden="true"></i><button class="sheet-x" data-act="${o.close||'sheetClose'}" aria-label="Закрыть">×</button>${inner}</div>`;}
-// Вкладки внутри экрана
+// Телефон: вкладки внутри экрана
 function seg(key,items,cur){return `<div class="seg" role="tablist">${items.map(([v,t])=>`<button role="tab" class="${cur===v?'on':''}" aria-selected="${cur===v}" data-act="seg" data-k="${key}" data-v="${v}">${t}</button>`).join('')}</div>`;}
-function lockChip(day){return `<span class="chip lock">${svg('lock','width="12" height="12"')} ${fmt(day,true)}</span>`;}
+function lockChip(day){return `<span class="chip lock">${svg('lock','width="12" height="12"')} ${DESK?'Откроется '+fmt(day):fmt(day,true)}</span>`;}
 function endBanner(){return st.day>LAST_DAY?'':st.day>=40?`<div class="ribbon">Платформа работает до 15 января — успейте пройти маршрут и послушать сказки</div>`:'';}
 const ROUTE_BTN={t:'На маршрут',act:'go',v:'route'};
 
 /* ===== Обложка и пролог ===== */
-const FAMILY=[['m_mikhail','Медведь Михаил','Он и есть Дед Мороз. Сквозной герой всего пути'],['m_zhena','Жена','Читает детям сказки народов России'],['m_star','Старший сын','Бежит по лесу и собирает подарки'],['m_mlad','Младший сын','Расспрашивает местных, приносит слова и узоры'],['m_doch','Дочь','Наряжает ёлку шарами из ваших фото']];
+const FAMILY=[['m_mikhail','Медведь Михаил','Он и есть Дед Мороз. Ему вы и помогаете'],['m_zhena','Жена','Читает детям сказки народов России'],['m_star','Старший сын','Бежит по лесу и собирает подарки'],['m_mlad','Младший сын','Расспрашивает местных, приносит слова и узоры'],['m_doch','Дочь','Наряжает ёлку шарами из ваших фото']];
 function vCover(){
-  return `<div class="cover-wrap">${frame(`<div class="cv">
+  return {raw:`<div class="cover-wrap">${frame(`<div class="cv">
     <div class="cv-top">ПСБ · для сотрудников банка</div>
     <h1 class="cv-title"><span>Новогодняя ночь</span><span>длиной в страну</span></h1>
     <div class="cv-rule"></div>
     <div class="cv-win"><img src="${A.hero}" alt="Сотрудники входят в новогоднюю сказку"></div>
     <p class="cv-sub">Сказка, в которую попадает каждый сотрудник</p>
     <div class="cv-cta"><button class="btn btn-gold btn-lg" data-act="openBook">${svg('book','width="20" height="20"')} Открыть книгу</button>
-      ${st.user?`<button class="btn btn-ghost" data-act="enter">Продолжить: ${esc(st.user.nick)}</button>`:''}</div>
-  </div>`,'cover')}</div>`;
+      ${st.user?`<button class="btn btn-ghost" data-act="enter">Продолжить: ${esc(st.user.nick)}</button>`:`<button class="link" data-act="toLogin">У меня уже есть код</button>`}</div>
+  </div>`,'cover')}</div>`};
 }
-// Пролог — три страницы, листаются свайпом
 const PRO_N=3;
+const PRO_T1='В новогоднюю ночь Дед Мороз идёт через всю страну с востока на запад: одиннадцать Новых годов за одну ночь, ни минуты лишней.';
+const PRO_T2='Где-то в тайге мешок рвётся о еловый сук — подарки рассыпаются по всему лесу. Один он не успеет. Нужен помощник, и это вы.';
+function famHTML(lead){return `<div class="fam-lead">${por('m_mikhail',lead)}<div><b>Медведь Михаил</b><span>Он и есть Дед Мороз. Ему вы и помогаете</span></div></div>
+  <div class="fam">${FAMILY.slice(1).map(f=>`<div class="fm">${por(f[0])}<b>${f[1]}</b><span>${f[2]}</span></div>`).join('')}</div>`;}
 function vPrologue(){
   if(!ui.bookOpen)return vCover();
+  const b11=`<figure class="b11"><img src="${A.b11}" alt="11"><figcaption>раз наступает Новый год в России за одну ночь</figcaption></figure>`;
+  if(DESK){
+    // Десктоп: первый разворот книги
+    const L=`${pt('Завязка','Одна ночь — одиннадцать полуночей','h1')}${b11}${tale(PRO_T1,true)}${tale(PRO_T2)}<img class="vign" src="${A.bear_lamp}" alt="">`;
+    const R=`${pt('Кто встретит вас на пути','Семья Деда Мороза')}${famHTML('xl')}
+      <div class="cta"><button class="btn btn-gold btn-lg" data-act="${st.user?'enter':'startAuth'}">${st.user?'Вернуться в сказку':'Стать помощником Деда Мороза'} ${svg('arrow','width="18" height="18"')}</button></div>`;
+    return {raw:`<div class="topstrip"><a class="brand" href="${href('cover')}" title="К обложке"><i class="sm"></i><span class="bt"><b>Новогодняя ночь</b><small>ПСБ · для сотрудников банка</small></span></a><div class="spacer"></div>
+      ${st.user?`<button class="btn btn-ghost btn-sm" data-act="enter">Продолжить: ${esc(st.user.nick)}</button>`:`<button class="btn btn-ghost btn-sm" data-act="toLogin">Войти по коду</button>`}</div>${book(L,R,{pn:1})}`};
+  }
+  // Телефон: три страницы, листаются свайпом
   const slides=[
-    page(`${pt('Завязка','Одна ночь — одиннадцать полуночей','h1')}
-      <figure class="b11"><img src="${A.b11}" alt="11"><figcaption>раз наступает Новый год в России за одну ночь</figcaption></figure>
-      ${tale('В новогоднюю ночь Дед Мороз идёт через всю страну с востока на запад: одиннадцать Новых годов за одну ночь, ни минуты лишней.',true)}`),
-    page(`${pt('Нужен помощник','Мешок порвался в тайге','h1')}
-      <img class="pro-img" src="${A.bear_lamp}" alt="">
-      ${tale('Где-то в тайге мешок рвётся о еловый сук — подарки рассыпаются по всему лесу. Один он не успеет. Нужен помощник, и это вы.',true)}`),
-    page(`${pt('Кто встретит вас','Семья Деда Мороза','h1')}
-      <div class="fam-lead">${por('m_mikhail','lg')}<div><b>Медведь Михаил</b><span>Он и есть Дед Мороз. Сквозной герой всего пути</span></div></div>
-      <div class="fam">${FAMILY.slice(1).map(f=>`<div class="fm">${por(f[0])}<b>${f[1]}</b><span>${f[2]}</span></div>`).join('')}</div>`)
+    page(`${pt('Завязка','Одна ночь — одиннадцать полуночей','h1')}${b11}${tale(PRO_T1,true)}`),
+    page(`${pt('Нужен помощник','Мешок порвался в тайге','h1')}<img class="pro-img" src="${A.bear_lamp}" alt="">${tale(PRO_T2,true)}`),
+    page(`${pt('Кто встретит вас','Семья Деда Мороза','h1')}${famHTML('lg')}`)
   ];
   const i=Math.min(ui.pro||0,PRO_N-1);
-  return `<div class="pro">
+  return {raw:`<div class="pro">
     <div class="pro-top"><a class="ab-sun" href="${href('cover')}" aria-label="К обложке"><i class="sm"></i></a><span class="pro-t">Новогодняя ночь</span>
       ${st.user?`<button class="link" data-act="enter">Продолжить</button>`:`<button class="link" data-act="startAuth">Пропустить</button>`}</div>
     <div class="slides" id="slides">${slides.map((s,k)=>`<div class="slide" data-k="${k}">${s}</div>`).join('')}</div>
     <div class="dots" id="dots">${slides.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join('')}</div>
     <div class="actbar"><div class="ab-row"><button class="btn btn-gold btn-lg" id="proBtn" data-act="proNext">${proLabel(i)}</button></div></div>
-  </div>`;
+  </div>`};
 }
 function proLabel(i){return i<PRO_N-1?'Дальше':(st.user?'Вернуться в сказку':'Стать помощником Деда Мороза');}
 function mountPrologue(){
@@ -208,35 +282,46 @@ function mountPrologue(){
 
 /* ===== Формирование персонажа: шаг 1 — имя ===== */
 function nkRow(nick){return `<span class="pl">—</span>${ava(nick,32,true)}<span class="n">${esc(nick)} <span class="tag">вы</span><small id="nkCity">${esc((ui.city||'').trim())}</small></span><span class="p">0</span>`;}
+const NK_AVA=()=>DESK?96:72;
 function vNick(){
   if(!ui.nick)ui.nick=rndNick();
   const cur=nickOf(ui.nick), g=cur.g;
   bar('Имя героя','Формирование персонажа · шаг 1 из 2','prologue');
-  return `${page(`
-    <div class="nk-prev"><span id="nkAva">${ava(cur.nick,72,true)}</span>
-      <div class="nickplate">${flowers()}<div class="hint">Ваше игровое имя</div><div class="nk" id="nkText">${esc(cur.nick)}</div></div></div>
-    <p class="note">Аватарка — из инициалов: <span id="nkHint">«${esc(cur.nick)}» → «${esc(initials(cur.nick))}»</span>. Имя не влияет на механику игры.</p>
-    <div class="pickrow"><span class="lbl-s">Первое слово</span><button class="dice" data-act="rndA" aria-label="Случайное первое слово">${svg('dice')}</button></div>
-    <div class="chips3" id="pA">${D.ADJ.map((a,i)=>`<button class="${i===ui.nick.a?'on':''}" data-act="pickA" data-i="${i}">${a[g]}</button>`).join('')}</div>
-    <div class="pickrow"><span class="lbl-s">Второе слово</span><button class="dice" data-act="rndN" aria-label="Случайное второе слово">${svg('dice')}</button></div>
-    <div class="chips3" id="pN">${NOUNS.map((x,i)=>`<button class="${i===ui.nick.n?'on':''}" data-act="pickN" data-i="${i}">${x.w}</button>`).join('')}</div>
-    <button class="btn btn-ghost btn-block" data-act="regen">${svg('dice','width="18" height="18"')} Случайное имя целиком</button>
-    <label class="field"><span>Ваш город — по желанию</span>
+  const plate=`<div class="nickplate">${flowers()}<div class="hint">Ваше игровое имя</div><div class="nk" id="nkText">${esc(cur.nick)}</div></div>`;
+  const hint=`<p class="note">Аватар — из инициалов: <span id="nkHint">«${esc(cur.nick)}» → «${esc(initials(cur.nick))}»</span>. Имя видно в турнирной таблице и ни на что в игре не влияет.</p>`;
+  const chipsA=D.ADJ.map((a,i)=>`<button class="${i===ui.nick.a?'on':''}" data-act="pickA" data-i="${i}">${a[g]}</button>`).join('');
+  const chipsN=NOUNS.map((x,i)=>`<button class="${i===ui.nick.n?'on':''}" data-act="pickN" data-i="${i}">${x.w}</button>`).join('');
+  const dice=(act,l)=>`<button class="dice" data-act="${act}" aria-label="${l}" title="${l}">${svg('dice')}</button>`;
+  const city=`<label class="field"><span>Ваш город — по желанию</span>
       <input class="input" id="city" list="cities" placeholder="Например, Казань" value="${esc(ui.city)}" autocomplete="off">
       <datalist id="cities">${D.CITIES.map(c=>`<option value="${c}">`).join('')}</datalist></label>
-    <p class="note left">Город нужен, чтобы показать, из скольких городов страны собрались помощники</p>
-    ${lbl('Так вас увидят в турнирной таблице','s')}
-    <div class="lbmini prev"><div class="r me" id="nkRow">${nkRow(cur.nick)}</div></div>`)}
-  ${actbar([{t:'Дальше: персональный код',act:'saveNick',gold:1}])}`;
+    <p class="note left">Город нужен, чтобы показать, из скольких городов страны собрались помощники</p>`;
+  const preview=`${lbl('Так вас увидят в турнирной таблице','s')}<div class="lbmini prev"><div class="r me" id="nkRow">${nkRow(cur.nick)}</div></div>`;
+  const regen=`<button class="btn btn-ghost btn-block" data-act="regen">${svg('dice','width="18" height="18"')} Случайное имя целиком</button>`;
+  const acts=[{t:'Дальше: персональный код',act:'saveNick',gold:1}];
+  if(DESK)return {
+    L:`${pt('Имя героя','Формирование персонажа · шаг 1 из 2','h1')}
+      <div class="nick-hero"><img class="mascot" src="${A.bear_juggler}" alt=""><div class="nick-prev"><span id="nkAva">${ava(cur.nick,NK_AVA(),true)}</span>${plate}</div></div>${hint}${preview}`,
+    R:`${pt('Соберите имя','Первое и второе слово — по отдельности')}
+      <div class="pick2"><div class="pcol"><div class="phd"><span>Первое слово</span>${dice('rndA','Случайное первое слово')}</div><div class="pchips" id="pA">${chipsA}</div></div>
+        <div class="pcol"><div class="phd"><span>Второе слово</span>${dice('rndN','Случайное второе слово')}</div><div class="pchips" id="pN">${chipsN}</div></div></div>
+      ${regen}${city}`,
+    acts,nbt:false,dnote:'Уже участвуете? <a class="link" href="#" data-act="toLogin">Войти по коду</a>',pn:3,cls:'onb'};
+  return {M:`<div class="nk-prev"><span id="nkAva">${ava(cur.nick,NK_AVA(),true)}</span>${plate}</div>${hint}
+    <div class="pickrow"><span class="lbl-s">Первое слово</span>${dice('rndA','Случайное первое слово')}</div><div class="chips3" id="pA">${chipsA}</div>
+    <div class="pickrow"><span class="lbl-s">Второе слово</span>${dice('rndN','Случайное второе слово')}</div><div class="chips3" id="pN">${chipsN}</div>
+    ${regen}${city}${preview}<p class="note">Уже участвуете? <a class="link" href="#" data-act="toLogin">Войти по коду</a></p>`,acts};
 }
 function patchNick(scroll){
   const cur=nickOf(ui.nick), g=cur.g;
   saveDraft();
   const row=$('#nkRow');if(row)row.innerHTML=nkRow(cur.nick);
-  $('#nkText').textContent=cur.nick;$('#nkAva').innerHTML=ava(cur.nick,72,true);$('#nkHint').textContent=`«${cur.nick}» → «${initials(cur.nick)}»`;
+  $('#nkText').textContent=cur.nick;$('#nkAva').innerHTML=ava(cur.nick,NK_AVA(),true);$('#nkHint').textContent=`«${cur.nick}» → «${initials(cur.nick)}»`;
   $$('#pA button').forEach((b,i)=>{b.textContent=D.ADJ[i][g];b.classList.toggle('on',i===ui.nick.a);});
   $$('#pN button').forEach((b,i)=>b.classList.toggle('on',i===ui.nick.n));
-  if(scroll)['#pA','#pN'].forEach(s=>{const box=$(s),b=$(s+' .on');if(box&&b)box.scrollTo({left:b.offsetLeft-box.clientWidth/2+b.offsetWidth/2,behavior:'smooth'});});
+  if(scroll)['#pA','#pN'].forEach(s=>{const box=$(s),b=$(s+' .on');if(!box||!b)return;
+    if(box.scrollWidth>box.clientWidth+2)box.scrollTo({left:b.offsetLeft-box.clientWidth/2+b.offsetWidth/2,behavior:'smooth'});
+    else box.scrollTop=b.offsetTop-box.offsetTop-box.clientHeight/2+b.offsetHeight/2;});
 }
 
 /* ===== Формирование персонажа: шаг 2 — персональный код (регистрации нет) ===== */
@@ -246,25 +331,43 @@ function vAuth(){
   if(!ui.pending){const n=nickOf(ui.nick||rndNick());ui.pending={nick:n.nick,g:n.g,city:''};}
   const sent=a.sentTo;
   bar('Персональный код','Формирование персонажа · шаг 2 из 2','nick');
-  return `${page(`
-    <div class="code-hero"><img class="mascot" src="${A.bear_archer}" alt="">${tale(`${ui.pending.nick}, это ваш код участника. Сохраните его — по нему платформа узнаёт вас.`)}</div>
-    <div class="codebox"><div class="lbl-s">Персональный код</div><div class="code">${a.code}</div>
-      <button class="btn btn-ghost btn-sm" data-act="copy" data-t="${a.code}">${svg('copy','width="15" height="15"')} Скопировать</button></div>
-    ${lbl('Почта — по желанию','s')}
-    <p class="tale small">Введите адрес — и код придёт письмом. Больше почта ни для чего не используется.</p>
+  const hero=`<div class="code-hero"><img class="mascot" src="${A.bear_archer}" alt="">${tale(`${ui.pending.nick}, это ваш персональный код. Сохраните его: по нему можно войти с другого устройства — например, с рабочего компьютера.`)}</div>`;
+  const code=`<div class="codebox"><div class="lbl-s">Персональный код</div><div class="code">${a.code}</div>
+      <button class="btn btn-ghost btn-sm" data-act="copy" data-t="${a.code}">${svg('copy','width="15" height="15"')} Скопировать</button></div>`;
+  const mail=`<p class="tale small">Введите адрес — и код придёт письмом. Туда же придёт код подарка из «Сундука чудес». Больше почта ни для чего не используется.</p>
     <div class="field">
       ${sent?`<div class="sent">${svg('check','width="16" height="16"')}<span>Отправили код на <b>${esc(sent)}</b></span><button class="link" data-act="mailEdit">Изменить</button></div>`
       :`<div class="row"><input class="input ${a.err?'err':''}" id="email" type="email" inputmode="email" autocomplete="email" placeholder="name@mail.ru" value="${esc(a.email)}"><button class="btn btn-ghost" data-act="mailSend">Отправить</button></div>
         ${a.err?`<div class="err-t">${a.err}</div>`:''}`}
-    </div>
-    <p class="note"><a class="link" href="#" data-act="toNick">Изменить имя</a></p>`)}
-  ${actbar([{t:'В путь',act:'codeNext',gold:1}])}`;
+    </div>`;
+  const back=`<p class="note"><a class="link" href="#" data-act="toNick">Изменить имя</a></p>`;
+  const acts=[{t:'В путь',act:'codeNext',gold:1}];
+  if(DESK)return {L:`${pt('Персональный код','Формирование персонажа · шаг 2 из 2','h1')}${hero}${code}`,
+    R:`${pt('Почта — по желанию','Продублируем код письмом')}${mail}`,acts,nbt:false,
+    dnote:'Почта нужна только для писем с кодами · <a class="link" href="#" data-act="toNick">Изменить имя</a>',pn:5,cls:'onb'};
+  return {M:`${hero}${code}${lbl('Почта — по желанию','s')}${mail}${back}`,acts};
+}
+
+/* ===== Вход по коду — для тех, кто уже создал героя: другое устройство или после выхода ===== */
+function vLogin(){
+  bar('Вход по коду','Для тех, кто уже в сказке','cover');
+  const L=ui.login;
+  const form=`<div class="code-hero"><img class="mascot" src="${A.bear_archer}" alt="">${tale('Введите персональный код — его выдали, когда вы создавали героя. Если указывали почту, код есть в письме.')}</div>
+    <label class="field"><span>Персональный код</span>
+      <input class="input code-in ${L.err?'err':''}" id="logincode" placeholder="PSB-XXXX-XXXX" value="${esc(L.code)}" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="20"></label>
+    ${L.err?`<div class="err-t">${L.err}</div>`:''}
+    <p class="note left">Регистр не важен, дефисы можно не ставить</p>`;
+  // «Нет кода?» — к созданию героя; уже выбранное имя (черновик) сохраняется
+  const alt='Нет кода? <a class="link" href="#" data-act="toNick">Стать помощником Деда Мороза</a>';
+  const acts=[{t:'Войти',act:'login',gold:1}];
+  if(DESK)return {one:`${pt('Вход по коду','Для тех, кто уже в сказке','h1')}${form}`,acts,nbt:false,dnote:alt};
+  return {M:`${form}<p class="note">${alt}</p>`,acts};
 }
 
 /* ===== Маршрут ===== */
 const STOPS=[
   {k:'quiz',n:1,t:'«Спроси дорогу»',d:'Квиз · новый набор каждую неделю',m:'m_mlad',who:'Младший сын',pts:`до ${D.QUIZ.reduce((s,r)=>s+r.qs.length,0)*20} баллов`,halt:[0,1]},
-  {k:'forest',n:2,t:'«Лес»',d:'Раннер: собрать рассыпанные подарки',m:'m_star',who:'Старший сын',pts:'10 баллов за подарок',halt:[2,3]},
+  {k:'forest',n:2,t:'«Лес»',d:'Игра: собрать рассыпанные подарки',m:'m_star',who:'Старший сын',pts:'10 баллов за подарок',halt:[2,3]},
   {k:'tree',n:3,t:'«Ёлка»',d:'Шар из вашего фото на общую ёлку',m:'m_doch',who:'Дочь',pts:'100 баллов',halt:[4,5]},
   {k:'final',n:4,t:'Финал',d:'Готовая сказка и карточка героя',m:'m_mikhail',who:'Дед Мороз Михаил',halt:['full']},
   {k:'chest',n:5,t:'«Сундук чудес»',d:'Лототрон перед Новым годом: код на подарок',m:'chest',who:'Подарок от Михаила'}
@@ -276,7 +379,7 @@ function haltHTML(s){
     const c=D.CHAPTERS[h],s2=chState(h),voted=st.serial.votes[h]!=null;
     const lab=s2==='soon'?fmt(c.day,true):s2==='vote'?(voted?'вы голосовали':'голосование'):'читать';
     return `<button class="hc ${s2}" data-act="openCh" data-i="${h}" ${s2==='soon'?'disabled':''}><b>Глава ${ROMAN[h]}</b><span>${lab}</span></button>`;}).join('');
-  return `<div class="halt"><span class="hl">${svg('book','width="13" height="13"')} Привал</span><div class="hcs">${items}</div></div>`;
+  return `<div class="halt"><span class="hl">${svg('book','width="13" height="13"')} Привал${DESK?' · сказка-сериал':''}</span><div class="hcs">${items}</div></div>`;
 }
 function stopHTML(s){
   let state='open',btnH='',dn=false;
@@ -291,16 +394,18 @@ function stopHTML(s){
     else {dn=st.chest.used;btnH=b(dn?'Мой код':'Запустить',!dn);}
   } else {
     if(st.day<OPEN[s.k]){state='locked';btnH=lockChip(OPEN[s.k]);}
+    else if(s.k==='quiz'&&st.qrun){btnH=b('Продолжить',true);dn=done.quiz();}
     else {dn=done[s.k]();btnH=b(dn?(s.k==='tree'?'К ёлке':'Ещё раз'):'Начать',!dn);}
   }
   return `<div class="stop ${state} ${dn?'done':''}">
     <div class="sm"><img class="med" src="${A['med'+s.n]}" alt="${s.n}">${dn?`<span class="done-mark">${svg('check','width="12" height="12" stroke-width="3"')}</span>`:''}</div>
-    <div class="sb"><b class="tt">${s.t}</b><span class="ds">${s.d}</span><span class="meta"><img src="${A[s.m]}" alt="" ${s.k==='chest'?'class="obj"':''}>${s.who}${s.pts?` · <em>${s.pts}</em>`:''}</span></div>
+    <div class="sb"><b class="tt">${s.t}</b><span class="ds">${s.d}</span><span class="meta"><span class="who"><img src="${A[s.m]}" alt="" ${s.k==='chest'?'class="obj"':''}>${s.who}</span>${s.pts?`<em>${STAR_SM}${s.pts}</em>`:''}</span></div>
     <div class="st">${btnH}</div>
   </div>${haltHTML(s)}`;
 }
 // Главное действие на сегодня — то, что маршрут предлагает сделать прямо сейчас
 function nextStep(){
+  if(st.qrun){const R=D.QUIZ[st.qrun.r];return {k:'quiz',m:'med1',t:`Продолжите квиз: вопрос ${st.qrun.i+1} из ${R.qs.length}`,d:`Набор ${st.qrun.r+1} «${R.title}» — ответы сохранены`,b:'Продолжить'};}
   if(!done.quiz())return {k:'quiz',m:'med1',t:'Пройдите квиз «Спроси дорогу»',d:'Младший сын ждёт у местных — без их подсказок тропу не найти',b:'Начать'};
   if(st.day>=OPEN.forest&&!done.forest())return {k:'forest',m:'med2',t:'Соберите подарки в «Лесу»',d:'Старший сын уже бежит — догоняйте',b:'Бежать'};
   if(st.day>=OPEN.tree&&!done.tree())return {k:'tree',m:'med3',t:'Повесьте свой шар на общую ёлку',d:'Дочь наряжает ёлку шарами из ваших фото',b:'Украсить'};
@@ -310,52 +415,75 @@ function nextStep(){
   if(nx)return {k:null,m:'clock',t:`Дальше — ${nx[1]}`,d:`Откроется ${fmt(nx[0])}. А пока — сказка-сериал и избушка`};
   return {k:null,m:'chest',t:'Маршрут пройден',d:'Следите за сказкой-сериалом и турнирной таблицей'};
 }
-function weeklyBlock(){
+// Кнопка «дальше по маршруту» для экранов вне маршрута (сериал, глава)
+const STEP_NAME={quiz:'«Спроси дорогу»',forest:'«Лес»',tree:'«Ёлка»',final:'финал',chest:'«Сундук чудес»'};
+function routeNext(gold){const ns=nextStep();return ns.k?{t:`Дальше: ${STEP_NAME[ns.k]}`,act:'go',v:ns.k,gold:gold?1:0}:{t:'На маршрут',act:'go',v:'route',gold:gold?1:0};}
+function nextCard(){
+  const ns=nextStep();
+  return `<div class="nextc ${ns.k?'':'idle'}"><img class="${ns.m.startsWith('med')?'med':'obj'}" src="${A[ns.m]}" alt=""><div class="nb"><span class="lbl-s">Следующий шаг</span><b>${nb(ns.t)}</b><span>${nb(ns.d)}</span></div>
+    ${ns.k?`<button class="btn btn-gold btn-sm" data-act="go" data-v="${ns.k}">${ns.b}</button>`:''}</div>`;
+}
+// Сказка-сериал: что происходит сейчас
+function serialState(){
   let cur=-1;D.CHAPTERS.forEach((c,i)=>{if(st.day>=c.day)cur=i;});
-  let sc;
-  if(cur<0){sc=`<div class="wcard"><img class="wim" src="${A.book}" alt=""><div class="wb"><span class="lbl-s">Сказка-сериал</span><b>Первая глава — 1 декабря</b><span>Каждые 3–4 дня — новая глава, а сюжет решает общее голосование</span></div></div>`;}
-  else{
-    const c=D.CHAPTERS[cur],s=chState(cur),voted=st.serial.votes[cur]!=null,full=st.day>=D.FULL_TALE_DAY,nx=D.CHAPTERS[cur+1];
-    const live=s==='vote'&&!full;
-    const txt=full?'Все главы собраны в одну сказку — читайте целиком и скачивайте PDF':live?(voted?'Ваш голос учтён. Итоги — после закрытия голосования':`Голосование до ${fmt(c.day+2)}, 10:00 — выберите, куда повернёт сюжет`):nx?`Голосование завершено. Глава ${ROMAN[cur+1]} выйдет ${fmt(nx.day)}`:`Цельная сказка выйдет ${fmt(D.FULL_TALE_DAY)}`;
-    const bt=full?`<button class="btn btn-gold btn-sm" data-act="go" data-v="fulltale">Читать сказку</button>`:`<button class="btn ${live&&!voted?'btn-gold':'btn-ghost'} btn-sm" data-act="openCh" data-i="${cur}">${live&&!voted?'Читать и голосовать':'Читать главу '+ROMAN[cur]}</button>`;
-    sc=`<div class="wcard ${live?'hot':''}"><img class="wim" src="${A.book}" alt=""><div class="wb"><div class="row tight"><span class="lbl-s">Сказка-сериал</span>${live?'<span class="chip live">голосование</span>':''}</div>
-      <b>${full?'Большая книга сказок':`Глава ${ROMAN[cur]}. ${c.t}`}</b><span>${txt}</span>${bt}</div></div>`;
-  }
+  const full=st.day>=D.FULL_TALE_DAY;
+  if(cur<0)return {cur,full,kind:'none'};
+  const c=D.CHAPTERS[cur],s=chState(cur),voted=st.serial.votes[cur]!=null,nx=D.CHAPTERS[cur+1];
+  const live=s==='vote'&&!full;
+  return {cur,full,c,nx,live,voted,kind:full?'full':live?(voted?'voted':'vote'):'read'};
+}
+function serialCard(withBtn){
+  const S=serialState();
+  if(S.kind==='none')return `<div class="wcard"><img class="wim" src="${A.book}" alt=""><div class="wb"><span class="lbl-s">Сказка-сериал</span><b>Первая глава — 1 декабря</b><span>Каждые 3–4 дня — новая глава, а сюжет решает общее голосование</span></div></div>`;
+  const {cur,c,nx}=S;
+  const txt=S.kind==='full'?'Все главы собраны в одну сказку — читайте целиком и скачивайте PDF'
+    :S.kind==='vote'?`Прочитайте главу и выберите, куда повернёт сюжет. Голосование до ${fmt(c.day+2)}, 10:00\u00a0мск`
+    :S.kind==='voted'?`Ваш голос учтён. Итоги — ${fmt(c.day+2)} в 10:00\u00a0мск${nx?`, глава ${ROMAN[cur+1]} выйдет ${fmt(nx.day)}`:''}`
+    :nx?`Голосование завершено. Глава ${ROMAN[cur+1]} выйдет ${fmt(nx.day)}`:c.final?`Финальная глава вышла. Цельная сказка — ${fmt(D.FULL_TALE_DAY)}`:`Цельная сказка выйдет ${fmt(D.FULL_TALE_DAY)}`;
+  const b=S.kind==='full'?{t:'Читать сказку',act:'go',v:'fulltale',gold:1}:S.kind==='vote'?{t:'Читать и голосовать',act:'openCh',i:cur,gold:1}:{t:S.kind==='voted'?'Ход голосования':'Читать главу '+ROMAN[cur],act:'openCh',i:cur};
+  return `<div class="wcard ${S.live?'hot':''}"><img class="wim" src="${A.book}" alt=""><div class="wb"><div class="row tight"><span class="lbl-s">Сказка-сериал</span>${S.live?`<span class="chip live">${S.voted?'вы голосовали':'голосование'}</span>`:''}</div>
+    <b>${S.kind==='full'?'Большая книга сказок':`Глава ${ROMAN[cur]}. ${c.t}`}</b><span>${nb(txt)}</span>${withBtn?btn(Object.assign({cls:'btn-sm',noarrow:1},b)):''}</div></div>`;
+}
+function quizCard(){
   let qi=-1;D.QUIZ.forEach((r,i)=>{if(st.day>=r.open)qi=i;});
   const R=D.QUIZ[qi],res=st.quiz[qi],nx=D.QUIZ[qi+1],fresh=!(res&&res.done);
-  const qc=`<div class="wcard ${fresh?'hot':''}"><span class="wim face">${por('m_mlad')}</span><div class="wb"><div class="row tight"><span class="lbl-s">Квиз</span>${fresh?'<span class="chip live">новый набор</span>':''}</div>
+  return `<div class="wcard ${fresh?'hot':''}"><span class="wim face">${por('m_mlad')}</span><div class="wb"><div class="row tight"><span class="lbl-s">Квиз${DESK?' «Спроси дорогу»':''}</span>${fresh?'<span class="chip live">новый набор</span>':''}</div>
     <b>Набор ${qi+1}. ${R.title}</b><span>${fresh?`${R.qs.length} новых слов и узоров — 20 баллов за верный ответ`:`Пройден: ${res.best} из ${R.qs.length}${res.best<R.qs.length?' — можно улучшить':''}`}. ${nx?`Следующий — ${fmt(nx.open)}`:'Это последний набор'}</span>
     <div class="qweeks">${D.QUIZ.map((r,i)=>`<i class="${i<qi?'past':i===qi?'now':''}">${fmt(r.open,true)}</i>`).join('')}</div>
-    <button class="btn ${fresh?'btn-gold':'btn-ghost'} btn-sm" data-act="goQuiz" data-i="${qi}">${fresh?'Пройти набор':'Ещё раз'}</button></div></div>`;
-  return `<section class="weekly">${lbl('Новое на этой неделе')}<div class="hs">${sc}${qc}</div></section>`;
+    <button class="btn ${fresh||st.qrun&&st.qrun.r===qi?'btn-gold':'btn-ghost'} btn-sm" data-act="goQuiz" data-i="${qi}">${st.qrun&&st.qrun.r===qi?'Продолжить':fresh?'Пройти набор':'Ещё раз'}</button></div></div>`;
 }
+function weeklyBlock(){return `<section class="weekly">${lbl('Новое на этой неделе')}<div class="hs">${serialCard(true)}${quizCard()}</div></section>`;}
 function talesOpen(){return D.TALES.filter(t=>st.day>=t.open).length;}
 function vRoute(){
   bar('Маршрут',`${fmt(st.day,true)} · ${nyLeft()}`);
-  const sd=stepsDone(), lit=Math.max(1,Math.round(sd/5*11)), ns=nextStep();
+  const sd=stepsDone(), lit=Math.max(1,Math.round(sd/5*11));
   const lb=board(), me=lb.find(x=>x.me);
-  return `${endBanner()}${page(`
-    <div class="midnights">${lbl('Одна ночь — одиннадцать полуночей','s')}
-      <div class="tz">${D.TZ.map((z,i)=>`<div class="z ${i<lit?'on':''} ${i===lit-1?'cur':''}" title="${z[1]} · UTC${z[0]}"><i></i><b>${z[0]}</b></div>`).join('')}</div>
-      <div class="row ew"><span>Восток</span><span class="cnt">${D.TZ[lit-1][1]} · ${lit} из 11</span><span>Запад</span></div></div>
-    <div class="nextc ${ns.k?'':'idle'}"><img class="${ns.m.startsWith('med')?'med':'obj'}" src="${A[ns.m]}" alt=""><div class="nb"><span class="lbl-s">Следующий шаг</span><b>${ns.t}</b><span>${ns.d}</span></div>
-      ${ns.k?`<button class="btn btn-gold btn-sm" data-act="go" data-v="${ns.k}">${ns.b}</button>`:''}</div>
-    ${weeklyBlock()}
-    ${lbl('Путь героя')}
-    <div class="route">${STOPS.map(stopHTML).join('')}</div>
-    <div class="cart bank"><div class="row tight">${ICON_BANK}<span class="lbl-s">Общий счётчик банка</span></div>
+  const mid=`<div class="midnights ${DESK?'cart':''}">${lbl('Одна ночь — одиннадцать полуночей','s')}
+      <div class="tz">${D.TZ.map((z,i)=>`<div class="z ${i<lit?'on':''} ${i===lit-1?'cur':''}" title="${z[1]} · UTC${z[0]}"><span class="c">${i%2?'':z[1]}</span><i></i><b>${z[0]}</b><span class="c">${i%2?z[1]:''}</span></div>`).join('')}</div>
+      <div class="row ew"><span>Восток</span><span class="cnt">${D.TZ[lit-1][1]} · ${lit} из 11</span><span>Запад</span></div></div>`;
+  const route=`<div class="route">${STOPS.map(stopHTML).join('')}</div>`;
+  const bank=`<div class="cart bank"><div class="row tight">${ICON_BANK}<span class="lbl-s">Общий счётчик банка</span></div>
       <div class="num">${num(bankTotal())}</div><div class="small ink2">подарков собрали сотрудники в «Лесу»${st.forest.gifts?` · ваших — ${st.forest.gifts}`:''}</div>
       <div class="stats"><div><b>${num(participants())}</b>помощников</div><div><b>${citiesCount()}</b>${plural(citiesCount(),'город','города','городов')}</div></div>
-      <img class="deco" src="${A.bear_sack}" alt=""></div>
-    <a class="kids" href="${href('izba')}"><img src="${A.hut}" alt=""><span class="kb"><span class="lbl-s">Для детей</span><b>Пряничная избушка</b><span>Аудиосказки на ночь · доступно ${talesOpen()} из 10</span></span>${svg('arrow','width="20" height="20"')}</a>
-    <a class="myrank" href="${href('rating')}">${ava(me.nick,34,true)}<span class="mr"><b>${me.place} место в рейтинге</b><span>${num(me.p)} баллов</span></span>${svg('arrow','width="20" height="20"')}</a>`)}`;
+      <img class="deco" src="${A.bear_sack}" alt=""></div>`;
+  const kids=`<a class="kids" href="${href('izba')}"><img src="${A.hut}" alt=""><span class="kb"><span class="lbl-s">Для детей</span><b>Пряничная избушка</b><span>Аудиосказки на ночь · доступно ${talesOpen()} из 10</span></span>${svg('arrow','width="20" height="20"')}</a>`;
+  const rank=`<a class="myrank" href="${href('rating')}">${ava(me.nick,34,true)}<span class="mr"><b>${me.place} место в рейтинге</b><span>${num(me.p)} баллов</span></span>${svg('arrow','width="20" height="20"')}</a>`;
+  return {pre:endBanner(),
+    L:`${pt('Маршрут помощника','Помогите Михаилу успеть во все полуночи','h1')}
+      <div class="intro"><img src="${A.bear_moroz}" alt="">${tale('Мешок Деда Мороза порвался о еловый сук, подарки рассыпались по лесу. Идите с востока на запад — на пути открываются испытания.',true)}</div>
+      ${nextCard()}${mid}${bank}${weeklyBlock()}`,
+    R:`${pt('Путь героя','Испытания · привалы · награда')}
+      <p class="tale small">Испытания приносят баллы в турнирную таблицу. На привалах выходят главы сказки-сериала — читайте и голосуйте, куда повернёт сюжет.</p>
+      ${route}${kids}${rank}`,
+    M:`${nextCard()}${mid}${weeklyBlock()}${lbl('Путь героя')}${route}${bank}${kids}${rank}`,
+    pn:7};
 }
 
 /* ===== Квиз «Спроси дорогу» ===== */
 function roundsList(R){
   return `<div class="rounds">${D.QUIZ.map((r,i)=>{const lk=st.day<r.open;const res=st.quiz[i];return `<button class="rnd ${R===i?'on':''}" data-act="qRound" data-i="${i}" ${lk?'disabled':''}><span class="rn">${ROMAN[i]}</span><span class="rt"><b>${r.title}</b><small>${lk?'Откроется '+fmt(r.open):res&&res.done?`Лучший результат: ${res.best} из ${r.qs.length}`:r.qs.length+' вопросов · '+fmt(r.open,true)}</small></span>${res&&res.done?`<span class="rs">${res.best}/${r.qs.length}</span>`:''}</button>`;}).join('')}</div>`;
 }
+const QUIZ_HELLO='чтобы понять, куда идти и где застрял папа, нужно расспросить местных. Но говорят они на своём: одна просит принести шаньги, другой упоминает камусы, третий зовёт к айрану. Не понял слова — не нашёл тропу!';
 function vQuiz(){
   bar('Спроси дорогу','Испытание 1 · квиз','route');
   if(st.day<OPEN.quiz)return lockView('Квиз откроется 1 декабря');
@@ -363,57 +491,84 @@ function vQuiz(){
   if(!q){
     if(ui.quizRound==null){const f=D.QUIZ.findIndex((r,i)=>st.day>=r.open&&!(st.quiz[i]&&st.quiz[i].done));ui.quizRound=f>=0?f:0;}
     const R=ui.quizRound;
-    return `${page(`
-      ${say('m_mlad','Младший сын','чтобы понять, куда идти и где застрял папа, нужно расспросить местных. Но говорят они на своём: одна просит принести шаньги, другой упоминает камусы, третий зовёт к айрану. Не понял слова — не нашёл тропу!','compact')}
-      <p class="tale small">Слово на диалекте или узор на рукавице — и четыре варианта ответа. После выбора — короткий рассказ: откуда слово и что оно означает. Ошибаться не страшно.</p>
-      ${lbl('Наборы вопросов · новый каждую неделю','s')}${roundsList(R)}
-      <p class="note">${STAR_SM} 20 баллов за каждый верный ответ · в зачёт лучший результат</p>`)}
-    ${actbar([{t:st.quiz[R]&&st.quiz[R].done?'Пройти набор ещё раз':'Расспросить местных',act:'qStart',gold:1}])}`;
+    const acts=[{t:st.quiz[R]&&st.quiz[R].done?'Пройти набор ещё раз':'Расспросить местных',act:'qStart',gold:1}];
+    const note=`<p class="note">${STAR_SM} 20 баллов за каждый верный ответ · в зачёт лучший результат</p>`;
+    return {
+      L:`${pt('Спроси дорогу','Испытание 1 · слова и узоры разных краёв','h1')}${say('m_mlad','Младший сын',QUIZ_HELLO)}
+        ${tale('Слово на диалекте и четыре варианта ответа. После выбора — короткий рассказ: откуда слово, что оно означает и где так говорят. Ошибаться не страшно — каждый ответ открывает что-то новое.',true)}
+        ${tale('А ещё будут узоры: на рукавице, на поясе, на полотенце. Угадайте, чей это край.')}`,
+      R:`${pt('Наборы вопросов','Новый набор каждую неделю')}${roundsList(R)}${note}`,
+      M:`${say('m_mlad','Младший сын',QUIZ_HELLO,'compact')}
+        <p class="tale small">Слово на диалекте или узор на рукавице — и четыре варианта ответа. После выбора — короткий рассказ: откуда слово и что оно означает. Ошибаться не страшно.</p>
+        ${lbl('Наборы вопросов · новый каждую неделю','s')}${roundsList(R)}${note}`,
+      acts,nbt:false,pn:9,cls:'quiz'};
   }
-  const R=D.QUIZ[q.r];
+  const R=D.QUIZ[q.r], n=R.qs.length;
   if(q.finished){
     bar('Спроси дорогу',`Набор ${q.r+1} · итог`,'route');
-    const c=q.correct;
-    return `${page(`${pt('Тропа найдена',`Набор ${q.r+1} · ${R.title}`,'h1')}
-      <div class="score"><span class="big">${c}</span><span class="of">из ${R.qs.length}</span></div>
+    const top=`${pt('Тропа найдена',`Набор ${q.r+1} · ${R.title}`,'h1')}
+      <div class="score"><span class="big">${q.correct}</span><span class="of">из ${n}</span></div>
       <p class="gain">${q.gain>0?`+${q.gain} баллов в таблицу`:'Лучший результат по этому набору сохранён'}</p>
       ${say('m_mlad','Младший сын','местные показали дорогу! Папа застрял где-то в лесу — там уже ждёт мой старший брат.','compact')}
-      ${st.day<OPEN.forest?`<p class="note">«Лес» откроется ${fmt(OPEN.forest)}</p>`:''}
-      ${lbl('Все наборы','s')}${roundsList(q.r)}`)}
-    ${actbar([st.day>=OPEN.forest?{t:'Дальше: в «Лес»',act:'go',v:'forest',gold:1}:{t:'На маршрут',act:'go',v:'route',gold:1},{t:'Другой набор',act:'qAgain'}])}`;
+      ${st.day<OPEN.forest?`<p class="note">«Лес» откроется ${fmt(OPEN.forest)}</p>`:''}`;
+    const acts=[st.day>=OPEN.forest?{t:'Дальше: «Лес»',act:'go',v:'forest',gold:1}:{t:'На маршрут',act:'go',v:'route',gold:1},{t:'Другой набор',act:'qAgain'}];
+    return {L:top,R:`${pt('Что дальше')}${nextBar(st.day>=OPEN.forest?[...acts,ROUTE_BTN]:acts,'',false)}${lbl('Все наборы')}${roundsList(q.r)}`,
+      M:`${top}${lbl('Все наборы','s')}${roundsList(q.r)}`,acts,dacts:[],pn:9,cls:'quiz'};
   }
   const Q=R.qs[q.i], ans=q.answered;
-  bar('Спроси дорогу',`Набор ${q.r+1} · вопрос ${q.i+1} из ${R.qs.length}`,'route');
+  bar('Спроси дорогу',`Набор ${q.r+1} · вопрос ${q.i+1} из ${n}`,'route');
   const expl=`<div class="explain"><div class="where">${Q.where}</div><div class="ttl2">${Q.t==='w'?Q.w:'Узор: '+Q.o[Q.a]}</div><p>${Q.ex}</p>
     <div class="verdict ${q.pick===Q.a?'ok':''}">${q.pick===Q.a?'Верно! +20 баллов':`Правильный ответ — «${Q.o[Q.a]}». Теперь и вы знаете!`}</div></div>`;
-  const nextT=q.i<R.qs.length-1?'Следующий вопрос':'Узнать, куда идти';
-  return `${page(`
-    <div class="qbar" aria-label="Вопрос ${q.i+1} из ${R.qs.length}">${R.qs.map((_,i)=>`<i class="${i<q.i?'done':i===q.i?'on':''}"></i>`).join('')}</div>
-    ${say('m_mlad','Младший сын',Q.t==='w'?`местные сказали «${Q.w.toLowerCase()}». Что бы это значило?`:`смотри, какой узор на ${Q.on}! Из какого он края?`,'compact')}
-    <div class="qword-wrap"><div class="plabel">${Q.t==='w'?'Что означает это слово':'Чей это узор?'}</div>
-      <div class="qword ${Q.t==='w'?'':'pat'}">${flowers()}${Q.t==='w'?`<div class="w">${Q.w}</div>`:`${patternSVG(Q.p)}<div class="on">Узор на ${Q.on}</div>`}</div></div>
-    <div class="opts ${ans?'answered':''}">${Q.o.map((o,i)=>{let cl='';if(ans){if(i===Q.a)cl='right';else if(i===q.pick)cl='wrong';else cl='dim';}return `<button class="opt ${cl}" data-act="qPick" data-i="${i}"><span>${o}</span></button>`;}).join('')}</div>
-    ${ans?'':'<p class="note">Выберите вариант — после ответа Младший сын расскажет, что это за слово</p>'}`,{sun:false})}
-  ${ans?actbar([{t:nextT,act:'qNext',gold:1},{t:'Пояснение',act:'sheetOpen',v:'explain'}]):''}
-  ${ans&&ui.sheet==='explain'?sheet(`${expl}<button class="btn btn-gold btn-block" data-act="qNext">${nextT} ${svg('arrow','width="18" height="18"')}</button>`,{cls:'parchsheet'}):''}`;
+  const nextT=q.i<n-1?'Следующий вопрос':'Узнать, куда идти';
+  const qbar=`<div class="qbar" aria-label="Вопрос ${q.i+1} из ${n}">${R.qs.map((_,i)=>`<i class="${i<q.i?'done':i===q.i?'on':''}"></i>`).join('')}</div>`;
+  const ask=say('m_mlad','Младший сын',Q.t==='w'?`местные сказали «${Q.w.toLowerCase()}». Что бы это значило?`:`смотри, какой узор на ${Q.on}! Из какого он края?`,'compact');
+  const word=`<div class="qword-wrap"><div class="plabel">${Q.t==='w'?'Что означает это слово':'Чей это узор?'}</div>
+      <div class="qword ${Q.t==='w'?'':'pat'}">${flowers()}${Q.t==='w'?`<div class="w">${Q.w}</div>`:`${patternSVG(Q.p)}<div class="on">Узор на ${Q.on}</div>`}</div></div>`;
+  const opts=`<div class="opts ${ans?'answered':''}">${Q.o.map((o,i)=>{let cl='';if(ans){if(i===Q.a)cl='right';else if(i===q.pick)cl='wrong';else cl='dim';}return `<button class="opt ${cl}" data-act="qPick" data-i="${i}"><span>${o}</span></button>`;}).join('')}</div>`;
+  const hint='<p class="note">Выберите вариант — после ответа Младший сын расскажет, что это значит</p>';
+  return {
+    L:`${pt('Спроси дорогу',`Набор ${q.r+1} · ${R.title}`,'h1')}${ask}${word}${qbar}<div class="qcount">Вопрос ${q.i+1} из ${n}</div>`,
+    R:`${pt('Ваш ответ')}${opts}${ans?`<div class="parch explain-in">${flowers()}${expl}</div>`:hint}`,
+    M:`${qbar}${ask}${word}${opts}${ans?'':hint}`,
+    acts:ans?[{t:nextT,act:'qNext',gold:1},{t:'Пояснение',act:'sheetOpen',v:'explain'}]:[],
+    dacts:ans?[{t:nextT,act:'qNext',gold:1}]:[],nbt:false,
+    sheet:ans&&ui.sheet==='explain'?sheet(`${expl}<button class="btn btn-gold btn-block" data-act="qNext">${nextT} ${svg('arrow','width="18" height="18"')}</button>`,{cls:'parchsheet'}):'',
+    sun:false,pn:9,cls:'quiz'};
 }
 
 /* ===== Лес ===== */
 function stageBar(n){return `<span>Этап ${n} из 20</span><b class="sprog"><i style="width:${n*5}%"></i></b>`;}
+const LITE_NOTE='<p class="note">Игра тормозит или не запускается? <a class="link" href="#" data-act="fLite">Альтернативный способ заработать баллы</a> — для старых браузеров и слабых компьютеров</p>';
+const FOREST_HELLO='тропа найдена! Папины подарки рассыпались по всему лесу — бежим вместе собирать. Управляешь мной ты. Всё, что соберём, пойдёт в общий счётчик банка.';
 function vForest(){
-  bar('Лес','Испытание 2 · раннер','route');
+  bar('Лес','Испытание 2 · бег за подарками','route');
   if(st.day<OPEN.forest)return lockView('«Лес» откроется 8 декабря','После того как тропа найдена, герой вместе со Старшим сыном попадает в лес, где рассыпаны подарки Деда Мороза.','m_star');
-  if(ui.fmode)return gameMode();
   const best=st.forest.bestGifts;
-  return `${page(`
-    ${say('m_star','Старший сын','тропа найдена! Папины подарки рассыпались по всему лесу — бежим вместе собирать. Управляешь мной ты. Всё, что соберём, пойдёт в общий счётчик банка.','compact')}
+  if(DESK){
+    // Десктоп: игровое поле на весь разворот, панель с жизнями и подарками на правой странице
+    return {
+      L:`${pt('Лес','Испытание 2 · соберите подарки, перепрыгните препятствия','h1')}${say('m_star','Старший сын',FOREST_HELLO)}`,
+      R:`<div class="hud"><div>${ICON_HEART}<div><span>Жизни</span><b id="hLives" class="hearts">${hearts(3)}</b></div></div><div>${ICON_GIFT}<div><span>Подарки</span><b id="hGifts">0</b></div></div><div>${ICON_BANK}<div><span>В общий счётчик</span><b id="hBank">+0</b></div></div></div>
+        <p class="tale small">Бегите и собирайте подарки: чем больше, тем лучше. 20 этапов, и с каждым бег быстрее. У вас 3 жизни — каждое столкновение отнимает одну.</p>
+        <p class="note left">Пробел, ↑ или клик по игре — прыжок · удерживайте → или «Быстрее» — ускорение</p>`,
+      full:`<div class="stage" id="stage"><canvas id="cv" data-ratio=".5"></canvas>
+          <div class="overlay" id="ov"><div class="inner"><div class="ov-t">${st.forest.runs?'Ещё забег?':'Готовы?'}</div>
+            <button class="btn btn-gold btn-lg" data-act="fStart">Бежать!</button>
+            ${st.forest.runs?`<p class="small">Лучший забег: ${best} ${plural(best,'подарок','подарка','подарков')}</p>`:''}</div></div></div>
+        <div class="ctrl" id="ctrl"><button class="btn btn-ghost" id="bJump">${svg('up','width="18" height="18"')} Прыжок</button><button class="btn btn-ghost" id="bFwd">Быстрее ${svg('arrow','width="18" height="18"')}</button>
+          <div class="stagebar" id="sbar">${stageBar(1)}</div></div>
+        <p class="note hidden" id="fin"><a class="link" href="#" data-act="fExit">Закончить забег</a> — собранные подарки засчитаются</p>${LITE_NOTE}`,
+      pn:11,cls:'forest'};
+  }
+  if(ui.fmode)return {raw:gameMode()};
+  return {M:`${say('m_star','Старший сын',FOREST_HELLO,'compact')}
     <div class="howto"><div>${svg('up')}<b>Тап по игре</b><span>прыжок</span></div><div>${svg('arrow')}<b>Держите «Быстрее»</b><span>ускорение</span></div><div>${ICON_HEART}<b>3 жизни</b><span>столкновение — минус одна</span></div></div>
-    <p class="tale small center">Просто беги и собирай: чем больше подарков — тем лучше. 20 этапов, бег всё быстрее.</p>
+    <p class="tale small center">Бегите и собирайте подарки: чем больше, тем лучше. 20 этапов, и с каждым бег быстрее.</p>
     ${st.forest.runs?`<div class="rcs"><div><b>${best}</b><span>рекорд, подарков</span></div><div><b>${num(best*10)}</b><span>баллов в таблице</span></div><div><b>${st.forest.gifts}</b><span>всего в общем счётчике</span></div></div>`:''}
-    <p class="note">Игра тормозит или не запускается? <a class="link" href="#" data-act="fLite">Альтернативный способ заработать баллы</a> — для старых браузеров и слабых компьютеров</p>`)}
-  ${actbar([{t:st.forest.runs?'Ещё забег':'Бежать!',act:'fPlay',gold:1}])}`;
+    ${LITE_NOTE}`,
+    acts:[{t:st.forest.runs?'Ещё забег':'Бежать!',act:'fPlay',gold:1}]};
 }
-// Игра во весь экран: сверху жизни и подарки, в центре поле, снизу большие кнопки под большие пальцы
+// Телефон: игра во весь экран — сверху жизни и подарки, в центре поле, снизу большие кнопки под большие пальцы
 function gameMode(){
   return `<div class="gm" id="gm">
     <div class="gm-top"><span class="hearts" id="hLives">${hearts(3)}</span><span class="gm-g">${ICON_GIFT}<b id="hGifts">0</b></span>
@@ -425,9 +580,9 @@ function gameMode(){
 }
 function mountForest(){
   const cv=$('#cv'); if(!cv) return;
-  cv.dataset.maxh=String(Math.max(200,innerHeight-(innerWidth>innerHeight?110:250)));
+  if(!DESK)cv.dataset.maxh=String(Math.max(200,innerHeight-(innerWidth>innerHeight?110:250)));
   game=ForestGame(cv,{
-    hud(S){const a=$('#hLives'),b=$('#hGifts');if(a)a.innerHTML=hearts(S.lives);if(b)b.textContent=S.gifts;},
+    hud(S){const a=$('#hLives'),b=$('#hGifts'),c=$('#hBank');if(a)a.innerHTML=hearts(S.lives);if(b)b.textContent=S.gifts;if(c)c.textContent='+'+S.gifts;},
     stage(n){const s=$('#sbar');if(s)s.innerHTML=stageBar(n);},
     end(S){finishForest(S.gifts,S.score,S.early?S.stage:0,S.out?S.stage:0);}
   });
@@ -441,24 +596,39 @@ function finishForest(gifts,score,earlyStage,outStage){
   st.forest.runs++;st.forest.gifts+=gifts;if(gifts>prevBest){addLog('forest',prevBest?`Новый рекорд: ${gifts} ${plural(gifts,'подарок','подарка','подарков')} (было ${prevBest})`:`Забег: ${gifts} ${plural(gifts,'подарок','подарка','подарков')}`,(gifts-prevBest)*10);st.forest.bestGifts=gifts;}save();
   const head=outStage?`Жизни закончились на этапе ${outStage} из 20`:earlyStage?`Забег окончен на этапе ${earlyStage} из 20`:'Все 20 этапов пройдены';
   const nx=st.day>=OPEN.tree?{t:'Дальше: «Ёлка»',act:'go',v:'tree',gold:1}:{t:'На маршрут',act:'go',v:'route',gold:1};
-  const gm=$('#gm');if(!gm)return;
-  const old=gm.querySelector('.sheet');if(old){old.previousElementSibling.remove();old.remove();}
-  gm.insertAdjacentHTML('beforeend',sheet(`<div class="lbl-s center">${head}</div>
-    <div class="fres"><b>${gifts}</b><span>${plural(gifts,'подарок','подарка','подарков')}</span></div>
-    ${say('m_star','Старший сын',outStage?'уф, споткнулись! Отдышимся — и ещё забег? Подарки, что успели собрать, уже в мешке.':'собрали! Бегу отдать папе мешок — а сестрёнка уже ждёт у ёлки.','compact')}
-    <div class="rcs"><div><b>+${gifts}</b><span>в общий счётчик банка</span></div><div><b>${gifts>prevBest?'+'+(gifts-prevBest)*10:st.forest.bestGifts}</b><span>${gifts>prevBest?'баллов — новый рекорд':'ваш рекорд, подарков'}</span></div></div>
-    <div class="sheet-acts">${btn(nx)}${btn({t:'Ещё забег',act:'fAgain'})}${nx.v!=='route'?btn({t:'На маршрут',act:'go',v:'route'}):''}</div>
-    ${st.day<OPEN.tree?`<p class="note">«Ёлка» откроется ${fmt(OPEN.tree)}</p>`:''}`,{cls:'darksheet',close:'fAgain'}));
+  const line=outStage?'уф, споткнулись! Отдышимся — и ещё забег? Подарки, что успели собрать, уже в мешке.':'собрали! Бегу отдать папе мешок — а сестрёнка уже ждёт у ёлки.';
+  const rec=`<div><b>${gifts>prevBest?'+'+(gifts-prevBest)*10:st.forest.bestGifts}</b><span>${gifts>prevBest?'баллов — новый рекорд':'ваш рекорд, подарков'}</span></div>`;
+  const treeNote=st.day<OPEN.tree?`«Ёлка» откроется ${fmt(OPEN.tree)}`:'';
+  if(DESK){
+    // Десктоп: итоги — карточкой под игровым полем
+    const fn=$('#fin');if(fn)fn.classList.add('hidden');
+    const ov=$('#ov');if(ov){ov.classList.remove('hidden');ov.innerHTML=`<div class="inner"><div class="lbl-s">${head}</div><div class="ov-t">${gifts} ${plural(gifts,'подарок','подарка','подарков')}</div><p class="small">Итоги и кнопки — под игрой ↓</p></div>`;}
+    const ctrl=$('#ctrl');if(!ctrl)return;
+    ctrl.outerHTML=`<div class="resultcard" id="ctrl">${say('m_star','Старший сын',line,'compact')}
+      <div class="rcs"><div><b>${gifts}</b><span>${plural(gifts,'подарок','подарка','подарков')} собрано</span></div><div><b>+${gifts}</b><span>в общий счётчик банка</span></div>${rec}</div>
+      ${nextBar([nx,{t:'Ещё забег',act:'fAgain'},nx.v!=='route'?ROUTE_BTN:null],treeNote)}</div>`;
+    const rc=$('#ctrl');if(rc)rc.scrollIntoView({behavior:reduced()?'auto':'smooth',block:'center'});
+  } else {
+    // Телефон: итоги — шторкой поверх игры
+    const gm=$('#gm');if(!gm)return;
+    const old=gm.querySelector('.sheet');if(old){old.previousElementSibling.remove();old.remove();}
+    gm.insertAdjacentHTML('beforeend',sheet(`<div class="lbl-s center">${head}</div>
+      <div class="fres"><b>${gifts}</b><span>${plural(gifts,'подарок','подарка','подарков')}</span></div>
+      ${say('m_star','Старший сын',line,'compact')}
+      <div class="rcs"><div><b>+${gifts}</b><span>в общий счётчик банка</span></div>${rec}</div>
+      <div class="sheet-acts">${btn(nx)}${btn({t:'Ещё забег',act:'fAgain'})}${nx.v!=='route'?btn(ROUTE_BTN):''}</div>
+      ${treeNote?`<p class="note">${treeNote}</p>`:''}`,{cls:'darksheet',close:'fAgain'}));
+  }
   updateHeader();
   if(first)toast('Подарки ушли в общий счётчик банка');
 }
 function startLite(){
   if(game)game.destroy(),game=null;
-  const ov=$('#ov'); ov.classList.remove('hidden');
+  const ov=$('#ov'); if(!ov)return; ov.classList.remove('hidden');
   const sg=$('#stage');if(sg)sg.classList.add('lite-on');
   let n=0,got=0,cur=-1;
   ov.innerHTML=`<div class="inner"><div class="lbl-s">Альтернативный способ заработать баллы</div><p class="small">Нажимайте на подарки, пока они не исчезли</p><div class="lite" id="lite">${[...Array(9)].map((_,i)=>`<button data-li="${i}"></button>`).join('')}</div><div class="small" id="liteC">Собрано: 0</div></div>`;
-  $('#lite').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-li]');if(b&&+b.dataset.li===cur){got++;cur=-1;b.classList.remove('has');b.textContent='';$('#liteC').textContent='Собрано: '+got;const g=$('#hGifts');if(g)g.textContent=got;}});
+  $('#lite').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-li]');if(b&&+b.dataset.li===cur){got++;cur=-1;b.classList.remove('has');b.textContent='';$('#liteC').textContent='Собрано: '+got;const g=$('#hGifts');if(g)g.textContent=got;const c=$('#hBank');if(c)c.textContent='+'+got;}});
   const t=setInterval(()=>{
     $$('#lite button').forEach(b=>{b.classList.remove('has');b.textContent='';});
     if(n>=18){clearInterval(t);finishForest(got,got*10);return;}
@@ -491,37 +661,53 @@ function vTree(){
   const T=ui.tree, step=T.step||0;
   if(!step){
     const nx=st.day>=OPEN.final?{t:'Дальше: финал',act:'go',v:'final',gold:1}:{t:'На маршрут',act:'go',v:'route',gold:1};
-    return `${page(`
-      <div class="tcount"><b>${num(treeCount())}</b> ${plural(treeCount(),'игрушка','игрушки','игрушек')} на общей ёлке</div>
-      <div class="treebox" id="treebox">${treeBox()}</div>
-      <div class="rot"><button class="btn btn-ghost btn-sm" data-act="treeRot" data-d="-1" aria-label="Повернуть влево">‹</button><div class="rotlab" id="tside">${sideLabel()}</div><button class="btn btn-ghost btn-sm" data-act="treeRot" data-d="1" aria-label="Повернуть вправо">›</button></div>
-      <p class="note">Крутите ёлку свайпом. Нажмите на шар — увидите, кто его повесил</p>
-      ${doch(st.tree.hung?'ёлка большая — у неё много сторон. Крути её: на каждой стороне игрушки коллег со всей страны.':'подарки собраны, папа уехал их развозить. Осталось вместе нарядить ёлку! Сделаем твой шар?','compact')}
-      ${st.tree.ball?`<div class="mytoy"><img src="${st.tree.ball}" alt=""><div><b>Ваша игрушка — на ёлке</b><span>Висит на передней стороне, в самом центре</span>
-        <span class="row tight"><button class="link ${ui.treeSide===0?'hidden':''}" id="toMine" data-act="treeMine">Показать</button><button class="link" data-act="tDownloadMine">Скачать</button></span></div></div>`:''}
-      ${st.tree.hung&&st.day<OPEN.final?`<p class="note">Финал маршрута откроется ${fmt(OPEN.final)}</p>`:''}`)}
-    ${actbar(st.tree.hung?[nx,{t:'Ещё игрушка',act:'tStep',s:1}]:[{t:'Сделать свой шар',act:'tStep',s:1,gold:1}])}`;
+    const tc=treeCount();
+    const treeH=`<div class="treebox" id="treebox">${treeBox()}</div>
+      <div class="rot"><button class="btn btn-ghost btn-sm" data-act="treeRot" data-d="-1" aria-label="Повернуть влево">‹${DESK?' Повернуть':''}</button><div class="rotlab" id="tside">${sideLabel()}</div><button class="btn btn-ghost btn-sm" data-act="treeRot" data-d="1" aria-label="Повернуть вправо">${DESK?'Повернуть ':''}›</button></div>
+      <p class="note">${DESK?'Ёлку можно крутить и свайпом. Наведите на шар — увидите, кто его повесил':'Крутите ёлку свайпом. Нажмите на шар — увидите, кто его повесил'}</p>`;
+    const line=st.tree.hung?'ёлка большая — у неё много сторон. Крути её: на каждой стороне игрушки коллег со всей страны.':'подарки собраны, папа уехал их развозить. Осталось вместе нарядить ёлку! Сделаем твой шар?';
+    const mine=st.tree.ball?`<div class="mytoy"><img src="${st.tree.ball}" alt=""><div><b>Ваша игрушка — на ёлке</b><span>Висит на передней стороне, в самом центре</span>
+        <span class="row tight"><button class="link ${ui.treeSide===0?'hidden':''}" id="toMine" data-act="treeMine">Показать</button><button class="link" data-act="tDownloadMine">Скачать</button></span></div></div>`:'';
+    const note=st.tree.hung&&st.day<OPEN.final?`Финал маршрута откроется ${fmt(OPEN.final)}`:'';
+    return {
+      L:`${pt('Общая ёлка банка',`${num(tc)} ${plural(tc,'игрушка','игрушки','игрушек')}`,'h1')}${treeH}`,
+      R:`${pt('Украсить ёлку','Испытание 3')}${doch(line)}${tale('Ёлка наряжается весь декабрь: свежие игрушки появляются на передней стороне, остальные — если её повернуть.')}${mine}`,
+      M:`<div class="tcount"><b>${num(tc)}</b> ${plural(tc,'игрушка','игрушки','игрушек')} на общей ёлке</div>${treeH}${doch(line,'compact')}${mine}`,
+      acts:st.tree.hung?[nx,{t:'Ещё игрушка',act:'tStep',s:1}]:[{t:'Сделать свой шар',act:'tStep',s:1,gold:1}],
+      dacts:st.tree.hung?[nx,{t:'Сделать ещё игрушку',act:'tStep',s:1},st.day>=OPEN.final?ROUTE_BTN:null]:[{t:'Сделать свой шар',act:'tStep',s:1,gold:1}],
+      note,pn:13,cls:'tree'};
   }
   bar('Украсить ёлку',`Шаг ${step} из 4 · ${TREE_STEPS[step-1]}`,'route');
   const lines={1:'выбери, какой шар мы сделаем. Стиль можно поменять в любой момент.',2:'теперь нужна картинка: твоё фото, фото с коллегами или рисунок ребёнка. Я превращу её в ёлочную игрушку.',3:'колдую над игрушкой… ещё чуть-чуть!',4:'какая красота! Повесим её на нашу общую ёлку?'};
   const steps=`<ol class="wiz" aria-label="Шаг ${step} из 4">${TREE_STEPS.map((s,i)=>`<li class="${i+1===step?'on':''} ${i+1<step?'done':''}"><i>${i+1<step?'✓':i+1}</i><span>${s}</span></li>`).join('')}</ol>`;
-  if(step===1)return `${page(`${steps}${doch(lines[1],'compact')}
-      <div class="styles">${BALL_STYLES.map((s,i)=>`<button class="${(T.style||0)===i?'on':''}" data-act="tStyle" data-i="${i}"><img src="${A['ball'+i]}" alt=""><span>${s.n}</span></button>`).join('')}</div>`,{sun:false})}
-    ${actbar([{t:'Дальше: фото',act:'tStep',s:2,gold:1},{t:'К ёлке',act:'tStep',s:0}])}`;
-  if(step===2)return `${page(`${steps}${doch(lines[2],'compact')}
-      <label class="dropzone" id="drop">${T.src?`<img class="pv" src="${T.src}" alt="">`:`<span class="dz">${svg('photo','width="40" height="40"')}</span>`}
-        <b>${T.src?'Фото загружено':'Выбрать фото'}</b><span class="small">${T.src?'Нажмите, чтобы заменить':'JPG или PNG — с телефона или компьютера'}</span>
+  const L=`${pt('Украсить ёлку','Испытание 3 · шар из вашего фото','h1')}${doch(lines[step])}${steps}
+    ${st.tree.hung?`<p class="note left"><a class="link" href="#" data-act="tStep" data-s="0">← Вернуться к общей ёлке</a></p>`:''}`;
+  const mob=x=>`${steps}${doch(lines[step],'compact')}${x}`;
+  let body,head,acts=[];
+  if(step===1){
+    head=dpt('Выберите игрушку','Шесть стилей шара');
+    body=`<div class="styles">${BALL_STYLES.map((s,i)=>`<button class="${(T.style||0)===i?'on':''}" data-act="tStyle" data-i="${i}"><img src="${A['ball'+i]}" alt=""><span>${s.n}</span></button>`).join('')}</div>`;
+    acts=[{t:'Дальше: фото',act:'tStep',s:2,gold:1},{t:'К ёлке',act:'tStep',s:0}];
+  } else if(step===2){
+    head=dpt('Загрузите фото','Своё, с коллегами или рисунок ребёнка');
+    body=`<label class="dropzone" id="drop">${T.src?`<img class="pv" src="${T.src}" alt="">`:`<span class="dz">${svg('photo','width="40" height="40"')}</span>`}
+        <b>${T.src?'Фото загружено':DESK?'Нажмите или перетащите файл сюда':'Выбрать фото'}</b><span class="small">${T.src?'Нажмите, чтобы заменить':'JPG или PNG — с телефона или компьютера'}</span>
         <input type="file" accept="image/*" id="file" class="sr"></label>
       ${lbl('или попробуйте на примере','s')}
       <div class="samples">${[['sample_girl','Своё фото'],['sample_team','С коллегами'],['sample_draw','Рисунок ребёнка']].map(([k,l])=>`<button data-act="tSample" data-k="${k}"><img src="${A[k]}" alt=""><span>${l}</span></button>`).join('')}</div>
-      <p class="note">Фото обрабатываются только для создания игрушки</p>`,{sun:false})}
-    ${actbar([{t:'Создать игрушку',act:'tMake',gold:1,disabled:!T.src},{t:'Назад',act:'tStep',s:1}])}`;
-  if(step===3)return page(`${steps}${doch(lines[3],'compact')}<div class="making"><div class="orb"><img src="${T.src}" alt=""></div><div class="mk" id="mk">Преобразуем фото в стилизованный новогодний шар…</div></div>`,{sun:false});
-  return `${page(`${steps}${doch(lines[4],'compact')}
-      <div class="ballout"><img src="${T.ball}" alt="Ваша игрушка"></div>
+      <p class="note">Фото обрабатываются только для создания игрушки</p>`;
+    acts=[{t:'Создать игрушку',act:'tMake',gold:1,disabled:!T.src},{t:'Назад',act:'tStep',s:1}];
+  } else if(step===3){
+    head=dpt('ИИ создаёт игрушку','Пара секунд');
+    body=`<div class="making"><div class="orb"><img src="${T.src}" alt=""></div><div class="mk" id="mk">Преобразуем фото в стилизованный новогодний шар…</div></div>`;
+  } else {
+    head=dpt('Готово!','Ваша уникальная новогодняя игрушка');
+    body=`<div class="ballout"><img src="${T.ball}" alt="Ваша игрушка"></div>
       <p class="tale small center">Её увидят коллеги из всех городов. Или сохраните к себе на устройство.</p>
-      <p class="note">${st.tree.hung?'':`${STAR_SM} +100 баллов за первую игрушку на ёлке · `}<a class="link" href="#" data-act="tStep" data-s="1">Сделать другую</a></p>`,{sun:false})}
-    ${actbar([{t:'Повесить на ёлку',act:'tHang',gold:1},{t:'Скачать',act:'tDownload'}])}`;
+      <p class="note">${st.tree.hung?'':`${STAR_SM} +100 баллов за первую игрушку на ёлке · `}<a class="link" href="#" data-act="tStep" data-s="1">Сделать другую</a></p>`;
+    acts=[{t:'Повесить на ёлку',act:'tHang',gold:1},{t:'Скачать',act:'tDownload'}];
+  }
+  return {L,R:head+body,M:mob(body),acts,nbt:false,sun:false,pn:13,cls:'tree'};
 }
 function setTreeSrc(src){ui.tree.src=src;render();}
 async function makeBall(){
@@ -548,24 +734,27 @@ function vFinal(){
   if(st.day<OPEN.final)return lockView('Финал маршрута откроется 22 декабря','Дед Мороз Михаил вручит готовую сказку, где главный герой — вы, и карточку героя.','m_mikhail');
   if(!allDone()){
     const items=[['quiz','«Спроси дорогу» — квиз',done.quiz()],['forest','«Лес» — собрать подарки',done.forest()],['tree','«Ёлка» — повесить игрушку',done.tree()]];
-    return `${page(`${pt('Сказка почти готова','Финал маршрута','h1')}
+    return {one:`${pt('Сказка почти готова','Финал маршрута','h1')}
       ${say('m_mikhail','Дед Мороз Михаил','осталось совсем немного! Пройдите все три испытания — и сказка станет вашей: свой персонаж, свой путь, свой результат, свой подарок.','compact')}
-      <ul class="checklist">${items.map(([k,l,ok])=>`<li class="${ok?'ok':''}"><i>${ok?'✓':''}</i><span>${l}</span>${ok?'':st.day>=OPEN[k]?`<button class="btn btn-gold btn-sm" data-act="go" data-v="${k}">Пройти</button>`:lockChip(OPEN[k])}</li>`).join('')}</ul>`)}
-    ${actbar([ROUTE_BTN])}`;
+      <ul class="checklist">${items.map(([k,l,ok])=>`<li class="${ok?'ok':''}"><i>${ok?'✓':''}</i><span>${l}</span>${ok?'':st.day>=OPEN[k]?`<button class="btn btn-gold btn-sm" data-act="go" data-v="${k}">Пройти</button>`:lockChip(OPEN[k])}</li>`).join('')}</ul>`,
+      acts:[ROUTE_BTN]};
   }
   if(!st.final.seen){st.final.seen=true;setTimeout(()=>toast('Сказка готова!'),300);}
   save();
   const u=st.user,p=pts(),T=personalTale();
-  return `${page(`${pt('Сказка о помощнике','Финал маршрута','h1')}
+  const story=`${pt('Сказка о помощнике','Финал маршрута','h1')}
     ${say('m_mikhail','Дед Мороз Михаил','спасибо, помощник! Благодаря вам я успел во все одиннадцать полуночей. Вот ваша сказка.','compact')}
-    <div class="parch story">${flowers()}${T.map((x,i)=>i===0?tale(x,true):tale(x)).join('')}<div class="fin">Конец</div></div>
-    ${lbl('Карточка героя')}
-    <div class="herocard">${ava(u.nick,84,true)}<div class="nk">${esc(u.nick)}</div><div class="city">${esc(u.city||'')}</div>
+    <div class="parch story">${flowers()}${T.map((x,i)=>i===0?tale(x,true):tale(x)).join('')}<div class="fin">Конец</div></div>`;
+  const card=`<div class="herocard">${ava(u.nick,DESK?96:84,true)}<div class="nk">${esc(u.nick)}</div><div class="city">${esc(u.city||'')}</div>
       <div class="herostats"><div><b>${quizWords()}</b><span>слов и узоров</span></div><div><b>${st.forest.bestGifts}</b><span>подарков</span></div><div><b>${num(p.total)}</b><span>баллов</span></div></div>
       <button class="btn btn-ghost btn-block" data-act="cardDl">${svg('down','width="17" height="17"')} Скачать карточку героя</button></div>
     <div class="cart chestinv"><img src="${A.chest}" alt="">${lbl('Подарок — в «Сундуке чудес»','s')}
-      <p class="small">${st.chest.used?`Ваш подарок: ${num(st.chest.prize)} баллов. Код — в сундуке и в личном кабинете.`:'С 25 по 31 декабря запустите лототрон: он выберет подарок и выдаст код. Один запуск на участника.'}</p></div>`)}
-  ${actbar([st.day>=OPEN.chest?{t:st.chest.used?'Мой подарок':'Запустить лототрон',act:'go',v:'chest',gold:1}:{t:'На маршрут',act:'go',v:'route',gold:1},{t:'Сериал',act:'go',v:'serial'}],st.day<OPEN.chest?'«Сундук чудес» откроется 25 декабря':'')}`;
+      <p class="small">${st.chest.used?`Ваш подарок: ${num(st.chest.prize)} баллов. Код — в сундуке и в личном кабинете.`:'С 25 по 31 декабря запустите лототрон: он выберет подарок и выдаст код. Один запуск на участника.'}</p></div>`;
+  const main=st.day>=OPEN.chest?{t:st.chest.used?'Мой подарок':'Запустить лототрон',act:'go',v:'chest',gold:1}:{t:'На маршрут',act:'go',v:'route',gold:1};
+  return {L:story,R:`${pt('Карточка героя')}${card}`,M:`${story}${lbl('Карточка героя')}${card}`,
+    acts:[main,{t:'Сериал',act:'go',v:'serial'}],
+    dacts:[main,{t:'Сказка-сериал',act:'go',v:'serial'},{t:'Личный кабинет',act:'go',v:'profile'},st.day>=OPEN.chest?ROUTE_BTN:null],
+    note:st.day<OPEN.chest?'«Сундук чудес» откроется 25 декабря':'',pn:15,cls:'final'};
 }
 
 /* ===== Сундук чудес ===== */
@@ -579,85 +768,99 @@ function vChest(){
     <p class="note">Основная масса выигрышей — 50–100 баллов, крупные номиналы распределены штучно</p>`;
   const top10=`<div class="cart">${lbl('Топ-10 турнирной таблицы','s')}<p class="small">Сверх лотереи десять лучших по баллам получают мерч — единственный приз, который нельзя выиграть случайно.</p><a class="link" href="${href('rating')}">Открыть таблицу</a></div>`;
   const chestImg=`<div class="chestimg ${before||after&&!st.chest.prize?'locked':''} ${C.reel?'shake':''} ${st.chest.prize&&!before?'open':''}" id="chestimg"><span class="burst"></span><img src="${A.chest}" alt="Сундук чудес">${before?`<div class="lockb"><span class="chip lock">${svg('lock','width="15" height="15"')} 25 декабря</span></div>`:''}</div>`;
+  const hello=say('m_mikhail','Дед Мороз Михаил','это мой сундук чудес. В нём подарок для каждого помощника — без проигрышей.','compact');
+  const L=`${pt('Сундук чудес','Награда в конце пути · беспроигрышная лотерея','h1')}${hello}${chestImg}${prizes}`;
   if(won||after&&st.chest.prize){
-    return `${page(`${pt('Ваш подарок','Код на подарок — забирайте','h1')}
+    const w=`${pt('Ваш подарок','Код на подарок — забирайте',DESK?'h2':'h1')}
       <div class="win"><div class="val">${num(st.chest.prize)}</div><div class="unit">баллов</div></div>
       <div class="codebox"><div class="lbl-s">Код на подарок</div><div class="code">${st.chest.code}</div>
         <button class="btn btn-ghost btn-sm" data-act="copy" data-t="${st.chest.code}">${svg('copy','width="15" height="15"')} Скопировать</button></div>
-      <p class="tale small center">Баллы — для магазина мерча банка. Код сохранён в личном кабинете${st.user&&st.user.email?` и продублирован на ${esc(st.user.email)}`:''}.</p>
-      ${chestImg}${top10}`)}
-    ${actbar([{t:'Личный кабинет',act:'go',v:'profile',gold:1},ROUTE_BTN])}`;
+      <p class="tale small center">Баллы — для магазина мерча банка. Код сохранён в личном кабинете${st.user&&st.user.email?` и продублирован на ${esc(st.user.email)}`:''}.</p>`;
+    return {L,R:`${w}${top10}`,M:`${w}${chestImg}${top10}`,
+      acts:[{t:'Личный кабинет',act:'go',v:'profile',gold:1},ROUTE_BTN],dacts:[{t:'Личный кабинет',act:'go',v:'profile',gold:1},{t:'Сказка-сериал',act:'go',v:'serial'},ROUTE_BTN],pn:17,cls:'chest'};
   }
   if(before){
     const d=OPEN.chest-st.day;
-    return `${page(`${say('m_mikhail','Дед Мороз Михаил','это мой сундук чудес. В нём подарок для каждого помощника — без проигрышей.','compact')}
-      ${chestImg}<p class="tale center">Откроется 25 декабря — осталось ${d} ${plural(d,'день','дня','дней')}. Перед Новым годом каждый участник один раз запустит лототрон и заберёт код на подарок.</p>
-      ${prizes}${top10}`)}
-    ${actbar([ROUTE_BTN])}`;
+    const txt=`<p class="tale${DESK?'':' center'}">Откроется 25 декабря — осталось ${d} ${plural(d,'день','дня','дней')}. Перед Новым годом каждый участник один раз запустит лототрон и заберёт код на подарок.</p>`;
+    return {pre:endBanner(),L,R:`${pt('Откроется 25 декабря','Раздел пока закрыт')}${txt}${top10}`,M:`${hello}${chestImg}${txt}${prizes}${top10}`,acts:[ROUTE_BTN],pn:17,cls:'chest'};
   }
-  if(after)return `${page(`${pt('Розыгрыш завершён','Сундук закрылся 31 декабря','h1')}${chestImg}<p class="tale center">Спасибо всем, кто участвовал!</p>${top10}`)}${actbar([ROUTE_BTN])}`;
-  return `${page(`${say('m_mikhail','Дед Мороз Михаил','это мой сундук чудес. В нём подарок для каждого помощника — без проигрышей.','compact')}
-    ${chestImg}
-    ${C.reel?`<div class="reel"><span class="mark"></span><div class="strip" id="strip">${C.reel.map(v2=>`<div class="cell ${v2>=500?'big':''}"><div>${num(v2)}<small>баллов</small></div></div>`).join('')}</div></div>`
-      :`<div class="reel idle"><span class="mark"></span><div class="strip">${[100,50,0,100,1000].map(v2=>v2?`<div class="cell ${v2>=500?'big':''}"><div>${num(v2)}<small>баллов</small></div></div>`:`<div class="cell q"><div>?<small>ваш подарок</small></div></div>`).join('')}</div></div>
-        <ol class="how"><li><i>1</i><span>Нажмите «Запустить»</span></li><li><i>2</i><span>Лототрон покрутится и остановится на подарке</span></li><li><i>3</i><span>Забирайте код — он сохранится в кабинете</span></li></ol>`}
-    ${prizes}${top10}`)}
-  ${C.reel?'':actbar([{t:'✦ Запустить лототрон ✦',act:'chestGo',gold:1,noarrow:1}],'Открыт до 31 декабря · один запуск на участника')}`;
+  if(after)return {L,R:`${pt('Розыгрыш завершён','Сундук закрылся 31 декабря')}<p class="tale center">Спасибо всем, кто участвовал!</p>${top10}`,
+    M:`${pt('Розыгрыш завершён','Сундук закрылся 31 декабря','h1')}${chestImg}<p class="tale center">Спасибо всем, кто участвовал!</p>${top10}`,acts:[ROUTE_BTN],pn:17,cls:'chest'};
+  const reel=C.reel?`<div class="reel"><span class="mark"></span><div class="strip" id="strip">${C.reel.map(v2=>`<div class="cell ${v2>=500?'big':''}"><div>${num(v2)}<small>баллов</small></div></div>`).join('')}</div></div>`
+    :`<div class="reel idle"><span class="mark"></span><div class="strip">${(DESK?[100,50,1000,100,0,50,500,100,5000]:[100,50,0,100,1000]).map(v2=>v2?`<div class="cell ${v2>=500?'big':''}"><div>${num(v2)}<small>баллов</small></div></div>`:`<div class="cell q"><div>?<small>ваш подарок</small></div></div>`).join('')}</div></div>
+      <ol class="how"><li><i>1</i><span>Нажмите «Запустить»</span></li><li><i>2</i><span>Лототрон покрутится и остановится на подарке</span></li><li><i>3</i><span>Забирайте код — он сохранится в кабинете</span></li></ol>`;
+  const go_=C.reel?[]:[{t:'✦ Запустить лототрон ✦',act:'chestGo',gold:1,noarrow:1,cls:DESK?'btn-xl':''}];
+  return {pre:endBanner(),L,
+    R:`${pt(C.reel?'Лототрон крутится…':'Запустите лототрон','Открыт до 31 декабря')}<p class="tale small center">Один запуск на участника. Лототрон выберет подарок — от 50 до 5000 баллов — и выдаст код.</p>${reel}`+(DESK&&go_.length?nextBar(go_,'',false):'')+top10,
+    M:`${hello}${chestImg}${reel}${prizes}${top10}`,
+    acts:go_,dacts:[],note:'Открыт до 31 декабря · один запуск на участника',pn:17,cls:'chest'};
 }
 function chestGo(){
   const C=ui.chest;if(st.chest.used||C.reel)return;
   const prize=rollPrize();
   const reel=[...Array(44)].map(()=>[50,100,50,100,500,1000,50,100,5000,100][Math.floor(Math.random()*10)]);reel[38]=prize;C.reel=reel;
   st.chest.used=true;st.chest.prize=prize;st.chest.code=genCode('GIFT');save();render();
-  const r=$('.reel');if(r)r.scrollIntoView({behavior:'smooth',block:'center'});
+  const r=$('.reel');if(r)r.scrollIntoView({behavior:reduced()?'auto':'smooth',block:'center'});
   requestAnimationFrame(()=>requestAnimationFrame(()=>{const s=$('#strip');if(!s)return;const w=s.parentElement.clientWidth;s.style.transform=`translateX(${-(38*110+55-w/2)}px)`;}));
-  setTimeout(()=>{C.reel=null;if(st.view==='chest'){render();window.scrollTo({top:0,behavior:'smooth'});}toast(`Ваш подарок: ${num(prize)} баллов — код готов`);},3800);
+  setTimeout(()=>{C.reel=null;if(st.view==='chest'){render();const w=$('.win');if(w)w.scrollIntoView({behavior:reduced()?'auto':'smooth',block:DESK?'center':'start'});}toast(`Ваш подарок: ${num(prize)} баллов — код готов`);},3800);
 }
 
 /* ===== Сказка-сериал ===== */
 function chState(i){const c=D.CHAPTERS[i];if(st.day<c.day)return 'soon';if(!c.final&&st.day<=c.day+1)return 'vote';return 'out';}
+// Кнопки «что дальше» на странице сериала: сначала то, что ждёт в сериале, потом — маршрут
+function serialActs(){
+  const S=serialState();
+  if(S.kind==='vote')return [{t:'Читать и голосовать',act:'openCh',i:S.cur,gold:1},{t:'На маршрут',act:'go',v:'route'}];
+  if(S.kind==='full')return [{t:'Читать сказку',act:'go',v:'fulltale',gold:1},{t:'На маршрут',act:'go',v:'route'}];
+  return [routeNext(true),S.cur>=0?{t:'Глава '+ROMAN[S.cur],act:'openCh',i:S.cur}:null];
+}
 function vSerial(){
   bar('Сказка-сериал','Пишут все вместе');
   const ch=D.CHAPTERS;
-  let live=-1;ch.forEach((c,i)=>{if(chState(i)==='vote')live=i;});
-  return `${endBanner()}${page(`
-    <div class="ser-head"><img class="illo" src="${A.serial}" alt=""><p class="tale small">Выходит глава — после неё герою нужно сделать выбор из трёх вариантов. Вариант с большинством голосов ложится в основу следующей главы. И так — до финала.</p></div>
-    <div class="stats3"><div><b>3–4 дня</b><span>новая глава</span></div><div><b>48 часов</b><span>на голосование</span></div><div><b>PDF</b><span>в финале</span></div></div>
-    ${live>=0?`<div class="wcard hot"><img class="wim" src="${A[ch[live].img]}" alt=""><div class="wb"><div class="row tight"><span class="lbl-s">Глава ${ROMAN[live]}</span><span class="chip live">голосование</span></div><b>${ch[live].t}</b>
-      <span>${st.serial.votes[live]!=null?'Ваш голос учтён — следите за итогами':'Выберите, куда повернёт сюжет'}</span>${btn({t:st.serial.votes[live]!=null?'Читать главу':'Читать и голосовать',act:'openCh',i:live,gold:st.serial.votes[live]==null,cls:'btn-sm'})}</div></div>`:''}
-    ${lbl('Оглавление','s')}
-    <div class="toc">${ch.map((c,i)=>{const s=chState(i);return `<button class="tocr ${s}" data-act="openCh" data-i="${i}" ${s==='soon'?'disabled':''}><span class="rn">${ROMAN[i]}</span><span class="rt"><b>${s==='soon'?'Скоро':c.t}</b><small>${s==='soon'?'Выйдет '+fmt(c.day):s==='vote'?(st.serial.votes[i]!=null?'Ваш голос учтён':'Идёт голосование'):c.final?'Финальная глава':`Выбор читателей: «${c.o[c.win]}»`}</small></span><span class="pg-n">${fmt(c.day,true)}</span></button>`;}).join('')}
-      <button class="tocr fin ${st.day<D.FULL_TALE_DAY?'soon':''}" data-act="go" data-v="fulltale" ${st.day<D.FULL_TALE_DAY?'disabled':''}><span class="rn">✦</span><span class="rt"><b>Цельная сказка</b><small>${st.day<D.FULL_TALE_DAY?'Выйдет '+fmt(D.FULL_TALE_DAY):'Читать и скачать PDF'}</small></span><span class="pg-n">${fmt(D.FULL_TALE_DAY,true)}</span></button></div>`)}`;
+  const head=`<div class="ser-head"><img class="illo" src="${A.serial}" alt="">${DESK?tale('Выходит глава — после неё герою нужно сделать выбор из трёх вариантов. Вариант, набравший больше всего голосов, ложится в основу следующей главы. И так — до финала.',true):'<p class="tale small">Выходит глава — после неё герою нужно сделать выбор из трёх вариантов. Вариант с большинством голосов ложится в основу следующей главы. И так — до финала.</p>'}</div>`;
+  const stats=`<div class="stats3"><div><b>3–4 дня</b><span>новая глава</span></div><div><b>48 часов</b><span>на голосование</span></div><div><b>PDF</b><span>в финале</span></div></div>`;
+  const now=`${lbl('Сейчас в сериале','s')}${serialCard(DESK)}`;
+  const toc=`<div class="toc">${ch.map((c,i)=>{const s=chState(i);return `<button class="tocr ${s}" data-act="openCh" data-i="${i}" ${s==='soon'?'disabled':''}><span class="rn">${ROMAN[i]}</span><span class="rt"><b>${s==='soon'?'Скоро':c.t}</b><small>${s==='soon'?'Выйдет '+fmt(c.day):s==='vote'?(st.serial.votes[i]!=null?'Ваш голос учтён':'Идёт голосование'):c.final?'Финальная глава':`Выбор читателей: «${c.o[c.win]}»`}</small></span>${s==='vote'?`<span class="chip live">${st.serial.votes[i]!=null?'учтён':'голосуем'}</span>`:`<span class="dots"></span><span class="pg-n">${fmt(c.day,true)}</span>`}</button>`;}).join('')}
+      <button class="tocr fin ${st.day<D.FULL_TALE_DAY?'soon':''}" data-act="go" data-v="fulltale" ${st.day<D.FULL_TALE_DAY?'disabled':''}><span class="rn">✦</span><span class="rt"><b>Цельная сказка</b><small>${st.day<D.FULL_TALE_DAY?'Выйдет '+fmt(D.FULL_TALE_DAY):'Читать и скачать PDF'}</small></span><span class="dots"></span><span class="pg-n">${fmt(D.FULL_TALE_DAY,true)}</span></button></div>`;
+  return {pre:endBanner(),
+    L:`${pt('Сказка-сериал','Пишут все вместе','h1')}${head}${stats}${now}`,
+    R:`${pt('Оглавление','Шесть глав и цельная сказка')}${toc}`,
+    M:`${head}${stats}${now}${lbl('Оглавление','s')}${toc}`,
+    acts:serialActs(),pn:19,cls:'serial'};
 }
-function voteHTML(i){
-  const c=D.CHAPTERS[i],s=chState(i),myv=st.serial.votes[i],open=s==='vote';
+// Голосование — прямо под текстом главы, без всплывающих окон
+function voteBlock(i,cd){
+  const c=D.CHAPTERS[i],s=chState(i),myv=st.serial.votes[i],open=s==='vote',nx=D.CHAPTERS[i+1];
   const frac=open?(st.day===c.day?.55:.88):1;
   const tot=Math.round(c.votes*frac)+(ui.liveBump||0)+(myv!=null?1:0);
   const cnt=c.pct.map((p,k)=>Math.round(tot*p/100)+(myv===k?1:0));
   const sum=cnt.reduce((a,b)=>a+b,0), show=myv!=null||!open;
-  return `${pt('Как продолжится сказка?',open?'Выбор за вами':'Голосование завершено')}
-    <div class="vote-h">${open?`<span class="chip live" id="vcd">${countdown(c.day)}</span>`:`<span class="chip">Проголосовали ${num(sum)}</span>`}</div>
-    <p class="tale small center">${open?(myv!=null?'Спасибо! Ваш голос учтён — следите за счётчиком.':'Выберите вариант — большинство решит, что будет дальше.'):'Вариант, набравший больше всего голосов, лёг в основу следующей главы.'}</p>
+  const lead=open?(myv==null?`Выберите вариант — большинство решит, что будет дальше. Голосование до ${fmt(c.day+2)}, 10:00\u00a0мск.`:'Спасибо! Ваш голос учтён — следите за счётчиком.')
+    :`Голосование завершено. Вариант «${c.o[c.win]}» лёг в основу главы ${ROMAN[i+1]}.`;
+  return `<section class="vote ${open&&myv==null?'todo':''}" id="vote">${DESK?pt('Как продолжится сказка?',open?(myv==null?'Выбор за вами':'Ваш голос учтён'):'Голосование завершено'):lbl('Как продолжится сказка?')}
+    ${cd||''}<p class="tale small center">${lead}</p>
     <div class="vopts">${c.o.map((o,k)=>{const pc=Math.round(cnt[k]/sum*100);const win=!open&&k===c.win;return `<button class="vopt ${myv===k?'mine':''} ${win?'win':''}" data-act="vote" data-k="${k}" ${show?'disabled':''}>${show?`<span class="bar" style="width:${pc}%"></span>`:''}<span class="k">${'АБВ'[k]}</span><span class="vt">${o}${myv===k?'<span class="tag">ваш выбор</span>':''}${win?'<span class="tag">победил</span>':''}</span>${show?`<span class="pc">${pc}%</span>`:''}</button>`;}).join('')}</div>
-    ${open&&show?`<p class="note">Голосов: <b id="vtot">${num(sum)}</b> · счётчик обновляется вживую</p>`:''}`;
+    ${open&&show?`<p class="note">Голосов: <b id="vtot">${num(sum)}</b> · счётчик обновляется вживую</p>`:''}
+    ${open&&myv!=null?`<p class="note">Итоги — ${fmt(c.day+2)} в 10:00\u00a0мск${nx?`. Глава ${ROMAN[i+1]} выйдет ${fmt(nx.day)}`:''}</p>`:''}
+  </section>`;
 }
 function vChapter(){
   const i=ui.chapter||0,c=D.CHAPTERS[i],s=chState(i);
   if(s==='soon')return vSerial();
   bar(`Глава ${ROMAN[i]}`,c.t,'serial');
-  const myv=st.serial.votes[i],open=s==='vote',nx=D.CHAPTERS[i+1],nxOut=nx&&st.day>=nx.day;
-  let acts;
-  if(c.final)acts=[st.day>=D.FULL_TALE_DAY?{t:'Читать сказку целиком',act:'go',v:'fulltale',gold:1}:{t:'Все главы',act:'go',v:'serial',gold:1}];
-  else if(open&&myv==null)acts=[{t:'Выбрать продолжение',act:'sheetOpen',v:'vote',gold:1}];
-  else acts=[nxOut?{t:`Глава ${ROMAN[i+1]}`,act:'openCh',i:i+1,gold:1}:{t:'Все главы',act:'go',v:'serial',gold:1},{t:open?'Ход голосования':'Итоги',act:'sheetOpen',v:'vote'}];
-  const note=c.final?(st.day>=D.FULL_TALE_DAY?'':`Цельная сказка с инфографикой голосований выйдет ${fmt(D.FULL_TALE_DAY)}`):open?'':nx&&!nxOut?`Глава ${ROMAN[i+1]} выйдет ${fmt(nx.day)}`:'';
-  return `${page(`
-    <div class="illu"><img src="${A[c.img]}" alt=""></div>
-    ${pt(c.t,`Глава ${ROMAN[i]} · ${fmt(c.day)}`,'h1')}
-    ${open?`<div class="vote-h"><span class="chip live" id="vcd2">${countdown(c.day)}</span></div>`:''}
-    <div class="parch story">${flowers()}${c.p.map((x,k)=>tale(x,k===0)).join('')}${!c.final&&!open?`<p class="choice">Выбор читателей: «${c.o[c.win]}» — ${c.pct[c.win]}% голосов</p>`:''}</div>`)}
-  ${actbar(acts,note)}
-  ${ui.sheet==='vote'&&!c.final?sheet(voteHTML(i)):''}`;
+  const myv=st.serial.votes[i],open=s==='vote',nx=D.CHAPTERS[i+1],nxOut=nx&&st.day>=nx.day,full=st.day>=D.FULL_TALE_DAY;
+  let acts,note='';
+  if(c.final){acts=[full?{t:'Читать сказку целиком',act:'go',v:'fulltale',gold:1}:routeNext(true),{t:'Все главы',act:'go',v:'serial'}];if(!full)note=`Цельная сказка выйдет ${fmt(D.FULL_TALE_DAY)}`;}
+  else if(open&&myv==null)acts=[{t:'К голосованию',act:'toVote',gold:1,noarrow:1}];
+  else{acts=[nxOut?{t:`Читать главу ${ROMAN[i+1]}`,act:'openCh',i:i+1,gold:1}:routeNext(true),{t:'Все главы',act:'go',v:'serial'}];if(nx&&!nxOut&&!open)note=`Глава ${ROMAN[i+1]} выйдет ${fmt(nx.day)}`;}
+  const text=`<div class="parch story">${flowers()}${c.p.map((x,k)=>tale(x,k===0)).join('')}${c.final?'<div class="fin">Конец</div>':''}</div>`;
+  const cd=open?`<div class="vote-h"><span class="chip live" id="vcd2">${countdown(c.day)}</span></div>`:'';
+  const fin=c.final?`<p class="tale small center">${full?'Цельная сказка уже собрана — её можно прочитать целиком и скачать.':`Это последняя глава. Цельная сказка с инфографикой голосований выйдет ${fmt(D.FULL_TALE_DAY)}.`}</p>`:'';
+  return {
+    L:`${pt(c.t,`Глава ${ROMAN[i]} · ${fmt(c.day)}`,'h1')}<div class="illu"><img src="${A[c.img]}" alt=""></div>${text}`,
+    R:c.final?`${pt('Последняя глава','Сказка-сериал')}${fin}`:voteBlock(i,cd),
+    M:`<div class="illu"><img src="${A[c.img]}" alt=""></div>${pt(c.t,`Глава ${ROMAN[i]} · ${fmt(c.day)}`,'h1')}${cd}${text}${c.final?fin:voteBlock(i,'')}`,
+    acts,dacts:open&&myv==null?[]:acts,note,pn:21,cls:'chapter'};
 }
 function countdown(day){const end=new Date(2026,11,1+day+2,10,0,0);const now=new Date(dateOf(st.day).getTime()+(Date.now()-T0));let s=Math.max(0,Math.floor((end-now)/1000));const d=Math.floor(s/86400);s%=86400;const h=Math.floor(s/3600);s%=3600;const m=Math.floor(s/60);s%=60;return `до конца ${d?d+' д ':''}${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;}
 const T0=Date.now();
@@ -670,18 +873,22 @@ function chapterHTML(c,i){return `<h3 class="ch-t"><small>Глава ${ROMAN[i]}
 function fullTaleHTML(forPrint){
   return D.CHAPTERS.map((c,i)=>forPrint?`<h3 style="font-family:Georgia;margin:28px 0 8px">Глава ${i+1}. ${c.t}</h3>${c.p.map(x=>`<p>${esc(x)}</p>`).join('')}${!c.final?`<p style="font-style:italic;color:#7a6a40">Выбор читателей: «${c.o[c.win]}» — ${c.pct[c.win]}% голосов</p>`:''}`:chapterHTML(c,i)).join('');
 }
-// Цельная сказка: читается по главам, переключатель глав сверху
+// Цельная сказка: читается по главам, переключатель глав
 function vFullTale(){
   bar('Большая книга сказок','Сказка-сериал · финал','serial');
   if(st.day<D.FULL_TALE_DAY)return lockView('Цельная сказка выйдет 25 декабря','Все главы соберутся в одну сказку — её можно будет прочитать и скачать в PDF.','book');
   const ch=D.CHAPTERS, k=Math.min(ui.seg.ft||0,ch.length-1);
-  return `${page(`
-    <div class="infog"><div class="bign">${num(D.SERIAL_AUTHORS)}</div><div><b>человек написали эту сказку</b><span>5 голосований, ${num(ch.filter(c=>!c.final).reduce((s,c)=>s+c.votes,0))} голосов. Каждый поворот сюжета выбрали сотрудники ПСБ.</span></div></div>
-    <details class="more"><summary>Итоги голосований</summary><div class="winners">${ch.filter(c=>!c.final).map((c,i)=>`<div class="wr"><span class="rn">${ROMAN[i]}</span><span class="wt">${c.o[c.win]}</span><b>${c.pct[c.win]}%</b></div>`).join('')}</div></details>
-    <div class="chsel" id="chsel">${ch.map((c,i)=>`<button class="${i===k?'on':''}" data-act="ftCh" data-i="${i}" aria-label="Глава ${i+1}">${ROMAN[i]}</button>`).join('')}</div>
-    <div class="parch story">${flowers()}${chapterHTML(ch[k],k)}${k===ch.length-1?'<div class="fin">Конец</div>':''}</div>
-    <div class="chnav">${k>0?`<button class="btn btn-ghost btn-sm" data-act="ftCh" data-i="${k-1}">‹ Глава ${ROMAN[k-1]}</button>`:'<span></span>'}${k<ch.length-1?`<button class="btn btn-ghost btn-sm" data-act="ftCh" data-i="${k+1}">Глава ${ROMAN[k+1]} ›</button>`:''}</div>`)}
-  ${actbar([{t:`${svg('down','width="18" height="18"')} Скачать сказку в PDF`,act:'pdf',gold:1,noarrow:1}])}`;
+  const info=`<div class="infog"><div class="bign">${num(D.SERIAL_AUTHORS)}</div><div><b>человек написали эту сказку</b><span>5 голосований, ${num(ch.filter(c=>!c.final).reduce((s,c)=>s+c.votes,0))} голосов. Каждый поворот сюжета выбрали сотрудники ПСБ.</span></div></div>`;
+  const winners=`<div class="winners">${ch.filter(c=>!c.final).map((c,i)=>`<div class="wr"><span class="rn">${ROMAN[i]}</span><span class="wt">${c.o[c.win]}</span><b>${c.pct[c.win]}%</b></div>`).join('')}</div>`;
+  const chsel=`<div class="chsel" id="chsel">${ch.map((c,i)=>`<button class="${i===k?'on':''}" data-act="ftCh" data-i="${i}" aria-label="Глава ${i+1}"${DESK?` title="${esc(c.t)}"`:''}>${ROMAN[i]}</button>`).join('')}</div>`;
+  const text=`<div class="parch story">${flowers()}${chapterHTML(ch[k],k)}${k===ch.length-1?'<div class="fin">Конец</div>':''}</div>
+    <div class="chnav">${k>0?`<button class="btn btn-ghost btn-sm" data-act="ftCh" data-i="${k-1}">‹ Глава ${ROMAN[k-1]}</button>`:'<span></span>'}${k<ch.length-1?`<button class="btn btn-ghost btn-sm" data-act="ftCh" data-i="${k+1}">Глава ${ROMAN[k+1]} ›</button>`:''}</div>`;
+  const pdf={t:`${svg('down','width="18" height="18"')} Скачать сказку в PDF`,act:'pdf',gold:1,noarrow:1};
+  return {
+    L:`${pt('Большая книга сказок','Сказка-сериал · финал','h1')}${info}${lbl('Итоги голосований','s')}${winners}${lbl('Читать по главам','s')}${chsel}<div class="cta">${btn(pdf)}</div>`,
+    R:text,
+    M:`${info}<details class="more"><summary>Итоги голосований</summary>${winners}</details>${chsel}${text}`,
+    acts:[pdf],dacts:[],pn:23,cls:'fulltale'};
 }
 
 /* ===== Пряничная избушка ===== */
@@ -695,14 +902,15 @@ function vIzba(){
   const player=cur!=null?`<div class="player"><span class="face"><img src="${A.m_zhena}" alt=""></span><button class="pp" data-act="pp" aria-label="${ui.izba.playing?'Пауза':'Слушать'}">${ui.izba.playing?svg('pause'):svg('play')}</button>
     <div class="meta"><b>${D.TALES[cur].t}</b><span>${D.TALES[cur].n} · читает жена Михаила</span><div class="bar"><i id="pbar" style="width:${(ui.izba.pos/(D.TALES[cur].d*60))*100}%"></i></div></div>
     <span class="tm-l" id="ptm">${mmss(ui.izba.pos)} / ${D.TALES[cur].d}:00</span></div>`:'';
-  return `${endBanner()}${page(`
-    <img class="illo" src="${A.izba}" alt="">
-    ${say('m_zhena','Жена Михаила','устраивайтесь поудобнее. Каждую неделю я читаю две новые сказки — заходите почаще!','compact')}
-    <div class="stats3"><div><b>${talesOpen()} из 10</b><span>сказок доступно</span></div><div><b>+2</b><span>каждую неделю</span></div><div><b>5–10</b><span>минут сказка</span></div></div>
-    ${lbl(`Сказки на ночь`,'s')}
-    <div class="tales">${D.TALES.map((t,i)=>{const lk=st.day<t.open;return `<button class="tale-r ${cur===i?'playing':''}" data-act="play" data-i="${i}" ${lk?'disabled':''}><span class="cv">${taleCover(t,i)}</span><span class="tt"><b>${t.t}</b><small>${t.n} · ${lk?'откроется '+fmt(t.open):t.d+' мин'}</small></span><span class="pl">${lk?svg('lock'):cur===i&&ui.izba.playing?svg('pause'):svg('play')}</span></button>`;}).join('')}</div>
-    <div class="stream"><span class="small ink2">Слушайте и вне платформы:</span><div class="row-c"><button class="btn btn-ghost btn-sm" data-act="toast" data-m="Ссылка на плейлист появится после публикации">VK Музыка</button><button class="btn btn-ghost btn-sm" data-act="toast" data-m="Ссылка на плейлист появится после публикации">Яндекс Музыка</button></div></div>`)}
-  ${player}`;
+  const hello=say('m_zhena','Жена Михаила','устраивайтесь поудобнее. Каждую неделю я читаю две новые сказки — заходите почаще!','compact');
+  const stats=`<div class="stats3"><div><b>${talesOpen()} из 10</b><span>сказок доступно</span></div><div><b>+2</b><span>каждую неделю</span></div><div><b>5–10</b><span>минут сказка</span></div></div>`;
+  const tales=`<div class="tales">${D.TALES.map((t,i)=>{const lk=st.day<t.open;return `<button class="tale-r ${cur===i?'playing':''}" data-act="play" data-i="${i}" ${lk?'disabled':''}><span class="cv">${taleCover(t,i)}</span><span class="tt"><b>${t.t}</b><small>${t.n} · ${lk?'откроется '+fmt(t.open):t.d+' мин'}</small></span><span class="pl">${lk?svg('lock'):cur===i&&ui.izba.playing?svg('pause'):svg('play')}</span></button>`;}).join('')}</div>`;
+  const stream=`<div class="stream"><span class="small ink2">Слушайте и вне платформы:</span><div class="row-c"><button class="btn btn-ghost btn-sm" data-act="toast" data-m="Ссылка на плейлист появится после публикации">VK Музыка</button><button class="btn btn-ghost btn-sm" data-act="toast" data-m="Ссылка на плейлист появится после публикации">Яндекс Музыка</button></div></div>`;
+  return {pre:endBanner(),
+    L:`${pt('Пряничная избушка','Для детей · сказка на ночь','h1')}<img class="illo wide" src="${A.izba}" alt="">${hello}${stats}${stream}`,
+    R:`${pt('Сказки на ночь',`Доступно ${talesOpen()} из 10`)}${tales}`,
+    M:`<img class="illo" src="${A.izba}" alt="">${hello}${stats}${lbl('Сказки на ночь','s')}${tales}${stream}`,
+    post:player,pn:25,cls:'izba'};
 }
 function mmss(s){s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
 function mountIzba(){
@@ -711,21 +919,26 @@ function mountIzba(){
 }
 
 /* ===== Рейтинг ===== */
-function lbRow(x){return `<tr class="${x.me?'me':''} ${x.place<=3?'t3 p'+x.place:''}"><td class="pl"><span>${x.place}</span></td><td><div class="nm">${ava(x.nick,32,x.me)}<div><b>${esc(x.nick)}</b>${x.me?'<span class="tag">вы</span>':''}${x.place<=10?'<span class="merch">мерч</span>':''}${x.city?`<small>${esc(x.city)}</small>`:''}</div></div></td><td class="p">${num(x.p)}</td></tr>`;}
+function lbRow(x){return `<tr class="${x.me?'me':''} ${x.place<=3?'t3 p'+x.place:''}"><td class="pl"><span>${x.place}</span></td><td><div class="nm">${ava(x.nick,DESK?34:32,x.me)}<div><b>${esc(x.nick)}</b>${x.me?'<span class="tag">вы</span>':''}${x.place<=10?'<span class="merch">мерч</span>':''}${x.city?`<small>${esc(x.city)}</small>`:''}</div></div></td><td class="p">${num(x.p)}</td></tr>`;}
+const RULES=`<ul class="rules"><li><b>«Спроси дорогу»</b> — 20 за каждый верный ответ, в зачёт лучший результат по каждому набору</li><li><b>«Лес»</b> — 10 за каждый подарок в лучшем забеге</li><li><b>«Ёлка»</b> — 100 за первую игрушку на общей ёлке</li></ul>
+  <p class="note left">Баллы дают только испытания маршрута. Сказка-сериал, Пряничная избушка и Сундук чудес — без баллов. Итоги и награждение — после завершения маршрута.</p>`;
 function vRating(){
   bar('Турнирная таблица','Топ-10 получают мерч');
   const lb=board(),me=lb.find(x=>x.me);
   const gap=me.place<=10?0:Math.max(10,lb[9].p-me.p+10);
   const tab=ui.seg.rt||'top';
   const from=Math.max(0,Math.min(lb.length-7,me.place-4)), near=lb.slice(from,from+7);
-  return `${endBanner()}${page(`
-    <div class="mypos">${ava(me.nick,64,true)}<div><b>${esc(me.nick)}</b><span>${me.place} место · ${num(me.p)} баллов</span><span class="gap">${me.place<=10?'Вы в топ-10 — претендуете на мерч':`До топ-10 — ${num(gap)} баллов`}</span></div></div>
-    ${seg('rt',[['top','Топ-10'],['near','Рядом со мной']],tab)}
-    <table class="lb">${(tab==='top'?lb.slice(0,10):near).map(lbRow).join('')}</table>
-    <a class="btn btn-ghost btn-block" href="${href('profile','?tab=earn')}">Где ещё заработать баллы</a>
-    <details class="more"><summary>Как начисляются баллы</summary>
-      <ul class="rules"><li><b>«Спроси дорогу»</b> — 20 за каждый верный ответ, в зачёт лучший результат по каждому набору</li><li><b>«Лес»</b> — 10 за каждый подарок в лучшем забеге</li><li><b>«Ёлка»</b> — 100 за первую игрушку на общей ёлке</li></ul>
-      <p class="note left">Баллы дают только испытания маршрута. Сказка-сериал, Пряничная избушка и Сундук чудес — без баллов. Итоги и награждение — после завершения маршрута.</p></details>`)}`;
+  const from5=Math.max(0,Math.min(lb.length-5,me.place-3)), near5=lb.slice(from5,from5+5);
+  const mypos=`<div class="mypos">${ava(me.nick,DESK?72:64,true)}<div><b>${esc(me.nick)}</b><span>${me.place} место · ${num(me.p)} баллов</span><span class="gap">${me.place<=10?'Вы в топ-10 — претендуете на мерч':`До топ-10 — ${num(gap)} баллов`}</span></div></div>`;
+  const earn={t:'Где ещё заработать баллы',href:href('profile','?tab=earn'),gold:1};
+  return {pre:endBanner(),
+    L:`${pt('Турнирная таблица','Балльно-рейтинговая система','h1')}${lbl('Топ-10 · получают мерч','s')}<table class="lb">${lb.slice(0,10).map(lbRow).join('')}</table>`,
+    R:`${pt('Ваше место','Ваш результат и соседи по таблице')}${mypos}${lbl('Рядом с вами','s')}<table class="lb">${near5.map(lbRow).join('')}</table>${lbl('Как начисляются баллы','s')}${RULES}`,
+    M:`${mypos}${seg('rt',[['top','Топ-10'],['near','Рядом со мной']],tab)}
+      <table class="lb">${(tab==='top'?lb.slice(0,10):near).map(lbRow).join('')}</table>
+      <a class="btn btn-ghost btn-block" href="${href('profile','?tab=earn')}">Где ещё заработать баллы</a>
+      <details class="more"><summary>Как начисляются баллы</summary>${RULES}</details>`,
+    dacts:[earn,ROUTE_BTN],pn:27,cls:'rating'};
 }
 
 /* ===== Личный кабинет ===== */
@@ -737,6 +950,7 @@ function opportunities(){
   D.QUIZ.forEach((r,i)=>{const res=st.quiz[i];
     const n=r.qs.length;
     if(st.day<r.open)o.push(item('quiz',`«Спроси дорогу» · набор ${i+1}`,`«${r.title}» — откроется ${fmt(r.open)}`,`до ${n*20}`,lk(r.open)));
+    else if(st.qrun&&st.qrun.r===i)o.push(item('quiz',`«Спроси дорогу» · набор ${i+1}`,`«${r.title}» — вы остановились на вопросе ${st.qrun.i+1} из ${n}`,`до ${n*20}`,`<button class="btn btn-gold btn-sm" data-act="goQuiz" data-i="${i}">Продолжить</button>`));
     else if(!res||!res.done)o.push(item('quiz',`«Спроси дорогу» · набор ${i+1}`,`«${r.title}» — 20 баллов за каждый верный ответ`,`до ${n*20}`,`<button class="btn btn-gold btn-sm" data-act="goQuiz" data-i="${i}">Пройти</button>`));
     else if(res.best<n)o.push(item('quiz',`«Спроси дорогу» · набор ${i+1}`,`Ваш результат — ${res.best} из ${n}, можно улучшить`,`ещё до ${(n-res.best)*20}`,`<button class="btn btn-ghost btn-sm" data-act="goQuiz" data-i="${i}">Ещё раз</button>`));
   });
@@ -750,62 +964,78 @@ function vProfile(){
   const u=st.user,p=pts(),lb=board(),me=lb.find(x=>x.me);
   const gap=me.place<=10?0:Math.max(10,lb[9].p-me.p+10);
   const log=[...(st.log||[])].reverse(), opp=opportunities(), tab=ui.seg.pf||'points';
+  const herostats=`<div class="herostats"><div><b>${num(p.total)}</b><span>баллов</span></div><div><b>${me.place}</b><span>место${DESK?' в таблице':''}</span></div><div><b>${me.place<=10?'топ-10':num(gap)}</b><span>${me.place<=10?(DESK?'претендуете на мерч':'мерч'):'до топ-10'}</span></div></div>`;
+  const mailH=u.email?`<div class="note">Продублирован на ${esc(u.email)}</div>`
+    :ui.pmail?`<div class="row pmail"><input class="input ${ui.auth.err?'err':''}" id="pmail" type="email" inputmode="email" autocomplete="email" placeholder="name@mail.ru" value="${esc(ui.pmailVal)}"><button class="btn btn-ghost" data-act="pmailSend">Отправить</button></div>${ui.auth.err?`<div class="err-t">${ui.auth.err}</div>`:''}`
+    :`<p class="note"><button class="link" data-act="pmailOpen">Прислать код на почту</button></p>`;
+  const codebox=`<div class="codebox"><div class="lbl-s">Персональный код</div><div class="code sm">${u.code}</div>
+      <button class="btn btn-ghost btn-sm" data-act="copy" data-t="${u.code}">${svg('copy','width="14" height="14"')} Копировать</button>
+      ${mailH}</div>`;
+  const logoutH=`<div class="logout">${ui.logout?`<p class="small">Выйти на этом устройстве? Вернуться можно будет только по коду <b>${u.code}</b> — сохраните его.</p><div class="row-c"><button class="btn btn-ghost btn-sm" data-act="logoutNo">Остаться</button><button class="btn btn-ghost btn-sm" data-act="logout">Выйти</button></div>`:`<button class="link" data-act="logoutAsk">Выйти на этом устройстве</button>`}</div>`;
+  const bysrc=`<div class="bysrc">${[['quiz',p.q],['forest',p.f],['tree',p.t]].map(([k,val])=>`<div>${por(SRC[k][1],'sm')}<span>${SRC[k][0]}</span><b>${num(val)}</b></div>`).join('')}</div>`;
+  const prize=st.chest.prize?`<div class="cart prize">${lbl('Подарок из «Сундука чудес»','s')}<div class="row"><img src="${A.chest}" alt=""><div><b class="pz">${num(st.chest.prize)} баллов</b><div class="small ink2">для магазина мерча банка · в турнирную таблицу не идут</div></div></div>
+      <div class="codebox"><div class="lbl-s">Код на подарок</div><div class="code sm">${st.chest.code||''}</div><button class="btn btn-ghost btn-sm" data-act="copy" data-t="${st.chest.code||''}">${svg('copy','width="14" height="14"')} Копировать</button></div></div>`:'';
+  const empty=`<p class="tale small">Пока пусто. Первые баллы — за квиз «Спроси дорогу».</p>`;
+  const oppH=opp.length?`<div class="opps">${opp.join('')}</div>`:`<p class="tale small">Все доступные баллы собраны — осталось удержаться в таблице.</p>`;
+  const oppNote=`<p class="note">Баллы в таблицу дают только испытания маршрута. Сказка-сериал, Пряничная избушка и Сундук чудес — без баллов. Топ-10 по итогам получают мерч.</p>`;
+  if(DESK){
+    const hist=log.length?`<table class="hist"><thead><tr><th>Дата</th><th>За что</th><th>Баллы</th></tr></thead><tbody>${log.map(e=>`<tr><td class="d">${fmt(e.d,true)}</td><td><b>${SRC[e.k][0]}</b><small>${esc(e.t)}</small></td><td class="p">+${num(e.p)}</td></tr>`).join('')}</tbody><tfoot><tr><td colspan="2">Итого</td><td class="p">${num(p.total)}</td></tr></tfoot></table>`:empty;
+    return {L:`${pt('Личный кабинет','Карточка помощника','h1')}
+        <div class="herocard">${ava(u.nick,104,true)}<div class="nk">${esc(u.nick)}</div><div class="city">${esc(u.city||'Город не указан')}</div>${herostats}</div>
+        ${codebox}${logoutH}${lbl('Мои баллы')}${bysrc}${lbl('История начислений')}${hist}`,
+      R:`${pt('Где ещё заработать','Баллы в турнирную таблицу')}${oppH}${prize}${oppNote}`,pn:29,cls:'profile'};
+  }
   let body;
-  if(tab==='history')body=log.length?`<div class="hist">${log.map(e=>`<div class="hr"><span class="d">${fmt(e.d,true)}</span><span class="w"><b>${SRC[e.k][0]}</b><small>${esc(e.t)}</small></span><span class="p">+${num(e.p)}</span></div>`).join('')}<div class="hr tot"><span class="w"><b>Итого</b></span><span class="p">${num(p.total)}</span></div></div>`
-      :`<p class="tale small">Пока пусто. Первые баллы — за квиз «Спроси дорогу».</p>`;
-  else if(tab==='earn')body=`${opp.length?`<div class="opps">${opp.join('')}</div>`:`<p class="tale small">Все доступные баллы собраны — осталось удержаться в таблице.</p>`}
-      <p class="note">Баллы в таблицу дают только испытания маршрута. Топ-10 по итогам получают мерч.</p>`;
-  else body=`<div class="bysrc">${[['quiz',p.q],['forest',p.f],['tree',p.t]].map(([k,val])=>`<div>${por(SRC[k][1],'sm')}<span>${SRC[k][0]}</span><b>${num(val)}</b></div>`).join('')}</div>
-      <div class="codebox"><div class="lbl-s">Персональный код</div><div class="code sm">${u.code}</div>
-        <button class="btn btn-ghost btn-sm" data-act="copy" data-t="${u.code}">${svg('copy','width="14" height="14"')} Копировать</button>
-        ${u.email?`<div class="note">Продублирован на ${esc(u.email)}</div>`:''}</div>
-      ${st.chest.prize?`<div class="cart prize">${lbl('Подарок из «Сундука чудес»','s')}<div class="row"><img src="${A.chest}" alt=""><div><b class="pz">${num(st.chest.prize)} баллов</b><div class="small ink2">для магазина мерча банка · в турнирную таблицу не идут</div></div></div>
-        <div class="codebox"><div class="lbl-s">Код на подарок</div><div class="code sm">${st.chest.code||''}</div><button class="btn btn-ghost btn-sm" data-act="copy" data-t="${st.chest.code||''}">${svg('copy','width="14" height="14"')} Копировать</button></div></div>`:''}`;
-  return page(`
-    <div class="pcard">${ava(u.nick,64,true)}<div><b>${esc(u.nick)}</b><span>${esc(u.city||'Город не указан')}</span></div></div>
-    <div class="herostats"><div><b>${num(p.total)}</b><span>баллов</span></div><div><b>${me.place}</b><span>место</span></div><div><b>${me.place<=10?'топ-10':num(gap)}</b><span>${me.place<=10?'мерч':'до топ-10'}</span></div></div>
-    ${seg('pf',[['points','Баллы'],['history','История'],['earn','Заработать']],tab)}
-    ${body}`);
+  if(tab==='history')body=log.length?`<div class="hist">${log.map(e=>`<div class="hr"><span class="d">${fmt(e.d,true)}</span><span class="w"><b>${SRC[e.k][0]}</b><small>${esc(e.t)}</small></span><span class="p">+${num(e.p)}</span></div>`).join('')}<div class="hr tot"><span class="w"><b>Итого</b></span><span class="p">${num(p.total)}</span></div></div>`:empty;
+  else if(tab==='earn')body=`${oppH}${oppNote}`;
+  else body=`${bysrc}${codebox}${prize}${logoutH}`;
+  return {M:`<div class="pcard">${ava(u.nick,64,true)}<div><b>${esc(u.nick)}</b><span>${esc(u.city||'Город не указан')}</span></div></div>
+    ${herostats}${seg('pf',[['points','Баллы'],['history','История'],['earn','Заработать']],tab)}${body}`};
 }
 
-/* ===== Заглушка закрытого раздела ===== */
+/* ===== Закрытый раздел ===== */
 function lockView(title,text,img){
-  return `${page(`${pt(title,'Раздел пока закрыт','h1')}
+  return {one:`${pt(title,'Раздел пока закрыт','h1')}
     <img class="lock-img" src="${A[img||'clock']}" alt="">
     ${text?tale(text):''}
-    <p class="note">Сейчас в прототипе — ${fmt(st.day)}. Дату можно сменить в панели «Прототип».</p>`)}
-  ${actbar([{t:'На маршрут',act:'go',v:'route',gold:1}])}`;
+    <p class="note">Сейчас в прототипе — ${fmt(st.day)}. Дату можно сменить в панели «Прототип».</p>`,
+    acts:[{t:'На маршрут',act:'go',v:'route',gold:1}],nbt:false};
 }
 
 /* ===== Рендер ===== */
 const VIEWS={route:vRoute,profile:vProfile,quiz:vQuiz,forest:vForest,tree:vTree,final:vFinal,serial:vSerial,chapter:vChapter,fulltale:vFullTale,izba:vIzba,chest:vChest,rating:vRating};
-const MOUNTS={forest:()=>{if(ui.fmode)mountForest();},chapter:mountChapter,izba:mountIzba};
+const MOUNTS={forest:()=>{if(DESK||ui.fmode)mountForest();},chapter:mountChapter,izba:mountIzba};
+const FOOT='<p class="foot">Прототип платформы · Deep × ПСБ · контент и цифры — примеры</p>';
 function render(){
   clearTimers();
   const app=$('#app'); ui.bar=null;
-  let html, root=false;
-  if(st.screen==='prologue')html=vPrologue();
-  else if(st.screen==='auth')html=vAuth();
-  else if(st.screen==='nick')html=vNick();
-  else {ensureUser();root=ROOTS.includes(st.view);html=(VIEWS[st.view]||vRoute)();}
-  const scr=st.screen==='app'?st.view:(st.screen==='prologue'&&!ui.bookOpen?'cover':st.screen);
-  document.body.dataset.screen=scr;
-  document.body.classList.toggle('tabbed',root);
-  document.body.classList.toggle('gm-on',st.screen==='app'&&st.view==='forest'&&!!ui.fmode);
-  app.innerHTML=(ui.bar?appbar(ui.bar):'')+`<main class="app">${html}${root?'<p class="foot">Прототип платформы · Deep × ПСБ · контент и цифры — примеры</p>':''}</main>`+(root?tabbar():'');
-  if(st.screen==='app')(MOUNTS[st.view]||(()=>{}))();
-  if(st.screen==='prologue'&&ui.bookOpen)mountPrologue();
-  if(ui.turn){app.classList.remove('turn');void app.offsetWidth;app.classList.add('turn');clearTimeout(render._t);render._t=setTimeout(()=>app.classList.remove('turn'),700);ui.turn=false;}
+  let v, root=false;
+  if(st.screen==='prologue')v=vPrologue();
+  else if(st.screen==='auth')v=vAuth();
+  else if(st.screen==='nick')v=vNick();
+  else if(st.screen==='login')v=vLogin();
+  else {ensureUser();root=ROOTS.includes(st.view);v=(VIEWS[st.view]||vRoute)();}
+  const html=compose(v), inApp=st.screen==='app';
+  document.body.dataset.screen=inApp?st.view:(st.screen==='prologue'&&!ui.bookOpen?'cover':st.screen);
+  document.body.classList.toggle('desk',DESK);
+  document.body.classList.toggle('tabbed',root&&!DESK);
+  document.body.classList.toggle('gm-on',!DESK&&inApp&&st.view==='forest'&&!!ui.fmode);
+  // Компьютер: шапка с меню, «назад» над разворотом. Телефон: верхняя панель, нижнее меню на главных разделах
+  if(DESK)app.innerHTML=(inApp?header():'')+`<main class="app${inApp?'':' solo'}">${ui.bar&&ui.bar.back?crumb(ui.bar.back):''}${html}</main>`+(inApp?FOOT:'');
+  else app.innerHTML=(ui.bar?appbar(ui.bar):'')+`<main class="app">${html}${root?FOOT:''}</main>`+(root?tabbar():'');
+  if(inApp)(MOUNTS[st.view]||(()=>{}))();
+  if(st.screen==='prologue'&&ui.bookOpen&&!DESK)mountPrologue();
+  if(ui.turn){app.classList.remove('turn');void app.offsetWidth;app.classList.add('turn');clearTimeout(render._t);render._t=setTimeout(()=>app.classList.remove('turn'),900);ui.turn=false;}
   renderDemo();
 }
-function updateHeader(){const c=$('.abar .chip.pts b');if(c)c.textContent=num(pts().total);}
+function updateHeader(){$$('.abar .chip.pts b, header.top .chip.pts b').forEach(c=>c.textContent=num(pts().total));}
 function go(view,q){save();SS.set('turn',1);clearTimers();location.href=href(view,q);}
 let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600);}
 function copy(t){const done2=()=>toast('Скопировано: '+t);if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(done2,()=>fallback());}else fallback();function fallback(){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');done2();}catch(e){toast(t);}a.remove();}}
 
 /* ===== Панель прототипа ===== */
 const MARKS=[[0,'1 дек · старт'],[7,'8 дек · «Лес»'],[14,'15 дек · «Ёлка»'],[21,'22 дек · финал'],[24,'25 дек · сундук'],[31,'1 января'],[45,'15 янв · конец']];
-const JUMPS=[['prologue','Обложка'],['nick','Имя героя'],['auth','Персональный код'],['route','Маршрут'],['quiz','Квиз'],['forest','Лес'],['tree','Ёлка'],['final','Финал'],['serial','Сериал'],['chapter','Глава + голосование'],['izba','Избушка'],['chest','Сундук'],['rating','Рейтинг'],['profile','Кабинет']];
+const JUMPS=[['prologue','Обложка'],['nick','Имя героя'],['auth','Персональный код'],['login','Вход по коду'],['route','Маршрут'],['quiz','Квиз'],['forest','Лес'],['tree','Ёлка'],['final','Финал'],['serial','Сериал'],['chapter','Глава + голосование'],['izba','Избушка'],['chest','Сундук'],['rating','Рейтинг'],['profile','Кабинет']];
 function renderDemo(){
   const el=$('#demo');
   el.innerHTML=`<button class="demo-fab" data-act="demo" aria-label="Панель прототипа">${svg('sliders')}<span>Прототип</span></button>
@@ -853,26 +1083,43 @@ const ACT={
     ui.auth.err='';ui.auth.sentTo=v2;saveDraft();render();toast('Код отправлен на '+v2);},
   mailEdit:()=>{ui.auth.sentTo=null;saveDraft();render();const e=$('#email');e&&e.focus();},
   saveNick:()=>{const city=($('#city').value||'').trim();ui.city=city;const n=nickOf(ui.nick);ui.pending={nick:n.nick,g:n.g,city};saveDraft();go('auth');},
-  codeNext:()=>{const p=ui.pending;st.user={email:ui.auth.sentTo||'',nick:p.nick,g:p.g,city:p.city,code:ui.auth.code,confirmed:true};st.draft=null;flash(`Добро пожаловать в сказку, ${p.nick}!`);go('route');},
+  codeNext:()=>{const p=ui.pending;
+    // новый участник начинает с чистого листа; прежний (если был на этом устройстве) остаётся на «сервере»
+    if(st.user){REG.put(snapshot());const day=st.day;st=fresh(day);}
+    st.user={email:ui.auth.sentTo||'',nick:p.nick,g:p.g,city:p.city,code:ui.auth.code,confirmed:true};st.draft=null;REG.put(snapshot());SS.del('demo');flash(`Добро пожаловать в сказку, ${p.nick}!`);goBack();},
+  toLogin:(d,e,ev)=>{ev&&ev.preventDefault&&ev.preventDefault();saveDraft();go('login');},
+  login:()=>{const inp=$('#logincode');const raw=inp?inp.value:'';ui.login.code=raw;const code=normCode(raw);
+    const fail=m=>{ui.login.err=m;render();const i=$('#logincode');if(i)i.focus();};
+    if(!/^PSB-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code))return fail('Код выглядит иначе: PSB и восемь букв и цифр, например PSB-7KQ2-M9XA');
+    const rec=st.user&&st.user.code===code?snapshot():REG.get(code);
+    if(rec&&st.user&&st.user.code!==code)REG.put(snapshot());
+    if(!rec)return fail('Такой код не найден. Проверьте буквы и цифры — или начните сказку заново');
+    const day=st.day;st=Object.assign(fresh(day),rec);st.draft=null;ui.login={code:'',err:''};SS.del('demo');flash(`С возвращением, ${st.user.nick}!`);goBack();},
+  logoutAsk:()=>{ui.logout=true;render();}, logoutNo:()=>{ui.logout=false;render();},
+  logout:()=>{REG.put(snapshot());const day=st.day;st=fresh(day);save();flash('Вы вышли. Вернуться можно по персональному коду');go('cover');},
+  pmailOpen:()=>{ui.pmail=true;ui.auth.err='';render();const e=$('#pmail');if(e)e.focus();},
+  pmailSend:()=>{const el=$('#pmail');const v2=(el?el.value:'').trim();ui.pmailVal=v2;
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v2)){ui.auth.err='Похоже, в адресе ошибка — проверьте, пожалуйста';return render();}
+    ui.auth.err='';ui.pmail=false;st.user.email=v2;save();render();toast('Код отправлен на '+v2);},
   sheetOpen:d=>{ui.sheet=d.v;render();}, sheetClose:()=>{ui.sheet=null;render();},
   seg:d=>{ui.seg[d.k]=d.v;render();},
   // квиз
-  qRound:d=>{ui.quiz=null;ui.quizRound=+d.i;render();},
-  qStart:()=>{ui.quiz={r:ui.quizRound||0,i:0,correct:0,answered:false,pick:null};ui.sheet=null;ui.turn=true;render();window.scrollTo(0,0);},
-  qPick:d=>{const q=ui.quiz;if(q.answered)return;q.pick=+d.i;q.answered=true;if(q.pick===D.QUIZ[q.r].qs[q.i].a)q.correct++;ui.sheet='explain';render();},
+  qRound:d=>{ui.quiz=null;st.qrun=null;save();ui.quizRound=+d.i;render();},
+  qStart:()=>{ui.quiz={r:ui.quizRound||0,i:0,correct:0,answered:false,pick:null};st.qrun=Object.assign({},ui.quiz);save();ui.sheet=null;ui.turn=true;render();window.scrollTo(0,0);},
+  qPick:d=>{const q=ui.quiz;if(q.answered)return;q.pick=+d.i;q.answered=true;if(q.pick===D.QUIZ[q.r].qs[q.i].a)q.correct++;st.qrun=Object.assign({},q);save();ui.sheet=DESK?null:'explain';render();},
   qNext:()=>{const q=ui.quiz,R=D.QUIZ[q.r];ui.sheet=null;
-    if(q.i<R.qs.length-1){q.i++;q.answered=false;q.pick=null;ui.turn=true;render();window.scrollTo(0,0);return;}
+    if(q.i<R.qs.length-1){q.i++;q.answered=false;q.pick=null;st.qrun=Object.assign({},q);save();ui.turn=true;render();window.scrollTo(0,0);return;}
     const prev=st.quiz[q.r],old=prev?prev.best:0,n=R.qs.length;q.gain=Math.max(0,q.correct-old)*20;
     if(q.gain>0)addLog('quiz',prev?`Набор ${q.r+1} «${R.title}»: улучшен результат ${old} → ${q.correct} из ${n}`:`Набор ${q.r+1} «${R.title}»: ${q.correct} из ${n} верных`,q.gain);
-    st.quiz[q.r]={best:Math.max(old,q.correct),done:true};q.finished=true;ui.turn=true;save();render();window.scrollTo(0,0);},
+    st.quiz[q.r]={best:Math.max(old,q.correct),done:true};st.qrun=null;q.finished=true;ui.turn=true;save();render();window.scrollTo(0,0);},
   goQuiz:d=>go('quiz','?set='+(+d.i+1)),
-  qAgain:()=>{ui.quiz=null;ui.quizRound=null;ui.turn=true;render();window.scrollTo(0,0);},
+  qAgain:()=>{ui.quiz=null;ui.quizRound=null;st.qrun=null;save();ui.turn=true;render();window.scrollTo(0,0);},
   // лес
   fPlay:()=>{ui.fmode=true;render();},
-  fStart:()=>{if(!game)mountForest();const ov=$('#ov');if(ov)ov.classList.add('hidden');game.start();},
+  fStart:()=>{if(!game)mountForest();const ov=$('#ov');if(ov)ov.classList.add('hidden');const fn=$('#fin');if(fn)fn.classList.remove('hidden');game.start();},
   fAgain:()=>{ui.fmode=true;render();},
-  fExit:()=>{if(game&&game.state.run){game.finish();return;}ui.fmode=false;render();window.scrollTo(0,0);},
-  fLite:(d,e,ev)=>{ev&&ev.preventDefault();ui.fmode=true;render();startLite();},
+  fExit:(d,e,ev)=>{ev&&ev.preventDefault&&ev.preventDefault();if(game&&game.state.run){game.finish();return;}if(DESK)return;ui.fmode=false;render();window.scrollTo(0,0);},
+  fLite:(d,e,ev)=>{ev&&ev.preventDefault();if(!DESK){ui.fmode=true;render();}startLite();},
   // ёлка
   tStyle:d=>{ui.tree.style=+d.i;render();},
   tStep:(d,e,ev)=>{ev&&ev.preventDefault();ui.tree.step=+d.s;ui.turn=true;render();window.scrollTo(0,0);},
@@ -885,8 +1132,9 @@ const ACT={
   cardDl:async()=>{toast('Готовим карточку…');const p=pts();const url=await renderHeroCard(st.user,{words:quizWords(),gifts:st.forest.bestGifts,points:p.total},st.tree.ball);download(url,'kartochka-geroya.png');},
   // сериал
   openCh:d=>go('chapter','?ch='+(+d.i+1)),
-  vote:d=>{const i=ui.chapter;if(st.serial.votes[i]!=null)return;st.serial.votes[i]=+d.k;save();ui.sheet='vote';render();toast('Голос учтён');},
-  ftCh:d=>{ui.seg.ft=+d.i;render();const s=$('#chsel');if(s)s.scrollIntoView({behavior:reduced()?'auto':'smooth',block:'start'});},
+  vote:d=>{const i=ui.chapter;if(st.serial.votes[i]!=null)return;st.serial.votes[i]=+d.k;save();render();toast('Голос учтён');},
+  toVote:()=>{const el=$('#vote');if(el)el.scrollIntoView({behavior:reduced()?'auto':'smooth',block:'start'});},
+  ftCh:d=>{ui.seg.ft=+d.i;render();const s=DESK?$('.fulltale .pg.pr'):$('#chsel');if(s&&(!DESK||s.getBoundingClientRect().top<70))s.scrollIntoView({behavior:reduced()?'auto':'smooth',block:'start'});},
   pdf:()=>{const w=window.open('','_blank');if(!w){toast('Разрешите всплывающие окна, чтобы скачать PDF');return;}
     w.document.write(`<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Большая книга сказок — ПСБ</title><style>body{font:16px/1.7 Georgia,serif;max-width:680px;margin:40px auto;padding:0 24px;color:#222}h1{text-align:center;font-size:30px}p.sub{text-align:center;color:#777}</style></head><body><h1>Большая книга сказок</h1><p class="sub">Эту сказку написали ${num(D.SERIAL_AUTHORS)} сотрудников ПСБ</p>${fullTaleHTML(true)}<script>setTimeout(()=>print(),300)<\/script></body></html>`);w.document.close();},
   // избушка
@@ -897,17 +1145,19 @@ const ACT={
   demo:()=>{ui.demo=!ui.demo;renderDemo();},
   setDay:d=>setDay(+d.d),
   fillAll:()=>fillAll(),
-  resetAll:()=>{if(!confirm('Сбросить прогресс прототипа и начать с обложки?'))return;const day=st.day;st=fresh(day);go('cover');},
-  jump:d=>{const k=d.k;
+  resetAll:()=>{if(!confirm('Сбросить прогресс прототипа и начать с обложки?'))return;if(st.user)REG.put(snapshot());const day=st.day;st=fresh(day);go('cover');},
+  jump:d=>{const k=d.k;SS.set('demo',1);
     if(k==='nick')st.draft=null;
     else if(k==='auth'){if(st.draft)st.draft.auth=null;}
-    else if(k!=='prologue')ensureUser();
+    else if(k!=='prologue'&&k!=='login')ensureUser();
     go(k==='prologue'?'cover':k);}
 };
 document.addEventListener('click',e=>{const a=e.target.closest('a[href]');if(a&&!a.dataset.act&&!a.target&&e.button===0&&!e.metaKey&&!e.ctrlKey&&!e.shiftKey&&/^[\w-]+\.html(\?|$)/.test(a.getAttribute('href'))){save();SS.set('turn',1);}});
 document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(!t||t.disabled)return;const fn=ACT[t.dataset.act];if(fn){if(t.tagName==='A')e.preventDefault();fn(t.dataset,t,e);}});
 document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&e.target.id==='email')ACT.mailSend();
+  if(e.key==='Enter'&&e.target.id==='logincode')ACT.login();
+  if(e.key==='Enter'&&e.target.id==='pmail')ACT.pmailSend();
   if(e.key==='Escape'){if(ui.sheet){ui.sheet=null;render();}else if($('#gm .sheet'))ACT.fAgain();}
 });
 document.addEventListener('change',e=>{
@@ -928,12 +1178,27 @@ document.addEventListener('pointerdown',e=>{const g=e.target.closest('.treesvg [
 /* ===== Старт страницы ===== */
 function applyPage(){
   if(PAGE==='cover'||PAGE==='prologue'){st.screen='prologue';ui.bookOpen=PAGE==='prologue';}
-  else if(PAGE==='nick'||PAGE==='auth'){st.screen=PAGE;}
+  else if(PAGE==='nick'||PAGE==='auth'||PAGE==='login'){st.screen=PAGE;}
   else {st.screen='app';st.view=PAGE;}
 }
+// После входа или создания героя — туда, куда человек шёл по ссылке (например, на главу сериала из рассылки)
+function goBack(){const b=SS.get('back');SS.del('back');save();SS.set('turn',1);clearTimers();location.href=b&&/^[\w-]+\.html(\?[\w=&%-]*)?$/.test(b)?b:href('route');}
+const ONB=['cover','prologue','nick','auth','login'], STEPS1=['nick','auth','login'];
+function guard(){
+  // Флаг панели «Прототип» живёт, пока идёт знакомство (имя → код), и снимается на любом другом экране
+  const demo=SS.get('demo');if(!STEPS1.includes(PAGE))SS.del('demo');
+  // Без героя в разделы не попасть: запоминаем адрес и ведём на обложку, после входа вернём
+  if(!st.user&&!ONB.includes(PAGE)&&!demo){SS.set('back',(location.pathname.split('/').pop()||'')+location.search);location.replace(href('cover'));return true;}
+  // Герой уже есть — повторно проходить знакомство и вход не нужно
+  if(st.user&&STEPS1.includes(PAGE)&&!demo){location.replace(href('route'));return true;}
+  return false;
+}
 (function boot(){
+  if(guard())return;
   applyPage();
-  if(PAGE==='quiz'){const n=+QS.get('set');if(n>=1&&n<=D.QUIZ.length&&st.day>=D.QUIZ[n-1].open)ui.quizRound=n-1;}
+  if(PAGE==='quiz'){const n=+QS.get('set');if(n>=1&&n<=D.QUIZ.length&&st.day>=D.QUIZ[n-1].open){ui.quizRound=n-1;if(st.qrun&&st.qrun.r!==n-1)st.qrun=null;}
+    // незавершённый набор: возвращаем к тому же вопросу
+    if(st.qrun){ui.quiz=Object.assign({},st.qrun);ui.quizRound=st.qrun.r;}}
   if(PAGE==='chapter'){const n=+QS.get('ch');if(n>=1&&n<=D.CHAPTERS.length)ui.chapter=n-1;else{let i=0;D.CHAPTERS.forEach((c,j)=>{if(st.day>=c.day)i=j;});ui.chapter=i;}}
   if(PAGE==='profile'){const t=QS.get('tab');if(['points','history','earn'].includes(t))ui.seg.pf=t;}
   if(SS.get('turn')){SS.del('turn');ui.turn=true;}
@@ -942,4 +1207,7 @@ function applyPage(){
   const m=SS.get('toast');if(m){SS.del('toast');setTimeout(()=>toast(m),350);}
 })();
 // Вернулись кнопкой «Назад» из кэша браузера — перечитываем состояние, оно могло измениться на другой странице
-window.addEventListener('pageshow',e=>{if(!e.persisted)return;try{st=Object.assign(fresh(),JSON.parse(localStorage.getItem(KEY)||'null')||{});}catch(err){}applyPage();ui.fmode=false;render();});
+window.addEventListener('pageshow',e=>{if(!e.persisted)return;try{st=Object.assign(fresh(),JSON.parse(localStorage.getItem(KEY)||'null')||{});}catch(err){}if(guard())return;applyPage();ui.fmode=false;ui.logout=false;render();});
+// Переход через 900 px (поворот планшета, изменение окна) — перерисовываем под другой режим
+const onMQ=e=>{if(e.matches===DESK)return;DESK=e.matches;ui.sheet=null;if(DESK)ui.fmode=false;render();};
+if(MQ.addEventListener)MQ.addEventListener('change',onMQ);else MQ.addListener(onMQ);
