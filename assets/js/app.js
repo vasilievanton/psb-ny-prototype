@@ -91,7 +91,51 @@ function pts(){const q=Object.values(st.quiz).reduce((s,r)=>s+(r.best||0)*20,0);
 const OPEN={quiz:0,forest:7,tree:14,final:21,chest:24,chestEnd:30};
 const done={quiz:()=>Object.values(st.quiz).some(r=>r.done),forest:()=>st.forest.runs>0,tree:()=>st.tree.hung};
 function allDone(){return done.quiz()&&done.forest()&&done.tree();}
-function stepsDone(){return (done.quiz()?1:0)+(done.forest()?1:0)+(done.tree()?1:0)+(st.final.seen?1:0)+(st.chest.used?1:0);}
+/* Подпись в турнирной таблице: имя героя и город в родительном падеже — «Снежный Лось из Барнаула».
+   Города из подсказок и названия, которые не склоняются по общим правилам, — словарём; остальные — по правилам */
+const CITY_GEN={'москва':'Москвы','санкт-петербург':'Санкт-Петербурга','петербург':'Петербурга','новосибирск':'Новосибирска','екатеринбург':'Екатеринбурга',
+  'казань':'Казани','нижний новгород':'Нижнего Новгорода','челябинск':'Челябинска','красноярск':'Красноярска','самара':'Самары','уфа':'Уфы',
+  'ростов-на-дону':'Ростова-на-Дону','омск':'Омска','краснодар':'Краснодара','воронеж':'Воронежа','пермь':'Перми','волгоград':'Волгограда',
+  'саратов':'Саратова','тюмень':'Тюмени','иркутск':'Иркутска','хабаровск':'Хабаровска','владивосток':'Владивостока','ярославль':'Ярославля',
+  'калининград':'Калининграда','якутск':'Якутска','мурманск':'Мурманска','петропавловск-камчатский':'Петропавловска-Камчатского','тула':'Тулы',
+  'сочи':'Сочи','барнаул':'Барнаула','томск':'Томска',
+  'набережные челны':'Набережных Челнов','чебоксары':'Чебоксар','химки':'Химок','мытищи':'Мытищ','люберцы':'Люберец','великие луки':'Великих Лук',
+  'минеральные воды':'Минеральных Вод','тольятти':'Тольятти','улан-удэ':'Улан-Удэ','орел':'Орла','елец':'Ельца','тверь':'Твери','анадырь':'Анадыря',
+  'кемерово':'Кемерова','иваново':'Иванова','гусь-хрустальный':'Гуся-Хрустального','пятигорск':'Пятигорска'};
+function genWord(w,adjNext){
+  const l=w.toLowerCase(), cut=(n,add)=>w.slice(0,w.length-n)+add;
+  if(/[гкх]ий$|(ск|цк)ий$|ый$/.test(l))return cut(2,'ого');   // Камчатский, Великий, Новый
+  if(/ий$/.test(l))return cut(2,'его');                       // Нижний
+  if(/ая$/.test(l))return cut(2,'ой');                        // Старая (Русса)
+  if(/ое$/.test(l))return cut(2,'ого');                       // Красное (Село)
+  if(/ые$/.test(l))return cut(2,'ых');                        // Набережные
+  if(/ие$/.test(l))return cut(2,'их');                        // Великие
+  if(/ой$/.test(l))return adjNext||/(н|ск|цк|в|т|д|р)ой$/.test(l)?cut(2,'ого'):cut(1,'я'); // Лесной → Лесного, Уренгой → Уренгоя
+  if(/(ов|ев|ин|ын)о$/.test(l))return cut(1,'а');             // Иваново → Иванова
+  if(/[еёиоуыэю]$/.test(l))return w;                          // Сочи, Улан-Удэ — не склоняются
+  if(/[гкхжшчщ]а$|я$/.test(l))return cut(1,'и');              // Калуга → Калуги, Евпатория → Евпатории
+  if(/а$/.test(l))return cut(1,'ы');                          // Москва → Москвы
+  if(/(поль|вль|ырь)$/.test(l))return cut(1,'я');             // Ставрополь → Ставрополя
+  if(/ь$/.test(l))return cut(1,'и');                          // Тюмень → Тюмени
+  if(/й$/.test(l))return cut(1,'я');
+  if(/[бвгджзклмнпрстфхцчшщ]$/.test(l))return w+'а';          // Барнаул → Барнаула
+  return w;
+}
+function cityGen(raw){
+  let c=String(raw||'').trim().replace(/^(г\.|город)\s*/i,'').split(',')[0].trim().replace(/\s+/g,' ');
+  if(!c)return '';
+  const key=c.toLowerCase().replace(/ё/g,'е');
+  if(CITY_GEN[key])return CITY_GEN[key];
+  if(!/^[А-Яа-яЁё][А-Яа-яЁё\s-]*$/.test(c))return c;
+  c=c.replace(/(^|[\s-])([а-яё])/g,(m,p,ch)=>p+ch.toUpperCase()).replace(/-(На|Над|Под)-/g,(m,p)=>'-'+p.toLowerCase()+'-');
+  const na=c.match(/^(.+?)(-(?:на|над|под)-.+)$/);if(na)return genWord(na[1])+na[2];   // Ростов-на-Дону
+  return c.split(' ').map((w,i,a)=>{
+    if(!w.includes('-'))return genWord(w,i<a.length-1);
+    const ps=w.split('-'),last=ps.length-1;
+    // Каменск-Уральский — склоняются обе части; Южно-Сахалинск, Йошкар-Ола — последняя
+    return ps.map((x,k)=>k===last||(k===0&&/(ий|ый|ой)$/i.test(ps[last]))?genWord(x):x).join('-');}).join(' ');
+}
+function tname(nick,city){const g=cityGen(city);return esc(nick)+(g?` <span class="from">из\u00a0${esc(g)}</span>`:'');}
 function addLog(k,t,p){(st.log=st.log||[]).push({d:st.day,k,t,p});}
 function nyLeft(){const d=NY_DAY-st.day;return d>0?`до Нового года ${d} ${plural(d,'день','дня','дней')}`:'С Новым годом!';}
 function bankTotal(){const k=st.day-6;return (k>0?Math.round(k*9137+k*k*210):0)+(st.forest.gifts||0);}
@@ -176,11 +220,12 @@ function dpt(t,sub,tag){return DESK?pt(t,sub,tag):'';}
 function lbl(t,cls){return `<div class="lbl ${cls||''}"><span>${t}</span></div>`;}
 function say(img,who,text,cls){return `<div class="say ${cls||''}"><span class="face"><img src="${A[img]}" alt=""></span><div class="bubble"><b>${who}:</b> ${text}</div></div>`;}
 function por(k,size){return `<span class="por ${size||''}"><img src="${A[k]}" alt=""></span>`;}
-// Абзац сказки; cap — с буквицей. Абзац с реплики или кавычки идёт без буквицы
+// Абзац сказки; cap — первый абзац страницы: в начале значок-снежинка в плашке.
+// Буквиц нет: текст остаётся целым, и вёрстка не зависит от первой буквы
+const ICON_FLAKE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7"/><path d="M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5M3.6 10.8l3.4-.9-.9-3.4M20.4 13.2l-3.4.9.9 3.4M3.6 13.2l3.4.9-.9 3.4M20.4 10.8l-3.4-.9.9-3.4"/></svg>';
 function tale(text,cap){
   const s=String(text);
-  if(!cap||!/^[A-Za-zА-Яа-яЁё]/.test(s))return `<p class="tale">${esc(s)}</p>`;
-  return `<p class="tale cap"><span class="drop" aria-hidden="true"><b>${esc(s[0])}</b></span><span class="sr">${esc(s[0])}</span>${esc(s.slice(1))}</p>`;
+  return cap?`<p class="tale lead"><i class="orn" aria-hidden="true">${ICON_FLAKE}</i>${esc(s)}</p>`:`<p class="tale">${esc(s)}</p>`;
 }
 function flowers(){return '<i class="fl tl"></i><i class="fl tr"></i><i class="fl bl"></i><i class="fl br"></i>';}
 
@@ -225,6 +270,8 @@ function actbar(items,note){items=items.filter(Boolean);if(!items.length)return 
 function nextBar(items,note,title){items=items.filter(Boolean);return `<div class="nextbar">${title===false?'':lbl(title||'Что дальше')}<div class="nb">${items.map(btn).join('')}</div>${note?`<p class="note">${note}</p>`:''}</div>`;}
 // Телефон: шторка снизу
 function sheet(inner,o={}){return `<div class="sheet-bg" data-act="${o.close||'sheetClose'}"></div><div class="sheet ${o.cls||''}" role="dialog" aria-modal="true"><i class="grab" aria-hidden="true"></i><button class="sheet-x" data-act="${o.close||'sheetClose'}" aria-label="Закрыть">×</button>${inner}</div>`;}
+// Компьютер: модальное окно по центру — то же содержимое, что в шторке на телефоне
+function modal(inner,o={}){return `<div class="modal-bg" data-act="${o.close||'sheetClose'}"></div><div class="modal ${o.cls||''}" role="dialog" aria-modal="true"><button class="sheet-x" data-act="${o.close||'sheetClose'}" aria-label="Закрыть">×</button>${inner}</div>`;}
 // Телефон: вкладки внутри экрана
 function seg(key,items,cur){return `<div class="seg" role="tablist">${items.map(([v,t])=>`<button role="tab" class="${cur===v?'on':''}" aria-selected="${cur===v}" data-act="seg" data-k="${key}" data-v="${v}">${t}</button>`).join('')}</div>`;}
 function lockChip(day){return `<span class="chip lock">${svg('lock','width="12" height="12"')} ${DESK?'Откроется '+fmt(day):fmt(day,true)}</span>`;}
@@ -284,7 +331,7 @@ function mountPrologue(){
 }
 
 /* ===== Формирование персонажа: шаг 1 — имя ===== */
-function nkRow(nick){return `<span class="pl">—</span>${ava(nick,32,true)}<span class="n">${esc(nick)} <span class="tag">вы</span><small id="nkCity">${esc((ui.city||'').trim())}</small></span><span class="p">0</span>`;}
+function nkRow(nick){return `<span class="pl">—</span>${ava(nick,32,true)}<span class="n">${tname(nick,ui.city)} <span class="tag">вы</span></span><span class="p">0</span>`;}
 const NK_AVA=()=>DESK?96:72;
 function vNick(){
   if(!ui.nick)ui.nick=rndNick();
@@ -298,7 +345,7 @@ function vNick(){
   const city=`<label class="field"><span>Ваш город — по желанию</span>
       <input class="input" id="city" list="cities" placeholder="Например, Казань" value="${esc(ui.city)}" autocomplete="off">
       <datalist id="cities">${D.CITIES.map(c=>`<option value="${c}">`).join('')}</datalist></label>
-    <p class="note left">Город нужен, чтобы показать, из скольких городов страны собрались помощники</p>`;
+    <p class="note left">Город добавится к имени в турнирной таблице и попадёт в счётчик городов на главной</p>`;
   const preview=`${lbl('Так вас увидят в турнирной таблице','s')}<div class="lbmini prev"><div class="r me" id="nkRow">${nkRow(cur.nick)}</div></div>`;
   const regen=`<button class="btn btn-ghost btn-block" data-act="regen">${svg('dice','width="18" height="18"')} Случайное имя целиком</button>`;
   const acts=[{t:'Дальше: персональный код',act:'saveNick',gold:1}];
@@ -345,10 +392,16 @@ function vAuth(){
     </div>`;
   const back=`<p class="note"><a class="link" href="#" data-act="toNick">Изменить имя</a></p>`;
   const acts=[{t:'В путь',act:'codeNext',gold:1}];
+  // Почту не указали — перед стартом напоминаем сохранить код: он единственный ключ к прогрессу
+  const save=ui.sheet==='savecode'?`<div class="savecode"><h3 class="sv-t">Сохраните код</h3>
+      <div class="codebox"><div class="code">${a.code}</div><button class="btn btn-ghost btn-sm" data-act="copy" data-t="${a.code}">${svg('copy','width="15" height="15"')} Скопировать</button></div>
+      <p class="sv-w"><b>Обязательно сохраните его — это ваш единственный идентификатор.</b> Если вы его забудете, сохранить прогресс не получится: войти с другого устройства или после выхода будет нельзя.</p>
+      <p class="note">Скопируйте код, сделайте скриншот или запишите. Надёжнее всего — прислать его себе на почту.</p>
+      <div class="sv-acts">${btn({t:'Код сохранён — в путь',act:'codeGo',gold:1})}${btn({t:'Прислать на почту',act:'toMail',noarrow:1})}</div></div>`:'';
   if(DESK)return {L:`${pt('Персональный код','Формирование персонажа · шаг 2 из 2','h1')}${hero}${code}`,
     R:`${pt('Почта — по желанию','Продублируем код письмом')}${mail}`,acts,nbt:false,
-    dnote:'Почта нужна только для писем с кодами · <a class="link" href="#" data-act="toNick">Изменить имя</a>',pn:5,cls:'onb'};
-  return {M:`${hero}${code}${lbl('Почта — по желанию','s')}${mail}${back}`,acts};
+    dnote:'Почта нужна только для писем с кодами · <a class="link" href="#" data-act="toNick">Изменить имя</a>',pn:5,cls:'onb',post:save?modal(save):''};
+  return {M:`${hero}${code}${lbl('Почта — по желанию','s')}${mail}${back}`,acts,sheet:save?sheet(save):''};
 }
 
 /* ===== Вход по коду — для тех, кто уже создал героя: другое устройство или после выхода ===== */
@@ -459,11 +512,7 @@ function weeklyBlock(){return `<section class="weekly">${lbl('Новое на э
 function talesOpen(){return D.TALES.filter(t=>st.day>=t.open).length;}
 function vRoute(){
   bar('Маршрут',`${fmt(st.day,true)} · ${nyLeft()}`);
-  const sd=stepsDone(), lit=Math.max(1,Math.round(sd/5*11));
   const lb=board(), me=lb.find(x=>x.me);
-  const mid=`<div class="midnights ${DESK?'cart':''}">${lbl('Одна ночь — одиннадцать полуночей','s')}
-      <div class="tz">${D.TZ.map((z,i)=>`<div class="z ${i<lit?'on':''} ${i===lit-1?'cur':''}" title="${z[1]} · UTC${z[0]}"><span class="c">${i%2?'':z[1]}</span><i></i><b>${z[0]}</b><span class="c">${i%2?z[1]:''}</span></div>`).join('')}</div>
-      <div class="row ew"><span>Восток</span><span class="cnt">${D.TZ[lit-1][1]} · ${lit} из 11</span><span>Запад</span></div></div>`;
   const route=`<div class="route">${STOPS.map(stopHTML).join('')}</div>`;
   const bank=`<div class="cart bank"><div class="row tight">${ICON_BANK}<span class="lbl-s">Общий счётчик банка</span></div>
       <div class="num">${num(bankTotal())}</div><div class="small ink2">подарков собрали сотрудники в «Лесу»${st.forest.gifts?` · ваших — ${st.forest.gifts}`:''}</div>
@@ -474,11 +523,11 @@ function vRoute(){
   return {pre:endBanner(),
     L:`${pt('Маршрут помощника','Помогите Михаилу успеть во все полуночи','h1')}
       <div class="intro"><img src="${A.bear_moroz}" alt="">${tale('Мешок Деда Мороза порвался о еловый сук, подарки рассыпались по лесу. Идите с востока на запад — на пути открываются испытания.',true)}</div>
-      ${nextCard()}${mid}${bank}${weeklyBlock()}`,
+      ${nextCard()}${bank}${weeklyBlock()}`,
     R:`${pt('Путь героя','Испытания · привалы · награда')}
       <p class="tale small">Испытания приносят баллы в турнирную таблицу. На привалах выходят главы сказки-сериала — читайте и голосуйте, куда повернёт сюжет.</p>
       ${route}${kids}${rank}`,
-    M:`${nextCard()}${mid}${weeklyBlock()}${lbl('Путь героя')}${route}${bank}${kids}${rank}`,
+    M:`${nextCard()}${weeklyBlock()}${lbl('Путь героя')}${route}${bank}${kids}${rank}`,
     pn:7};
 }
 
@@ -922,7 +971,7 @@ function mountIzba(){
 }
 
 /* ===== Рейтинг ===== */
-function lbRow(x){return `<tr class="${x.me?'me':''} ${x.place<=3?'t3 p'+x.place:''}"><td class="pl"><span>${x.place}</span></td><td><div class="nm">${ava(x.nick,DESK?34:32,x.me)}<div><b>${esc(x.nick)}</b>${x.me?'<span class="tag">вы</span>':''}${x.place<=10?'<span class="merch">мерч</span>':''}${x.city?`<small>${esc(x.city)}</small>`:''}</div></div></td><td class="p">${num(x.p)}</td></tr>`;}
+function lbRow(x){return `<tr class="${x.me?'me':''} ${x.place<=3?'t3 p'+x.place:''}"><td class="pl"><span>${x.place}</span></td><td><div class="nm">${ava(x.nick,DESK?34:32,x.me)}<div><b>${tname(x.nick,x.city)}</b>${x.me?'<span class="tag">вы</span>':''}${x.place<=10?'<span class="merch">мерч</span>':''}</div></div></td><td class="p">${num(x.p)}</td></tr>`;}
 const RULES=`<ul class="rules"><li><b>«Спроси дорогу»</b> — 20 за каждый верный ответ, в зачёт лучший результат по каждому набору</li><li><b>«Лес»</b> — 10 за каждый подарок в лучшем забеге</li><li><b>«Ёлка»</b> — 100 за первую игрушку на общей ёлке</li></ul>
   <p class="note left">Баллы дают только испытания маршрута. Сказка-сериал, Пряничная избушка и Сундук чудес — без баллов. Итоги и награждение — после завершения маршрута.</p>`;
 function vRating(){
@@ -932,7 +981,7 @@ function vRating(){
   const tab=ui.seg.rt||'top';
   const from=Math.max(0,Math.min(lb.length-7,me.place-4)), near=lb.slice(from,from+7);
   const from5=Math.max(0,Math.min(lb.length-5,me.place-3)), near5=lb.slice(from5,from5+5);
-  const mypos=`<div class="mypos">${ava(me.nick,DESK?72:64,true)}<div><b>${esc(me.nick)}</b><span>${me.place} место · ${num(me.p)} баллов</span><span class="gap">${me.place<=10?'Вы в топ-10 — претендуете на мерч':`До топ-10 — ${num(gap)} баллов`}</span></div></div>`;
+  const mypos=`<div class="mypos">${ava(me.nick,DESK?72:64,true)}<div><b>${tname(me.nick,me.city)}</b><span>${me.place} место · ${num(me.p)} баллов</span><span class="gap">${me.place<=10?'Вы в топ-10 — претендуете на мерч':`До топ-10 — ${num(gap)} баллов`}</span></div></div>`;
   const earn={t:'Где ещё заработать баллы',href:href('profile','?tab=earn'),gold:1};
   return {pre:endBanner(),
     L:`${pt('Турнирная таблица','Балльно-рейтинговая система','h1')}${lbl('Топ-10 · получают мерч','s')}<table class="lb">${lb.slice(0,10).map(lbRow).join('')}</table>`,
@@ -1086,7 +1135,9 @@ const ACT={
     ui.auth.err='';ui.auth.sentTo=v2;saveDraft();render();toast('Код отправлен на '+v2);},
   mailEdit:()=>{ui.auth.sentTo=null;saveDraft();render();const e=$('#email');e&&e.focus();},
   saveNick:()=>{const city=($('#city').value||'').trim();ui.city=city;const n=nickOf(ui.nick);ui.pending={nick:n.nick,g:n.g,city};saveDraft();go('auth');},
-  codeNext:()=>{const p=ui.pending;
+  codeNext:()=>{if(!ui.auth.sentTo){ui.sheet='savecode';render();return;}ACT.codeGo();},
+  toMail:()=>{ui.sheet=null;render();const e=$('#email');if(e){e.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'});e.focus({preventScroll:true});}},
+  codeGo:()=>{ui.sheet=null;const p=ui.pending;
     // новый участник начинает с чистого листа; прежний (если был на этом устройстве) остаётся на «сервере»
     if(st.user){REG.put(snapshot());const day=st.day;st=fresh(day);}
     st.user={email:ui.auth.sentTo||'',nick:p.nick,g:p.g,city:p.city,code:ui.auth.code,confirmed:true};st.draft=null;REG.put(snapshot());SS.del('demo');flash(`Добро пожаловать в сказку, ${p.nick}!`);goBack();},
@@ -1166,7 +1217,7 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('change',e=>{
   if(e.target.id==='file'){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>setTreeSrc(r.result);r.readAsDataURL(f);}
 });
-document.addEventListener('input',e=>{if(e.target.id==='city'){ui.city=e.target.value;saveDraft();const c=$('#nkCity');if(c)c.textContent=e.target.value.trim();}});
+document.addEventListener('input',e=>{if(e.target.id==='city'){ui.city=e.target.value;saveDraft();const r=$('#nkRow');if(r&&ui.nick)r.innerHTML=nkRow(nickOf(ui.nick).nick);}});
 document.addEventListener('dragover',e=>{const d=e.target.closest('#drop');if(d){e.preventDefault();d.classList.add('over');}});
 document.addEventListener('dragleave',e=>{const d=e.target.closest('#drop');if(d)d.classList.remove('over');});
 document.addEventListener('drop',e=>{const d=e.target.closest('#drop');if(!d)return;e.preventDefault();const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/')){const r=new FileReader();r.onload=()=>setTreeSrc(r.result);r.readAsDataURL(f);}});

@@ -112,11 +112,10 @@ body[data-screen="cover"] main.app,body[data-screen="prologue"] main.app{min-hei
 .tale{font:400 16.5px/1.62 var(--text);color:var(--ink);margin:0 0 12px}
 .tale.small{font-size:14.5px;line-height:1.55;color:var(--ink2)}
 .tale.center{text-align:center}
-.tale.cap::after{content:"";display:block;clear:both}
-.drop{float:left;width:50px;height:50px;margin:4px 10px 0 0;display:grid;place-items:center;border-radius:7px;
-  background:radial-gradient(circle at 50% 38%,#26468f,#0d1a45 75%);
-  box-shadow:inset 0 0 0 1px rgba(0,0,0,.55),0 0 0 1.5px #dcab58,0 0 0 4px rgba(10,20,51,.95),0 0 0 5px rgba(220,171,88,.55),0 5px 12px rgba(0,0,0,.45)}
-.drop b{font:400 40px/1 var(--slav);padding-top:5px;background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 1px rgba(0,0,0,.7))}
+/* Первый абзац страницы: значок-снежинка в синей плашке с золотой каймой — вместо буквицы, в строке, без обтекания */
+.orn{display:inline-grid;place-items:center;width:28px;height:28px;margin:0 9px 0 0;vertical-align:-8px;border-radius:7px;color:var(--gold-hi);
+  background:radial-gradient(circle at 50% 38%,#2a4ea8,#0b1d55 75%) padding-box,linear-gradient(180deg,#ffe7a8,#c08236) border-box;border:1.5px solid transparent;box-shadow:0 3px 8px rgba(0,0,0,.35)}
+.orn svg{width:16px;height:16px}
 .note{font-size:13px;line-height:1.5;color:var(--muted);text-align:center;margin:10px 0 0}
 .note.left{text-align:left}
 .link{color:var(--gold-hi);font-family:var(--ui);text-decoration:underline;text-decoration-color:rgba(251,228,164,.5);text-underline-offset:3px;font-weight:700}
@@ -220,6 +219,20 @@ body[data-screen="cover"] main.app,body[data-screen="prologue"] main.app{min-hei
 
 /* ---------- Шторка снизу ---------- */
 .sheet-bg{position:fixed;inset:0;z-index:60;background:rgba(3,8,24,.62);animation:fadeIn .2s ease}
+/* Компьютер: модальное окно по центру (на телефоне то же содержимое — шторкой снизу) */
+.modal-bg{position:fixed;inset:0;z-index:60;background:rgba(0,8,34,.72);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);animation:fadeIn .2s ease}
+.modal{position:fixed;left:50%;top:50%;z-index:61;width:min(480px,calc(100vw - 32px));max-height:calc(100vh - 48px);overflow:auto;transform:translate(-50%,-50%);padding:26px 28px 24px;border-radius:18px;
+  background:linear-gradient(180deg,#0c2566,#061748);box-shadow:0 0 0 1.5px #e2b25e,0 0 0 4px rgba(10,20,51,.9),0 0 0 5px rgba(226,178,94,.5),0 24px 60px rgba(0,0,0,.6);animation:modalIn .25s cubic-bezier(.2,.8,.2,1)}
+@keyframes modalIn{from{opacity:0;transform:translate(-50%,-46%)}to{opacity:1;transform:translate(-50%,-50%)}}
+/* «Сохраните код» — перед стартом без почты */
+.savecode{text-align:center}
+.savecode .sv-t{margin:2px 0 4px;font:800 24px/1.2 var(--display);background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.savecode .codebox{margin:12px 0}
+.savecode .sv-w{margin:0 0 8px;font:400 15px/1.5 var(--ui);color:var(--ink)}
+.savecode .sv-w b{display:block;margin-bottom:4px;color:var(--gold-hi)}
+.savecode .note{margin:0 0 16px}
+.sv-acts{display:flex;flex-direction:column;gap:10px}
+.sv-acts .btn{width:100%}
 .sheet{position:fixed;left:50%;bottom:0;z-index:61;width:var(--col);max-height:86vh;max-height:86svh;overflow:auto;overscroll-behavior:contain;transform:translateX(-50%);padding:14px 18px calc(18px + var(--safe-b));
   border-radius:22px 22px 0 0;background:linear-gradient(180deg,#0c2566,#061748);box-shadow:0 -2px 0 #e2b25e,0 -4px 0 rgba(10,20,51,.9),0 -5px 0 rgba(226,178,94,.5),0 -16px 40px rgba(0,0,0,.55);animation:sheetUp .3s cubic-bezier(.2,.8,.2,1)}
 .sheet .grab{display:block;width:44px;height:5px;margin:0 auto 12px;border-radius:3px;background:rgba(233,189,104,.6)}
@@ -406,17 +419,6 @@ body[data-screen="cover"] main.app,body[data-screen="prologue"] main.app{min-hei
 .sent span{flex:1;min-width:0;overflow-wrap:anywhere}
 
 /* ---------- Маршрут ---------- */
-.midnights .tz{display:grid;grid-template-columns:repeat(11,1fr);gap:2px;position:relative;margin:4px 0 6px}
-.midnights .tz::before{content:"";position:absolute;left:4%;right:4%;top:9px;height:2px;background:linear-gradient(90deg,rgba(233,189,104,.15),rgba(233,189,104,.5),rgba(233,189,104,.15))}
-.tz .z{text-align:center;position:relative}
-.tz .z i{display:block;width:18px;height:18px;border-radius:50%;margin:0 auto 4px;background:#152454;border:2px solid rgba(233,190,104,.4);position:relative}
-.tz .z.on i{background:radial-gradient(circle,#fff6d6,#f1c463 60%,#b98232);border-color:#ffe6a6;box-shadow:0 0 12px rgba(251,228,164,.7)}
-.tz .z.cur i::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(251,228,164,.6);animation:ring 1.8s infinite}
-@keyframes ring{0%{transform:scale(.8);opacity:1}100%{transform:scale(1.5);opacity:0}}
-.tz .z b{display:block;font:700 9.5px var(--ui);color:var(--gold-hi)}
-.tz .z .c{display:none}
-.midnights .ew{justify-content:space-between;font-size:12px;color:var(--muted)}
-.midnights .ew .cnt{color:var(--gold-hi);font-weight:700;text-align:center}
 .nextc{display:grid;grid-template-columns:54px minmax(0,1fr);column-gap:12px;row-gap:10px;align-items:center;margin:16px 0 4px;padding:12px;border-radius:16px;
   background:linear-gradient(110deg,rgba(233,189,104,.2),rgba(8,16,44,.5) 60%);box-shadow:inset 0 0 0 1.5px rgba(251,228,164,.75),0 0 22px rgba(251,228,164,.12)}
 .nextc .med,.nextc .obj{width:54px;height:54px;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))}
@@ -921,8 +923,6 @@ body[data-screen="izba"] main.app{padding-bottom:calc(var(--tb) + 76px)}
   .lbl-s{font-size:11.5px;letter-spacing:.13em}
   .tale{font-size:17px;line-height:1.66}
   .tale.small{font-size:15px;line-height:1.6}
-  .drop{width:60px;height:60px;margin:5px 12px 2px 0}
-  .drop b{font-size:48px;padding-top:6px}
   .btn{padding:12px 22px;min-height:46px;line-height:1.15;white-space:nowrap}
   .btn-gold{box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -2px 0 rgba(110,60,15,.45),0 0 0 1px #7a4e18,0 0 0 3px rgba(10,20,51,.9),0 0 0 4px rgba(233,189,104,.6),0 8px 18px rgba(0,0,0,.45),0 0 22px rgba(240,190,100,.22)}
   .btn-gold:hover{filter:brightness(1.07)}
@@ -1025,16 +1025,6 @@ body[data-screen="izba"] main.app{padding-bottom:calc(var(--tb) + 76px)}
   .nextc .nb b{font-size:18px}
   .nextc .nb>span:last-child{font-size:14px}
   .nextc>.btn{flex:none}
-  .midnights .tz::before{top:24px}
-  .tz .z i{width:22px;height:22px;margin:0 auto 5px}
-  .tz .z b{font-size:11px}
-  .tz .z .c{display:block;height:14px;font:400 10px/14px var(--ui);color:var(--muted);white-space:nowrap;margin:0 -40px;text-align:center}
-  .tz .z .c:first-child{margin-bottom:3px}
-  .tz .z.on .c{color:var(--ink2)}
-  .tz .z.cur .c{color:var(--gold-hi);font-weight:700}
-  .tz .z:first-child .c{text-align:left;margin-left:-4px}
-  .tz .z:last-child .c{text-align:right;margin-right:-4px}
-  .midnights .ew{font-size:12.5px}
   .bank .row svg{width:26px;height:26px}
   .bank .num{font-size:clamp(36px,4vw,46px);margin:10px 0 4px}
   .bank .small{max-width:none}
@@ -1315,5 +1305,9 @@ body[data-screen="izba"] main.app{padding-bottom:calc(var(--tb) + 76px)}
 
 /* ---------- Фирменная типографика ПСБ ----------
    Сказка — книжными шрифтами (заголовки Playfair Display, текст PT Serif), интерфейс и цифры — фирменным ПСБ Лавр */
-.note,.err-t,.ab-note,.sent,.stop .meta,.stats3 span,.herostats span,.rcs span,.midnights .ew,.bank .stats div,.howto span,.prizes span,
+.note,.err-t,.ab-note,.sent,.stop .meta,.stats3 span,.herostats span,.rcs span,.bank .stats div,.howto span,.prizes span,
 .lb td,.lbmini .n,.mypos>div>span,.hist .d,.opp .ot>span,.kids .kb>span:last-child,.myrank .mr span,.codebox .note{font-family:var(--ui)}
+/* Имя в турнирной таблице с городом: «Снежный Лось из Барнаула» */
+.from{font-weight:400;color:var(--ink2)}
+.lbmini .n{white-space:normal}
+.mypos .from{font:500 .78em var(--ui);color:var(--ink2)}
