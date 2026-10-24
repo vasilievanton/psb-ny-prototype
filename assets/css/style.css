@@ -1409,3 +1409,15 @@ body[data-screen="izba"] main.app{padding-bottom:calc(var(--tb) + 76px)}
 /* панель «Прототип»: ссылка на админку — тёмная плашка, чтобы читалась на светлом фоне */
 .demo .jump a{display:inline-flex;align-items:center;padding:7px 10px;border-radius:8px;background:#1c2452;font:500 12px var(--ui);color:#fbe4a4;text-decoration:none}
 .demo .jump a:hover{background:#2a3570}
+
+/* ---------- Город: выбор только из справочника ---------- */
+.city-box{position:relative}
+.city-sug{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:30;max-height:286px;overflow:auto;overscroll-behavior:contain;padding:6px;border-radius:12px;
+  background:#08174a;box-shadow:inset 0 0 0 1px rgba(233,189,104,.55),0 14px 30px rgba(0,0,0,.5)}
+.city-sug[hidden]{display:none}
+.city-o{display:block;width:100%;min-height:44px;padding:10px 12px;border-radius:9px;text-align:left;font:500 16px/1.25 var(--ui);color:var(--ink)}
+@media (hover:hover){.city-o:hover{background:rgba(233,189,104,.12)}}
+.city-o:focus-visible{outline:2px solid var(--gold-hi);outline-offset:-2px;background:rgba(233,189,104,.12)}
+#cityNote.err-t{margin:8px 0 0}
+@media (min-width:900px){.city-o{min-height:38px;padding:8px 12px;font-size:15px}}
+.city-sug.up{top:auto;bottom:calc(100% + 6px)}

@@ -68,7 +68,7 @@ const CYR={'А':'A','В':'B','Е':'E','К':'K','М':'M','Н':'H','О':'O','Р':'
 function normCode(v){let x=String(v||'').toUpperCase().replace(/[АВЕКМНОРСТХУ]/g,c=>CYR[c]).replace(/[^A-Z0-9]/g,'');
   if(x.length===8)x='PSB'+x;
   return x.length===11&&x.startsWith('PSB')?`PSB-${x.slice(3,7)}-${x.slice(7)}`:x;}
-const ui={auth:AUTH0(),nick:null,pending:null,city:'',treeSide:0,quiz:null,quizRound:null,bookOpen:false,turn:false,
+const ui={auth:AUTH0(),nick:null,pending:null,city:'',cityQ:null,cityErr:false,treeSide:0,quiz:null,quizRound:null,bookOpen:false,turn:false,
   tree:{step:0,src:null,style:0,ball:null},chapter:null,izba:{cur:null,playing:false,pos:0},svOk:false,pubOk:false,demo:false,
   sheet:null,seg:{rt:'top',pf:'points',ft:0},fmode:false,pro:0,bar:null,login:{code:'',err:''},logout:false,pmail:false,pmailVal:''};
 /* ===== Страницы ===== */
@@ -84,8 +84,8 @@ const SS={get(k){try{return JSON.parse(sessionStorage.getItem('psb-'+k));}catch(
 function href(view,q){return (PAGES[view]||'route.html')+(q||'');}
 function flash(m){SS.set('toast',m);}
 // Черновик персонажа: живёт между страницами «Имя героя» и «Персональный код», после «В путь» удаляется
-function saveDraft(){st.draft={nick:ui.nick,city:ui.city,pending:ui.pending,auth:{code:ui.auth.code,email:ui.auth.email,sentTo:ui.auth.sentTo}};save();}
-if(st.draft){ui.nick=st.draft.nick||null;ui.city=st.draft.city||'';ui.pending=st.draft.pending||null;ui.auth=Object.assign(AUTH0(),st.draft.auth||{});}
+function saveDraft(){st.draft={nick:ui.nick,city:ui.city,cityQ:ui.cityQ,pending:ui.pending,auth:{code:ui.auth.code,email:ui.auth.email,sentTo:ui.auth.sentTo}};save();}
+if(st.draft){ui.nick=st.draft.nick||null;ui.city=st.draft.city||'';ui.cityQ=st.draft.cityQ!=null?st.draft.cityQ:null;ui.pending=st.draft.pending||null;ui.auth=Object.assign(AUTH0(),st.draft.auth||{});}
 let game=null, timers=[];
 function clearTimers(){timers.forEach(t=>clearInterval(t));timers=[];if(game){game.destroy();game=null;}}
 
@@ -150,9 +150,33 @@ function cityGen(raw){
     // Каменск-Уральский — склоняются обе части; Южно-Сахалинск, Йошкар-Ола — последняя
     return ps.map((x,k)=>k===last||(k===0&&/(ий|ый|ой)$/i.test(ps[last]))?genWord(x):x).join('-');}).join(' ');
 }
-// Город из справочника показывается в таблице сразу, свой вариант — после проверки модератором
-function cityKey(raw){return String(raw||'').trim().replace(/^(г\.\s*|город\s+)/i,'').split(/[,(]/)[0].trim().replace(/\s+/g,' ').toLowerCase().replace(/ё/g,'е');}
-function cityNote(raw){const k=cityKey(raw);return k&&!CITY_DIR.has(k)?'Такого города нет в справочнике — в таблице он появится после проверки модератором':'Выберите из списка или впишите свой. Город добавится к имени в турнирной таблице';}
+// Город выбирается только из справочника: подсказки по мере ввода, свой вариант не принимается
+const CITY_IDX=D.CITIES.map(([n])=>({n,k:n.toLowerCase().replace(/ё/g,'е')}));
+const cityNorm=v=>String(v||'').trim().replace(/\s+/g,' ').toLowerCase().replace(/ё/g,'е');
+function cityFind(v){const k=cityNorm(v);const c=k&&CITY_IDX.find(x=>x.k===k);return c?c.n:'';}
+function citySug(v){const k=cityNorm(v);if(!k)return [];const pre=[],inn=[];
+  for(const c of CITY_IDX){if(c.k.startsWith(k)){pre.push(c.n);if(pre.length>=8)break;}else if(inn.length<8&&c.k.includes(k))inn.push(c.n);}
+  return pre.concat(inn).slice(0,8);}
+function cityQ(){return ui.cityQ!=null?ui.cityQ:ui.city;}
+function cityNote(){const q=cityQ();if(ui.cityErr)return 'Выберите город из списка или оставьте поле пустым';
+  if(!cityNorm(q)||ui.city)return 'Начните вводить и выберите город из списка — он добавится к имени в турнирной таблице';
+  return citySug(q).length?'Выберите город из списка':'Такого города нет в списке. Выберите ближайший или оставьте поле пустым';}
+function citySugHTML(){const q=cityQ();if(!cityNorm(q)||ui.city===q)return '';const L=citySug(q);
+  return L.map(n=>`<button type="button" class="city-o" role="option" data-act="citySel" data-v="${esc(n)}">${esc(n)}</button>`).join('');}
+// Обновить поле города без перерисовки экрана: подсказки, превью строки таблицы, подпись под полем
+function patchCity(){const box=$('#citySug'),inp=$('#city'),n=$('#cityNote'),r=$('#nkRow');
+  if(box){const h=citySugHTML();box.innerHTML=h;box.hidden=!h;if(inp)inp.setAttribute('aria-expanded',h?'true':'false');}
+  if(inp)inp.classList.toggle('err',!!ui.cityErr);
+  if(n){n.textContent=cityNote();n.className=ui.cityErr?'err-t':'note left';}
+  if(r&&ui.nick)r.innerHTML=nkRow(nickOf(ui.nick).nick);
+  placeCitySug();}
+// Подсказки — вниз от поля, если хватает места до панели кнопок (на компьютере — до края страницы книги), иначе — вверх
+function placeCitySug(){const box=$('#citySug'),inp=$('#city');if(!box||!inp||box.hidden)return;
+  const r=inp.getBoundingClientRect(),vh=window.visualViewport?visualViewport.height:innerHeight;
+  let lim=vh-8;const ab=!DESK&&$('.actbar');if(ab)lim=Math.min(lim,ab.getBoundingClientRect().top-6);
+  const pg=DESK&&inp.closest('.pg');if(pg)lim=Math.min(lim,pg.getBoundingClientRect().bottom-40);
+  const top=DESK?72:64,below=lim-r.bottom-6,above=r.top-top-6,need=Math.min(286,box.scrollHeight);
+  const up=below<need&&above>below;box.classList.toggle('up',up);box.style.maxHeight=Math.max(120,Math.min(286,up?above:below))+'px';}
 function tname(nick,city){const g=cityGen(city);return esc(nick)+(g?` <span class="from">из\u00a0${esc(g)}</span>`:'');}
 function addLog(k,t,p){(st.log=st.log||[]).push({d:st.day,k,t,p});}
 function nyLeft(){const d=NY_DAY-st.day;return d>0?`до Нового года ${d} ${plural(d,'день','дня','дней')}`:'С Новым годом!';}
@@ -384,10 +408,12 @@ function vNick(){
   const hint=`<p class="note">Аватар — из инициалов: <span id="nkHint">«${esc(cur.nick)}» → «${esc(initials(cur.nick))}»</span>. Имена не повторяются: у каждого помощника — своё.</p>`;
   const stat=`<div id="nkStat">${nickStat()}</div>`;
   const dice=(act,l)=>`<button class="dice" data-act="${act}" aria-label="${l}" title="${l}">${svg('dice')}</button>`;
-  const city=`<label class="field"><span>Ваш город — по желанию</span>
-      <input class="input" id="city" list="cities" placeholder="Например, Казань" value="${esc(ui.city)}" autocomplete="off">
-      <datalist id="cities">${D.CITIES.map(c=>`<option value="${c[0]}">`).join('')}</datalist></label>
-    <p class="note left" id="cityNote">${cityNote(ui.city)}</p>`;
+  const sug=citySugHTML();
+  const city=`<div class="field"><span id="cityLbl">Ваш город — по желанию</span>
+      <div class="city-box"><input class="input${ui.cityErr?' err':''}" id="city" placeholder="Начните вводить, например, Казань" value="${esc(cityQ())}" autocomplete="off" autocorrect="off" spellcheck="false"
+        role="combobox" aria-labelledby="cityLbl" aria-autocomplete="list" aria-controls="citySug" aria-expanded="${sug?'true':'false'}">
+        <div class="city-sug" id="citySug" role="listbox" aria-labelledby="cityLbl"${sug?'':' hidden'}>${sug}</div></div></div>
+    <p class="${ui.cityErr?'err-t':'note left'}" id="cityNote">${cityNote()}</p>`;
   const preview=`${lbl('Так вас увидят в турнирной таблице','s')}<div class="lbmini prev"><div class="r me" id="nkRow">${nkRow(cur.nick)}</div></div>`;
   const regen=`<button class="btn btn-ghost btn-block" data-act="regen">${svg('dice','width="18" height="18"')} Другое имя</button>`;
   const acts=[{t:'Дальше: персональный код',act:'saveNick',gold:1}];
@@ -1233,7 +1259,9 @@ const ACT={
   mailSend:()=>{const v2=$('#email').value.trim();ui.auth.email=v2;if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v2)){ui.auth.err='Похоже, в адресе ошибка — проверьте, пожалуйста';return render();}
     ui.auth.err='';ui.auth.sentTo=v2;saveDraft();render();toast('Код отправлен на '+v2);},
   mailEdit:()=>{ui.auth.sentTo=null;saveDraft();render();const e=$('#email');e&&e.focus();},
-  saveNick:()=>{if(nameTaken(ui.nick.a,ui.nick.n)){toast('Такое имя уже есть — выберите свободное');const st2=$('#nkStat');if(st2)st2.scrollIntoView({block:'center',behavior:'smooth'});return;}const city=($('#city').value||'').trim();ui.city=city;const n=nickOf(ui.nick);ui.pending={nick:n.nick,g:n.g,city};saveDraft();go('auth');},
+  saveNick:()=>{if(nameTaken(ui.nick.a,ui.nick.n)){toast('Такое имя уже есть — выберите свободное');const st2=$('#nkStat');if(st2)st2.scrollIntoView({block:'center',behavior:'smooth'});return;}const q=cityQ();ui.city=cityFind(q);if(cityNorm(q)&&!ui.city){ui.cityErr=true;patchCity();const f=$('#city');if(f){f.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'});f.focus({preventScroll:true});}return;}
+    ui.cityQ=ui.city;const city=ui.city;const n=nickOf(ui.nick);ui.pending={nick:n.nick,g:n.g,city};saveDraft();go('auth');},
+  citySel:d=>{ui.city=d.v;ui.cityQ=d.v;ui.cityErr=false;saveDraft();const f=$('#city');if(f){f.value=d.v;f.blur();}patchCity();},
   codeNext:()=>{if(!ui.auth.sentTo){ui.svOk=false;ui.sheet='savecode';render();return;}ACT.codeGo();},
   toMail:()=>{ui.sheet=null;render();const e=$('#email');if(e){e.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'});e.focus({preventScroll:true});}},
   codeGo:()=>{ui.sheet=null;const p=ui.pending;
@@ -1312,6 +1340,11 @@ const ACT={
 document.addEventListener('click',e=>{const a=e.target.closest('a[href]');if(a&&!a.dataset.act&&!a.target&&e.button===0&&!e.metaKey&&!e.ctrlKey&&!e.shiftKey&&/^[\w-]+\.html(\?|$)/.test(a.getAttribute('href'))){save();SS.set('turn',1);}});
 document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(!t||t.disabled)return;const fn=ACT[t.dataset.act];if(fn){if(t.tagName==='A')e.preventDefault();fn(t.dataset,t,e);}});
 document.addEventListener('keydown',e=>{
+  if(e.target.id==='city'||e.target.classList.contains('city-o')){const o=$$('#citySug .city-o'),i=o.indexOf(document.activeElement);
+    if(e.key==='ArrowDown'&&o.length){e.preventDefault();(o[i+1]||o[0]).focus();}
+    if(e.key==='ArrowUp'&&o.length){e.preventDefault();if(i>0)o[i-1].focus();else $('#city').focus();}
+    if(e.key==='Enter'&&e.target.id==='city'&&o.length===1){e.preventDefault();o[0].click();}
+    if(e.key==='Escape'){const b=$('#citySug');if(b&&!b.hidden){e.stopPropagation();b.hidden=true;return;}}}
   if(e.key==='Enter'&&e.target.id==='email')ACT.mailSend();
   if(e.key==='Enter'&&e.target.id==='logincode')ACT.login();
   if(e.key==='Enter'&&e.target.id==='pmail')ACT.pmailSend();
@@ -1323,7 +1356,14 @@ document.addEventListener('change',e=>{
   if(e.target.id==='pubOk'){ui.pubOk=e.target.checked;$$('[data-act=tHang]').forEach(b=>b.disabled=!ui.pubOk);}
   if(e.target.id==='file'){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>setTreeSrc(r.result);r.readAsDataURL(f);}
 });
-document.addEventListener('input',e=>{if(e.target.classList.contains('pk-q')){filterPk(e.target);const l=e.target.closest('.pk-box').querySelector('.pk-list');if(l)l.scrollTop=0;}if(e.target.id==='city'){ui.city=e.target.value;saveDraft();const r=$('#nkRow');if(r&&ui.nick)r.innerHTML=nkRow(nickOf(ui.nick).nick);const n=$('#cityNote');if(n)n.textContent=cityNote(ui.city);}});
+document.addEventListener('input',e=>{if(e.target.classList.contains('pk-q')){filterPk(e.target);const l=e.target.closest('.pk-box').querySelector('.pk-list');if(l)l.scrollTop=0;}if(e.target.id==='city'){ui.cityQ=e.target.value;ui.city=cityFind(ui.cityQ);if(ui.city)ui.cityQ=ui.city;ui.cityErr=false;saveDraft();patchCity();}});
+// Поле города: стрелка вниз — к подсказкам, Esc — закрыть; при уходе из поля подсказки прячутся
+document.addEventListener('focusout',e=>{if(e.target.id==='city'||e.target.classList.contains('city-o'))setTimeout(()=>{const a=document.activeElement;if(a&&(a.id==='city'||a.classList.contains('city-o')))return;const b=$('#citySug');if(b){b.hidden=true;const i=$('#city');if(i)i.setAttribute('aria-expanded','false');}},150);});
+document.addEventListener('focusin',e=>{if(e.target.id!=='city')return;patchCity();
+  // телефон: поднимаем поле к верху экрана, чтобы под ним поместились подсказки
+  if(!DESK)setTimeout(()=>{const f=$('#city');if(!f||document.activeElement!==f)return;const y=f.getBoundingClientRect().top-76;if(y>0)window.scrollBy({top:y,behavior:reduced()?'auto':'smooth'});setTimeout(placeCitySug,reduced()?0:350);},300);});
+// мышью по подсказке — фокус остаётся в поле, список не закрывается до выбора
+document.addEventListener('mousedown',e=>{if(e.target.closest('.city-o'))e.preventDefault();});
 document.addEventListener('dragover',e=>{const d=e.target.closest('#drop');if(d){e.preventDefault();d.classList.add('over');}});
 document.addEventListener('dragleave',e=>{const d=e.target.closest('#drop');if(d)d.classList.remove('over');});
 document.addEventListener('drop',e=>{const d=e.target.closest('#drop');if(!d)return;e.preventDefault();const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/')){const r=new FileReader();r.onload=()=>setTreeSrc(r.result);r.readAsDataURL(f);}});

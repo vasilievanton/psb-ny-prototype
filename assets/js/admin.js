@@ -31,15 +31,6 @@ USERS.sort((a,b)=>b.pts-a.pts||a.day-b.day);
 const TOYS=[...Array(12)].map((_,i)=>{const u=pick(USERS);return {id:i+1,nick:u.nick,city:u.city,src:['sample_draw','sample_team','sample_girl'][i%3],style:(i*5)%6,
   time:String(Math.floor(R()*10)).padStart(2,'0')+':'+String(Math.floor(R()*60)).padStart(2,'0'),st:'wait',img:null,why:''};}).sort((a,b)=>a.time<b.time?-1:1);
 let toysReady=false;
-const CITYQ=[
-  {raw:'Мск',n:11,act:'replace',to:'Москва',gen:'Москвы',why:'Сокращение'},
-  {raw:'Зеленоград',n:14,act:'accept',gen:'Зеленограда',why:'Округ Москвы — нет в справочнике городов'},
-  {raw:'Спб',n:9,act:'replace',to:'Санкт-Петербург',gen:'Санкт-Петербурга',why:'Сокращение'},
-  {raw:'Новосиб',n:6,act:'replace',to:'Новосибирск',gen:'Новосибирска',why:'Разговорное название'},
-  {raw:'Подмосковье',n:4,act:'hide',gen:'',why:'Регион, а не город'},
-  {raw:'Красная Поляна',n:3,act:'accept',gen:'Красной Поляны',why:'Посёлок — нет в справочнике городов'},
-  {raw:'пос. Солнечный',n:2,act:'accept',gen:'Солнечного',why:'Посёлок — нет в справочнике городов'}
-].map(x=>Object.assign(x,{st:'wait'}));
 const SUSP=[
   {nick:USERS[3].nick,run:'15 дек, 09:12',gifts:74,time:'41 с',why:'Подарков больше, чем было на пройденных этапах',st:'wait'},
   {nick:USERS[17].nick,run:'14 дек, 22:47',gifts:39,time:'2 мин 10 с',why:'6 забегов за минуту с одного устройства',st:'wait'},
@@ -65,7 +56,7 @@ function log(who,what){LOG.unshift([NOW_T,who,what]);}
 function csv(name,rows){const s='﻿'+rows.map(r=>r.map(x=>{x=String(x==null?'':x);return /[;"\n]/.test(x)?'"'+x.replace(/"/g,'""')+'"':x;}).join(';')).join('\r\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([s],{type:'text/csv;charset=utf-8'}));a.download=name;document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);toast('Выгружен файл '+name);}
-const waitToys=()=>TOYS.filter(t=>t.st==='wait').length, waitCities=()=>CITYQ.filter(c=>c.st==='wait').length, waitSusp=()=>SUSP.filter(s=>s.st==='wait').length;
+const waitToys=()=>TOYS.filter(t=>t.st==='wait').length, waitSusp=()=>SUSP.filter(s=>s.st==='wait').length;
 function chState(i){const c=CH[i];if(c.empty&&!c.sched)return ['Не загружена','bad'];if(c.day>TODAY)return ['Запланирована на '+fmt(c.day),'acc'];
   if(c.final)return ['Опубликована','ok'];if(TODAY<=c.day+1)return ['Голосование до '+fmt(c.day+1)+', 23:59','warn'];return ['Итоги подведены','ok'];}
 function votes(i){const c=D.CHAPTERS[i];if(c.final)return null;const fr=TODAY>c.day+1?1:TODAY===c.day?.42:.86;const tot=Math.round(c.votes*fr);return {tot,cnt:c.pct.map(p=>Math.round(tot*p/100)),lead:c.pct.indexOf(Math.max(...c.pct)),done:TODAY>c.day+1};}
@@ -73,7 +64,7 @@ function votes(i){const c=D.CHAPTERS[i];if(c.final)return null;const fr=TODAY>c.
 /* ---------- разделы ---------- */
 const SECTIONS=[
   ['dash','Обзор',null],
-  ['g1','Модерация'],['tree','Ёлка',waitToys],['cities','Города',waitCities],
+  ['g1','Модерация'],['tree','Ёлка',waitToys],
   ['g2','Контент'],['serial','Сказка-сериал',null],['quiz','Квиз',null],['tales','Аудиосказки',null],
   ['g3','Итоги и участники'],['draw','Розыгрыш',null],['rating','Турнирная таблица',waitSusp],['users','Участники и коды',null],
   ['g4','Настройки'],['schedule','Расписание',null],['dict','Справочники',null],['access','Доступы и журнал',null]
@@ -83,11 +74,10 @@ let cur=(location.hash||'#dash').slice(1);
 function vDash(){
   const nx=[[OPEN.final,'Финал маршрута, набор IV квиза, сказки 9–10'],[17,'Глава VI (финальная) — нужно загрузить до 17 декабря'],[24,'Розыгрыш «Сундука чудес», цельная сказка (PDF)']];
   return head('Обзор',`Сегодня ${fmt(TODAY)}, ${NOW_T} мск. Разделы и главы открываются в 00:00 мск. Платформа работает до 17 января, после — архив.`)+
-  `<div class="grid g4">${kpi(num(2100+TODAY*520),'участников · +520 за сутки')}${kpi('63','города')}${kpi(num(waitToys()),'игрушек ждут проверки',waitToys()>0)}${kpi(num(waitCities()),'городов ждут проверки',waitCities()>0)}</div>
+  `<div class="grid g4">${kpi(num(2100+TODAY*520),'участников · +520 за сутки')}${kpi('63','города')}${kpi(num(waitToys()),plural(waitToys(),'игрушка ждёт','игрушки ждут','игрушек ждут')+' проверки',waitToys()>0)}${kpi(num(waitSusp()),plural(waitSusp(),'подозрительный забег','подозрительных забега','подозрительных забегов')+' в «Лесе»',waitSusp()>0)}</div>
   <div class="grid g2" style="margin-top:12px">
     <div class="panel"><h2>Требует внимания</h2><table class="tbl">
       <tr class="click" data-go="tree"><td>Игрушки на модерации</td><td class="num">${st(waitToys(),waitToys()?'warn':'ok')}</td></tr>
-      <tr class="click" data-go="cities"><td>Города не из справочника</td><td class="num">${st(waitCities(),waitCities()?'warn':'ok')}</td></tr>
       <tr class="click" data-go="rating"><td>Подозрительные результаты «Леса»</td><td class="num">${st(waitSusp(),waitSusp()?'warn':'ok')}</td></tr>
       <tr class="click" data-go="serial"><td>Глава VI не загружена · выход ${fmt(17)}</td><td class="num">${CH[5].empty&&!CH[5].sched?st('нужно сделать','bad'):st('готово','ok')}</td></tr></table></div>
     <div class="panel"><h2>Сейчас на платформе</h2><table class="tbl">
@@ -113,16 +103,6 @@ function vTree(){
   `<div class="tabs">${[['wait','На проверке',waitToys()],['ok','Одобрены',TOYS.filter(t=>t.st==='ok').length],['no','Отклонены',TOYS.filter(t=>t.st==='no').length]].map(([k,l,n])=>`<button class="${tab===k?'on':''}" data-act="toyTab" data-k="${k}">${l} · ${n}</button>`).join('')}</div>
   ${list.length?`<div class="mods">${list.map(card).join('')}</div>`:`<div class="note">Здесь пусто.</div>`}
   <p class="note" style="margin-top:14px">Отклонённую игрушку автор видит с причиной и может сделать другую. Срок проверки (SLA) и состав модераторов — уточняются.</p>`;
-}
-
-function vCities(){
-  const row=c=>`<tr><td><b>${esc(c.raw)}</b><div class="small muted">${esc(c.why)}</div></td><td class="num">${c.n}</td>
-    <td>${c.st==='wait'?(c.act==='replace'?`Заменить на «${esc(c.to)}»`:c.act==='hide'?'Скрыть: это не город':'Принять как есть'):''}${c.st!=='wait'?st(c.st,'ok'):''}</td>
-    <td>${c.st==='wait'&&c.act!=='hide'?`<input class="in" style="height:30px;max-width:190px" value="${esc(c.gen)}" aria-label="Форма «из …»">`:esc(c.gen?'из '+c.gen:'—')}</td>
-    <td>${c.st==='wait'?`<div class="row">${btn(c.act==='replace'?'Заменить':'Принять','cityOk',{cls:'ok sm',d:{raw:c.raw}})}${btn('Скрыть город','cityHide',{cls:'sm',d:{raw:c.raw}})}</div>`:''}</td></tr>`;
-  return head('Города на проверке',`Город из справочника (${num(D.CITIES.length)} городов) сразу показывается в турнирной таблице: «Снежный Лось из Барнаула». Свой вариант — только после проверки: принять с формой «из …», заменить на город из справочника или скрыть. Пока город на проверке, в таблице видно только имя героя.`)+
-  `<div class="panel scroll"><table class="tbl"><tr><th>Как ввели</th><th class="num">Участников</th><th>Предложение</th><th>Форма в таблице</th><th></th></tr>${CITYQ.map(row).join('')}</table></div>
-  <p class="note">Принятые варианты попадают в справочник: следующие участники с таким же городом проходят без проверки.</p>`;
 }
 
 function vSerial(){
@@ -240,13 +220,14 @@ function vDict(){
   const q=(sel.cq||'').trim().toLowerCase().replace(/ё/g,'е');
   const found=q?D.CITIES.filter(c=>c[0].toLowerCase().replace(/ё/g,'е').startsWith(q)).slice(0,12):[];
   const group=(names,items)=>names.map((g,k)=>{const w=items.filter(x=>x.g===k);return `<div style="margin:0 0 10px"><b class="small">${esc(g)} · ${w.length}</b><div class="chips" style="margin-top:4px">${w.slice(0,14).map(x=>`<span class="chip">${esc(x.w)}</span>`).join('')}${w.length>14?`<span class="chip">+${w.length-14}</span>`:''}</div></div>`;}).join('');
-  return head('Справочники','Имена героев собираются из двух слов и не повторяются. Города — из справочника; свой вариант проходит проверку.')+
+  return head('Справочники','Имена героев собираются из двух слов и не повторяются. Город участник выбирает только из справочника — своего варианта нет.')+
   `<div class="grid g2"><div class="panel"><h2>Первое слово · ${D.ADJ.length}</h2>${group(D.ADJ_G,D.ADJ.map(a=>({w:a[0],g:a[2]})))}
       <div class="grid g3"><input class="in" placeholder="мужской род"><input class="in" placeholder="женский род"><select class="in">${D.ADJ_G.map(g=>`<option>${esc(g)}</option>`).join('')}</select></div><div style="margin-top:8px">${btn('Добавить','save',{cls:'sm'})}</div></div>
     <div class="panel"><h2>Второе слово · ${D.NOUNS.length}</h2>${group(D.NOUN_G,D.NOUNS.map(n=>({w:n[0],g:n[2]})))}
       <div class="grid g3"><input class="in" placeholder="слово"><select class="in"><option>мужской род</option><option>женский род</option></select><select class="in">${D.NOUN_G.map(g=>`<option>${esc(g)}</option>`).join('')}</select></div><div style="margin-top:8px">${btn('Добавить','save',{cls:'sm'})}</div></div></div>
   <div class="note i" style="margin:0 0 16px">Сочетаний: ${num(D.ADJ.length*D.NOUNS.length)} — с запасом на 12–18 тысяч участников. Занятое имя предложить нельзя: участнику показываем свободные похожие.</div>
-  <div class="panel"><h2>Города · ${num(D.CITIES.length)}</h2><p class="muted">Справочник городов России (hflabs/city, CC BY-SA 4.0) с готовой формой «из …» + варианты, принятые модератором.</p>
+  <div class="panel"><h2>Города · ${num(D.CITIES.length)}</h2><p class="muted">Справочник городов России (hflabs/city, CC BY-SA 4.0) с готовой формой «из …» для турнирной таблицы. Перед запуском сверяем со списком городов, где работают сотрудники банка, и добавляем недостающие.</p>
+    <div class="grid g3" style="margin:0 0 10px"><input class="in" placeholder="Город"><input class="in" placeholder="Форма «из …», например «из Барнаула»"><div>${btn('Добавить город','save',{cls:'sm'})}</div></div>
     <input class="in" id="cq" placeholder="Найти город" value="${esc(sel.cq||'')}" style="max-width:320px">
     ${found.length?`<table class="tbl" style="margin-top:10px"><tr><th>Город</th><th>В таблице</th></tr>${found.map(c=>`<tr><td>${esc(c[0])}</td><td>из ${esc(c[1])}</td></tr>`).join('')}</table>`:q?'<p class="muted" style="margin-top:10px">Нет в справочнике — такой город пройдёт через проверку</p>':''}</div>`;
 }
@@ -255,14 +236,14 @@ function vAccess(){
   return head('Доступы и журнал','Кто что может в админке. Все действия пишутся в журнал.')+
   `<div class="panel scroll"><table class="tbl"><tr><th>Роль</th><th>Кто</th><th>Что может</th></tr>
     <tr><td><b>Администратор</b></td><td>Deep</td><td>Всё, включая расписание, доступы и выгрузки</td></tr>
-    <tr><td><b>Модератор</b></td><td>Deep</td><td>Ёлка и города: одобрить, отклонить, скрыть</td></tr>
+    <tr><td><b>Модератор</b></td><td>Deep</td><td>Ёлка: одобрить или отклонить игрушку</td></tr>
     <tr><td><b>Редактор контента</b></td><td>Deep</td><td>Главы сериала, квиз, аудиосказки, справочники</td></tr>
     <tr><td><b>Наблюдатель</b></td><td>Банк</td><td>Просмотр, статистика, выгрузки, отметка «подтверждён» у победителей</td></tr></table>
     <p class="small muted" style="margin:10px 0 0">Вход в админку — по личным учётным записям с двухфакторной аутентификацией; кто со стороны банка — уточняется.</p></div>
   <div class="panel scroll"><h2>Журнал действий</h2><table class="tbl">${LOG.map(([t,w,x])=>`<tr><td style="white-space:nowrap">${t}</td><td style="white-space:nowrap">${esc(w)}</td><td>${esc(x)}</td></tr>`).join('')}</table></div>`;
 }
 
-const VIEWS={dash:vDash,tree:vTree,cities:vCities,serial:vSerial,quiz:vQuiz,tales:vTales,draw:vDraw,rating:vRating,users:vUsers,schedule:vSchedule,dict:vDict,access:vAccess};
+const VIEWS={dash:vDash,tree:vTree,serial:vSerial,quiz:vQuiz,tales:vTales,draw:vDraw,rating:vRating,users:vUsers,schedule:vSchedule,dict:vDict,access:vAccess};
 
 function nav(){
   return SECTIONS.map(([k,l,c])=>l==null||!VIEWS[k]?`<div class="grp">${esc(l||'')}</div>`:`<a href="#${k}" class="${cur===k?'on':''}"><span>${esc(l)}</span>${c&&c()?`<span class="cnt">${c()}</span>`:''}</a>`).join('');
@@ -280,8 +261,6 @@ const ACT={
   toyOk:d=>{const t=TOYS.find(x=>x.id==d.id);t.st='ok';log('Анна (модератор)',`одобрила игрушку героя «${t.nick}»`);render();toast('Игрушка на ёлке, автору начислено 100 баллов');},
   toyNo:d=>{const t=TOYS.find(x=>x.id==d.id);const s=$(`select[data-why="${d.id}"]`);if(!s||!s.value){toast('Выберите причину отказа');if(s)s.focus();return;}t.st='no';t.why=s.value;log('Анна (модератор)',`отклонила игрушку героя «${t.nick}»: ${t.why}`);render();toast('Отклонено — автор увидит причину');},
   toyAll:()=>{let n=0;TOYS.forEach(t=>{if(t.st==='wait'){t.st='ok';n++;}});log('Анна (модератор)',`одобрила ${n} ${plural(n,'игрушку','игрушки','игрушек')}`);render();toast(`Одобрено: ${n}`);},
-  cityOk:d=>{const c=CITYQ.find(x=>x.raw===d.raw);c.st=c.act==='replace'?'Заменён: '+c.to:'Принят';log('Анна (модератор)',`город «${c.raw}» — ${c.st.toLowerCase()}`);render();},
-  cityHide:d=>{const c=CITYQ.find(x=>x.raw===d.raw);c.st='Скрыт';log('Анна (модератор)',`скрыла город «${c.raw}»`);render();},
   chSel:d=>{sel.ch=+d.i;render();},
   chSave:()=>{const c=CH[sel.ch];const t=$('#chT'),x=$('#chX');c.t=t.value.trim();c.text=x.value;if(c.empty&&c.t&&c.text)c.empty=false;
     $$('.opt .in').forEach((inp,k)=>{c.o[k]=inp.value;});log('Илья (редактор)',`сохранил главу ${ROMAN[sel.ch]}${c.t?' «'+c.t+'»':''}`);render();toast('Глава сохранена');},
