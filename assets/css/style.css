@@ -548,7 +548,7 @@ body[data-screen="cover"] main.app,body[data-screen="prologue"] main.app{min-hei
 .howto span{font-size:11.5px;line-height:1.3;color:var(--ink2)}
 .gm{position:fixed;top:0;bottom:0;left:50%;z-index:50;width:var(--col);transform:translateX(-50%);display:flex;flex-direction:column;
   padding:calc(6px + env(safe-area-inset-top)) 10px calc(14px + var(--safe-b));background:radial-gradient(ellipse at 50% 0%,#1d3474,#0a1435 55%,#050b22)}
-.gm-top{flex:none;display:grid;grid-template-columns:1fr auto;grid-template-areas:"h x" "g g";align-items:center;row-gap:8px;padding:4px 2px 0}
+.gm-top{flex:none;display:flex;justify-content:flex-end;align-items:center;padding:4px 2px 0}
 .gm-top .hearts{grid-area:h;display:flex;gap:4px}
 .gm-top .hearts svg{width:26px;height:26px;fill:rgba(255,255,255,.2)}
 .gm-top .hearts svg.on{fill:#e8473f;filter:drop-shadow(0 0 4px rgba(255,90,80,.6))}

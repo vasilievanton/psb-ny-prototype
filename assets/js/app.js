@@ -679,7 +679,7 @@ function vForest(){
       L:`${pt('Лес','Испытание 2 · соберите подарки, перепрыгните препятствия','h1')}${say('m_star','Старший сын',FOREST_HELLO)}`,
       R:`<div class="hud"><div>${ICON_HEART}<div><span>Жизни</span><b id="hLives" class="hearts">${hearts(3)}</b></div></div><div>${ICON_GIFT}<div><span>Подарки</span><b id="hGifts">0</b></div></div><div>${ICON_BANK}<div><span>В общий счётчик</span><b id="hBank">+0</b></div></div></div>
         <p class="tale small">Бегите и собирайте подарки: чем больше, тем лучше. Лес не кончается, а бег становится всё быстрее. У вас 3 жизни — каждое столкновение отнимает одну.</p>
-        <p class="note left">Пробел, ↑ или клик по игре — прыжок · удерживайте → или «Быстрее» — ускорение</p>`,
+        <p class="note left">Пробел, ↑ или клик по игре — прыжок · чем дольше держите → или «Быстрее», тем быстрее бег</p>`,
       full:`<div class="stage" id="stage"><canvas id="cv" data-ratio=".5"></canvas>
           <div class="overlay" id="ov"><div class="inner"><div class="ov-t">${st.forest.runs?'Ещё забег?':'Готовы?'}</div>
             <button class="btn btn-gold btn-lg" data-act="fStart">Бежать!</button>
@@ -690,7 +690,7 @@ function vForest(){
   }
   if(ui.fmode)return {raw:gameMode()};
   return {M:`${say('m_star','Старший сын',FOREST_HELLO,'compact')}
-    <div class="howto"><div>${svg('up')}<b>Тап по игре</b><span>прыжок</span></div><div>${svg('arrow')}<b>Держите «Быстрее»</b><span>ускорение</span></div><div>${ICON_HEART}<b>3 жизни</b><span>столкновение — минус одна</span></div></div>
+    <div class="howto"><div>${svg('up')}<b>Тап по игре</b><span>прыжок</span></div><div>${svg('arrow')}<b>Держите «Быстрее»</b><span>чем дольше, тем быстрее</span></div><div>${ICON_HEART}<b>3 жизни</b><span>столкновение — минус одна</span></div></div>
     <p class="tale small center">Бегите и собирайте подарки: чем больше, тем лучше. Лес не кончается, а бег становится всё быстрее.</p>
     ${st.forest.runs?`<div class="rcs"><div><b>${best}</b><span>рекорд, подарков</span></div><div><b>${num(best*10)}</b><span>баллов в таблице</span></div><div><b>${st.forest.gifts}</b><span>всего в общем счётчике</span></div></div>`:''}
     ${LITE_NOTE}`,
@@ -699,7 +699,7 @@ function vForest(){
 // Телефон: игра во весь экран — сверху жизни и подарки, в центре поле, снизу большие кнопки под большие пальцы
 function gameMode(){
   return `<div class="gm" id="gm">
-    <div class="gm-top"><span class="hearts" id="hLives">${hearts(3)}</span><span class="gm-g">${ICON_GIFT}<b id="hGifts">0</b></span><button class="gm-x" data-act="fExit" aria-label="Закончить забег">×</button></div>
+    <div class="gm-top"><button class="gm-x" data-act="fExit" aria-label="Закончить забег">×</button></div>
     <div class="gm-mid"><div class="stage" id="stage"><canvas id="cv" data-ratio="1.15" data-lw="620"></canvas>
       <div class="overlay" id="ov"><div class="inner"><div class="ov-t">Готовы?</div><button class="btn btn-gold btn-lg" data-act="fStart">Старт</button><p class="small">Тап по игре — тоже прыжок</p></div></div></div></div>
     <div class="gm-ctrl" id="ctrl"><button class="btn btn-ghost" id="bJump">${svg('up','width="22" height="22"')} Прыжок</button><button class="btn btn-ghost" id="bFwd">Быстрее ${svg('arrow','width="22" height="22"')}</button></div>
@@ -710,7 +710,8 @@ function mountForest(){
   if(!DESK)cv.dataset.maxh=String(Math.max(200,innerHeight-(innerWidth>innerHeight?110:250)));
   game=ForestGame(cv,{
     hud(S){const a=$('#hLives'),b=$('#hGifts'),c=$('#hBank');if(a)a.innerHTML=hearts(S.lives);if(b)b.textContent=S.gifts;if(c)c.textContent='+'+S.gifts;},
-    end(S){finishForest(S.gifts,S.score,S.out);}
+    end(S){finishForest(S.gifts,S.score,S.out);},
+    best:()=>st.forest.bestGifts||0   // рекорд — для полоски «до рекорда» на поле
   });
   const j=$('#bJump'),f=$('#bFwd');
   j.addEventListener('pointerdown',e=>{e.preventDefault();game&&game.jump();});
