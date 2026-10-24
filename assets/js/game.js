@@ -48,15 +48,19 @@ function patternSVG(kind){
 //   bear_idle.png, bear_jump.png, bear_fall.png, bear_hit.png — стойка до старта, прыжок вверх, падение, столкновение
 //   gift_1.png … gift_4.png — варианты подарков
 //   obstacle_log.png, obstacle_stump.png, obstacle_drift.png — бревно, пень, сугроб
+//   tree_1.png … tree_3.png — ели: ближний ряд как есть, дальний — те же ели, затемнённые под ночное небо
+//   lamp.png — фонарь на столбе; тёплое свечение вокруг рисует игра
 const FOREST_DIR='assets/img/forest/';
 // Сколько кадров бега и вариантов подарков. Если файлов будет другое число — поменять здесь
-const FOREST_RUN_FRAMES=6, FOREST_GIFT_KINDS=4;
+const FOREST_RUN_FRAMES=6, FOREST_GIFT_KINDS=4, FOREST_TREE_KINDS=3;
 // Отдельные кадры медведя. Если какого-то не будет — убрать его из списка: вместо прыжка и стойки покажется первый кадр бега, вместо падения — прыжок, вместо столкновения — бег с миганием
 const FOREST_BEAR_EXTRA=['idle','jump','fall','hit'];
 // Препятствия: h — высота в игре (поле — 400 единиц в высоту, медведь — около 110), ширина — по пропорциям PNG; w — ширина векторной заглушки.
 // Новое препятствие — строка здесь и файл obstacle_<k>.png; пока файла нет, оно рисуется сугробом
 const FOREST_OBSTACLES=[{k:'log',h:34,w:72},{k:'stump',h:48,w:42},{k:'drift',h:30,w:76}];
-const FOREST_ART={run:[],idle:null,jump:null,fall:null,hit:null,gifts:[],ob:{}};
+// Где на картинке фонаря горит свет: доли ширины и высоты от левого верхнего угла; туда игра ставит свечение
+const FOREST_LAMP_LIGHT=[0.68,0.30];
+const FOREST_ART={run:[],idle:null,jump:null,fall:null,hit:null,gifts:[],ob:{},trees:[],treesFar:[],lamp:null};
 let forestArtReq=null;
 function forestImg(name){return new Promise(res=>{const i=new Image();i.onload=()=>res(i.naturalWidth?i:null);i.onerror=()=>res(null);i.src=FOREST_DIR+name;});}
 // Нумерованные файлы _1 … _count. Нет первого — остальные не запрашиваем
@@ -65,11 +69,19 @@ async function forestSeq(prefix,count,into){
   const rest=await Promise.all([...Array(Math.max(0,count-1))].map((_,i)=>forestImg(prefix+(i+2)+'.png')));
   into.push(first,...rest.filter(Boolean));
 }
+// Дальние ели — те же картинки, затемнённые под цвет ночного неба: так лес выглядит глубже
+function forestTint(img){
+  const h=Math.min(320,img.naturalHeight), w=Math.round(img.naturalWidth*h/img.naturalHeight);
+  const c=document.createElement('canvas'); c.width=w; c.height=h; const x=c.getContext('2d');
+  x.drawImage(img,0,0,w,h); x.globalCompositeOperation='source-atop'; x.fillStyle='rgba(12,26,72,.6)'; x.fillRect(0,0,w,h);
+  return c;
+}
 function loadForestArt(){
   if(forestArtReq)return forestArtReq;
   const F=FOREST_ART;
   const bear=forestSeq('bear_run_',FOREST_RUN_FRAMES,F.run).then(()=>F.run.length?Promise.all(FOREST_BEAR_EXTRA.map(k=>forestImg('bear_'+k+'.png').then(i=>{F[k]=i;}))):null);
-  forestArtReq=Promise.all([bear,forestSeq('gift_',FOREST_GIFT_KINDS,F.gifts),...FOREST_OBSTACLES.map(o=>forestImg('obstacle_'+o.k+'.png').then(i=>{F.ob[o.k]=i;}))]);
+  const trees=forestSeq('tree_',FOREST_TREE_KINDS,F.trees).then(()=>{F.treesFar=F.trees.map(forestTint);});
+  forestArtReq=Promise.all([bear,trees,forestSeq('gift_',FOREST_GIFT_KINDS,F.gifts),forestImg('lamp.png').then(i=>{F.lamp=i;}),...FOREST_OBSTACLES.map(o=>forestImg('obstacle_'+o.k+'.png').then(i=>{F.ob[o.k]=i;}))]);
   return forestArtReq;
 }
 // На странице «Леса» картинки грузятся сразу, пока игрок читает правила
@@ -81,16 +93,19 @@ function ForestGame(canvas, hooks){
   const LH=400, GROUND=328, PX=96;
   // PNG в единицах игры: кадр медведя — BEAR_H в высоту, лапы на земле; RUN_CYCLE — сколько медведь пробегает за все кадры бега; подарок — GIFT_D по большей стороне
   const BEAR_H=124, BEAR_SINK=4, RUN_CYCLE=150, GIFT_D=40, OB_SINK=3;
+  // Фонарь — LAMP_H в высоту; ели — по росту из nearT/farT, ширина по пропорциям PNG
+  const LAMP_H=96;
   let LW=800, TOP=0, sc=1, dpr=1, raf=0, last=0, alive=true;
-  const S={run:false,done:false,lives:3,out:false,t:0,dist:0,stage:1,gifts:0,score:0,cleared:0,py:GROUND,vy:0,ground:true,stun:0,inv:0,boost:false,objs:[],parts:[],next:520,banner:0};
-  const STAGES=20, STAGE_LEN=2000;
+  const S={run:false,done:false,lives:3,out:false,t:0,dist:0,stage:1,gifts:0,score:0,cleared:0,py:GROUND,vy:0,ground:true,stun:0,inv:0,boost:false,objs:[],parts:[],next:520,jumpAt:-1e9,lowAt:-1e9};
+  // Лес бесконечный: каждые STAGE_LEN единиц пути бег ускоряется на 12, без потолка. Забег идёт, пока есть жизни, — рано или поздно скорость становится непосильной
+  const STAGE_LEN=2000;
   const stageEnd=s=>s*STAGE_LEN, speed=s=>280+(s-1)*12;
   const rnd=(a,b)=>a+Math.random()*(b-a);
   const stars=[...Array(70)].map(()=>({x:Math.random(),y:Math.random()*0.55,r:Math.random()*1.4+.3,p:Math.random()*6}));
   const flakes=[...Array(60)].map(()=>({x:Math.random(),y:Math.random(),r:Math.random()*2+.6,v:Math.random()*30+20,w:Math.random()*2}));
   const mtn=[...Array(14)].map((_,i)=>({x:i*120,h:rnd(60,130)}));
-  const farT=[...Array(30)].map((_,i)=>({x:i*48+rnd(-10,10),h:rnd(60,110)}));
-  const nearT=[...Array(16)].map((_,i)=>({x:i*130+rnd(-30,30),h:rnd(120,190),lamp:Math.random()<.18}));
+  const farT=[...Array(30)].map((_,i)=>({x:i*48+rnd(-10,10),h:rnd(60,110),k:Math.floor(Math.random()*9)}));
+  const nearT=[...Array(16)].map((_,i)=>({x:i*130+rnd(-30,30),h:rnd(120,190),k:Math.floor(Math.random()*9),lamp:Math.random()<.18}));
   function resize(){
     // высота поля — от ширины (data-ratio) и не больше свободного места на экране (data-maxh)
     // в игровом режиме поле занимает свободное место между панелью и кнопками; ширина обзора не меньше data-lw — сверху добавляется небо
@@ -109,20 +124,29 @@ function ForestGame(canvas, hooks){
     const w=Math.round(Math.max(24,Math.min(140,d.h*img.naturalWidth/img.naturalHeight))); // шире 140 не бывает: перепрыгнуть можно и на старте, и на полной скорости
     return {w,h:d.h,png:true,hb:{x:w*.12,y:d.h*.15,w:w*.76}};
   }
+  // Трасса — цепочка событий по одному: прыжок (препятствие или подарок высоко) либо подарок у земли.
+  // Расстояния считаются от скорости следующего отрезка пути с зажатым «Быстрее», поэтому любое препятствие можно перепрыгнуть, а любой подарок — поймать.
+  // Прыжок длится 0,8 с: медведь пролетает 0,8 скорости, в верхней точке — посередине. Подарок высоко ловится прыжком с верхней точкой у подарка
+  function giftAt(cx,elev){S.objs.push({k:'gift',x:cx-13,y:GROUND-elev-12,c:Math.floor(Math.random()*4)});}
   function spawn(){
-    const wx=S.next; const k=Math.random();
-    if(k<.62){
+    const v=speed(S.stage+1)*1.35, half=v*.4;      // полпрыжка по горизонтали
+    const jumpGap=2*half+v*.25;                                       // от прыжка до прыжка: прыжок и четверть секунды на реакцию
+    const r=Math.random();
+    if(r<.42){                                                        // препятствие; над половиной — подарок, он ловится тем же прыжком
       const type=FOREST_OBSTACLES[Math.floor(Math.random()*FOREST_OBSTACLES.length)].k, o=obSize(type);
-      S.objs.push(Object.assign({k:'ob',type,x:wx},o));
-      for(let i=0;i<3;i++) S.objs.push({k:'gift',x:wx-60+i*(o.w/2+30),y:GROUND-110-(i===1?70:30),c:i});
-    } else if(k<.9){
-      const hy=rnd(40,150); for(let i=0;i<4;i++) S.objs.push({k:'gift',x:wx+i*46,y:GROUND-30-hy,c:i+1});
-    } else {
-      S.objs.push(Object.assign({k:'ob',type:'stump',x:wx},obSize('stump')));
-      S.objs.push(Object.assign({k:'ob',type:'drift',x:wx+260},obSize('drift')));
-      S.objs.push({k:'gift',x:wx+130,y:GROUND-170,c:3});
+      const c=Math.max(S.next, S.jumpAt+jumpGap+rnd(0,v*.6), S.lowAt+half+40);
+      S.objs.push(Object.assign({k:'ob',type,x:c-o.w/2},o));
+      if(Math.random()<.5) giftAt(c,rnd(190,215));
+      S.jumpAt=c; S.next=c+v*rnd(.3,.5);
+    } else if(r<.62){                                                 // подарок высоко — за ним надо прыгнуть
+      const c=Math.max(S.next, S.jumpAt+jumpGap+rnd(0,v*.5), S.lowAt+half+40);
+      giftAt(c,rnd(190,240));
+      S.jumpAt=c; S.next=c+v*rnd(.3,.5);
+    } else {                                                          // подарок у земли — ловится на бегу, медведь к этому месту уже приземлился
+      const c=Math.max(S.next, S.jumpAt+half+40, S.lowAt+v*rnd(.3,.6));
+      giftAt(c,rnd(38,58));
+      S.lowAt=c; S.next=c+v*rnd(.25,.45);
     }
-    S.next+=rnd(430,640)*(1+(S.stage-1)*.03);
   }
   function hit(){
     if(S.inv>0||!S.run) return; S.stun=.6; S.inv=1.4; S.lives--;
@@ -134,7 +158,7 @@ function ForestGame(canvas, hooks){
     S.t+=dt;
     const v=speed(S.stage)*(S.boost?1.35:1)*(S.stun>0?.45:1);
     if(S.run){ S.dist+=v*dt; }
-    if(S.stun>0)S.stun-=dt; if(S.inv>0)S.inv-=dt; if(S.banner>0)S.banner-=dt;
+    if(S.stun>0)S.stun-=dt; if(S.inv>0)S.inv-=dt;
     // physics
     if(!S.ground){S.vy+=2300*dt;S.py+=S.vy*dt;if(S.py>=GROUND){S.py=GROUND;S.vy=0;S.ground=true;}}
     if(S.run){ while(S.next<S.dist+LW+200) spawn(); }
@@ -158,9 +182,7 @@ function ForestGame(canvas, hooks){
     S.objs=S.objs.filter(o=>o.x>S.dist-200&&!o.gone);
     for(const p of S.parts){p.life-=dt; if(p.k==='sp'){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=400*dt;} else p.y-=40*dt;}
     S.parts=S.parts.filter(p=>p.life>0);
-    if(S.run&&S.dist>=stageEnd(S.stage)){
-      if(S.stage<STAGES){S.stage++;S.banner=1.1;hooks.stage(S.stage);} else {S.run=false;S.done=true;hooks.end(S);}
-    }
+    if(S.run&&S.dist>=stageEnd(S.stage)) S.stage++;   // незаметно для игрока: только скорость
   }
   function fir(x,base,h,col,snow){
     const w=h*.42;
@@ -171,6 +193,18 @@ function ForestGame(canvas, hooks){
         ctx.fillRect(x-bw,by-3,bw*2,3);}
     }
     ctx.fillStyle='#2a1d18';ctx.fillRect(x-4,base-8,8,10);
+  }
+  // Ель из PNG: x — середина, base — где ствол уходит в снег
+  function treeImg(im,x,base,h){const w=h*(im.naturalWidth||im.width)/(im.naturalHeight||im.height); ctx.drawImage(im,x-w/2,base-h,w,h);}
+  function lamp(x){
+    if(F.lamp){
+      const h=LAMP_H, w=h*F.lamp.naturalWidth/F.lamp.naturalHeight, x0=x-w/2, y0=GROUND+2-h;
+      const lx=x0+w*FOREST_LAMP_LIGHT[0], ly=y0+h*FOREST_LAMP_LIGHT[1];
+      const g=ctx.createRadialGradient(lx,ly,2,lx,ly,46); g.addColorStop(0,'rgba(255,214,130,.42)'); g.addColorStop(1,'rgba(255,200,110,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(lx,ly,46,0,7); ctx.fill();
+      ctx.drawImage(F.lamp,x0,y0,w,h); return;
+    }
+    ctx.fillStyle='rgba(255,200,110,.18)';ctx.beginPath();ctx.arc(x,GROUND-70,36,0,7);ctx.fill();ctx.fillStyle='#2a1d18';ctx.fillRect(x-2,GROUND-64,4,64);ctx.fillStyle='#ffd27a';ctx.fillRect(x-7,GROUND-80,14,16);
   }
   function rr(x,y,w,h,r){ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x,y,w,h,r);else ctx.rect(x,y,w,h);ctx.fill();}
   // Кадр медведя: столкновение → прыжок или падение → стойка до старта → бег. null — PNG нет, рисуем вектор
@@ -259,10 +293,12 @@ function ForestGame(canvas, hooks){
     ctx.fillStyle='#152660';ctx.beginPath();ctx.moveTo(0,GROUND-40);
     const mo=(d*.08)%1680; for(let k=0;k<2;k++) for(const m of mtn){const x=m.x+k*1680-mo; ctx.lineTo(x,GROUND-60-m.h);ctx.lineTo(x+60,GROUND-60);} ctx.lineTo(LW,GROUND);ctx.lineTo(0,GROUND);ctx.fill();
     // far trees
-    const fo=(d*.25)%1440; for(let k=0;k<2;k++) for(const f of farT){const x=f.x+k*1440-fo; if(x<-40||x>LW+40)continue; fir(x,GROUND-14,f.h,'#11214f',true);}
+    const fo=(d*.25)%1440; for(let k=0;k<2;k++) for(const f of farT){const x=f.x+k*1440-fo; if(x<-60||x>LW+60)continue;
+      const im=F.treesFar.length?F.treesFar[f.k%F.treesFar.length]:null; if(im)treeImg(im,x,GROUND-8,f.h*1.1); else fir(x,GROUND-14,f.h,'#11214f',true);}
     // near trees
-    const no=(d*.55)%2080; for(let k=0;k<2;k++) for(const f of nearT){const x=f.x+k*2080-no; if(x<-80||x>LW+80)continue; fir(x,GROUND+4,f.h,'#173a5c',true);
-      if(f.lamp){ctx.fillStyle='rgba(255,200,110,.18)';ctx.beginPath();ctx.arc(x+50,GROUND-70,36,0,7);ctx.fill();ctx.fillStyle='#2a1d18';ctx.fillRect(x+48,GROUND-64,4,64);ctx.fillStyle='#ffd27a';ctx.fillRect(x+43,GROUND-80,14,16);}}
+    const no=(d*.55)%2080; for(let k=0;k<2;k++) for(const f of nearT){const x=f.x+k*2080-no; if(x<-110||x>LW+110)continue;
+      const im=F.trees.length?F.trees[f.k%F.trees.length]:null; if(im)treeImg(im,x,GROUND+8,f.h*1.1); else fir(x,GROUND+4,f.h,'#173a5c',true);
+      if(f.lamp)lamp(x+50);}
     // ground
     const gg=ctx.createLinearGradient(0,GROUND,0,LH);gg.addColorStop(0,'#eef4ff');gg.addColorStop(1,'#9fb8e6');
     ctx.fillStyle=gg;ctx.fillRect(0,GROUND,LW,LH-GROUND);
@@ -290,8 +326,6 @@ function ForestGame(canvas, hooks){
     // falling snow
     ctx.fillStyle='rgba(255,255,255,.85)';
     for(const f of flakes){const y=(f.y*SH+t*f.v)%SH-TOP; const x=((f.x*LW-d*.3*f.w*.2+Math.sin(t+f.w)*10)%LW+LW)%LW; ctx.beginPath();ctx.arc(x,y,f.r,0,7);ctx.fill();}
-    if(S.banner>0){ctx.globalAlpha=Math.min(1,S.banner*1.5);ctx.fillStyle='rgba(8,18,51,.7)';ctx.fillRect(LW/2-130,(LH-TOP)/2-70,260,64);
-      ctx.fillStyle='#fde7a8';ctx.font='800 30px "Playfair Display", Georgia, serif';ctx.textAlign='center';ctx.fillText('Этап '+S.stage+' из '+STAGES,LW/2,(LH-TOP)/2-28);ctx.textAlign='left';ctx.globalAlpha=1;}
   }
   function loop(ts){
     if(!alive) return;
@@ -307,8 +341,8 @@ function ForestGame(canvas, hooks){
   const onTap=e=>{e.preventDefault();jump();};
   canvas.addEventListener('pointerdown',onTap);
   return {
-    start(){Object.assign(S,{run:true,done:false,dist:0,stage:1,gifts:0,score:0,cleared:0,objs:[],parts:[],next:520,stun:0,inv:0,banner:1.2,early:false,out:false,lives:3});hooks.hud(S);hooks.stage(1);},
-    jump, boost(v){S.boost=v;}, state:S, stages:STAGES,
+    start(){Object.assign(S,{run:true,done:false,dist:0,stage:1,gifts:0,score:0,cleared:0,objs:[],parts:[],next:520,jumpAt:-1e9,lowAt:-1e9,stun:0,inv:0,early:false,out:false,lives:3});hooks.hud(S);},
+    jump, boost(v){S.boost=v;}, state:S,
     finish(){if(S.run){S.run=false;S.done=true;S.early=true;hooks.end(S);}},
     destroy(){alive=false;cancelAnimationFrame(raf);window.removeEventListener('resize',resize);window.removeEventListener('keydown',onKey);window.removeEventListener('keyup',onKey);}
   };

@@ -32,9 +32,9 @@ const TOYS=[...Array(12)].map((_,i)=>{const u=pick(USERS);return {id:i+1,nick:u.
   time:String(Math.floor(R()*10)).padStart(2,'0')+':'+String(Math.floor(R()*60)).padStart(2,'0'),st:'wait',img:null,why:''};}).sort((a,b)=>a.time<b.time?-1:1);
 let toysReady=false;
 const SUSP=[
-  {nick:USERS[3].nick,run:'15 дек, 09:12',gifts:74,time:'41 с',why:'Подарков больше, чем было на пройденных этапах',st:'wait'},
+  {nick:USERS[3].nick,run:'15 дек, 09:12',gifts:74,time:'41 с',why:'Подарков больше, чем было на пройденном пути',st:'wait'},
   {nick:USERS[17].nick,run:'14 дек, 22:47',gifts:39,time:'2 мин 10 с',why:'6 забегов за минуту с одного устройства',st:'wait'},
-  {nick:USERS[25].nick,run:'14 дек, 18:03',gifts:52,time:'1 мин 02 с',why:'Длительность меньше возможной для 14 этапов',st:'wait'}
+  {nick:USERS[25].nick,run:'14 дек, 18:03',gifts:52,time:'1 мин 02 с',why:'Длительность меньше возможной для такого пути',st:'wait'}
 ];
 const CH=D.CHAPTERS.map((c,i)=>({t:c.t,img:A[c.img],text:c.p.join('\n\n'),o:(c.o||[]).slice(),day:c.day,final:!!c.final,note:'',sched:false,
   empty:c.day>TODAY+1}));      // глава VI (18 декабря) ещё не загружена: её пишут по итогам голосования главы V
@@ -181,7 +181,7 @@ function vRating(){
   `<div class="panel scroll"><table class="tbl"><tr><th>Место</th><th>Герой</th><th>Город</th><th>Код</th><th class="num">Квиз</th><th class="num">Лес</th><th class="num">Ёлка</th><th class="num">Итого</th></tr>
     ${top.map((u,k)=>`<tr><td>${k+1}</td><td><b>${esc(u.nick)}</b></td><td>${esc(u.city||'—')}</td><td><code>${u.code}</code></td><td class="num">${u.q}</td><td class="num">${u.f}</td><td class="num">${u.t}</td><td class="num"><b>${u.pts}</b></td></tr>`).join('')}</table>
     <p class="small muted" style="margin:10px 0 0">Дата фиксации и состав мерча — уточняются с банком.</p></div>
-  <div class="panel scroll"><h2>Подозрительные результаты «Леса»</h2><p class="muted">Сервер проверяет забег по зерну уровня: подарков не больше, чем было на пройденных этапах, длительность правдоподобна. Сомнительные результаты не начисляются, пока их не проверят.</p>
+  <div class="panel scroll"><h2>Подозрительные результаты «Леса»</h2><p class="muted">Сервер проверяет забег по зерну уровня: подарков не больше, чем было на пройденном пути, длительность правдоподобна. Сомнительные результаты не начисляются, пока их не проверят.</p>
     <table class="tbl"><tr><th>Герой</th><th>Забег</th><th class="num">Подарков</th><th class="num">Время</th><th>Причина</th><th></th></tr>
     ${SUSP.map((x,k)=>`<tr><td><b>${esc(x.nick)}</b></td><td>${x.run}</td><td class="num">${x.gifts}</td><td class="num">${x.time}</td><td>${x.why}</td><td>${x.st==='wait'?`<div class="row">${btn('Аннулировать','suspNo',{cls:'bad sm',d:{i:k}})}${btn('Засчитать','suspOk',{cls:'sm',d:{i:k}})}</div>`:st(x.st,x.st==='Засчитан'?'ok':'bad')}</td></tr>`).join('')}</table></div>`;
 }
@@ -220,12 +220,12 @@ function vDict(){
   const q=(sel.cq||'').trim().toLowerCase().replace(/ё/g,'е');
   const found=q?D.CITIES.filter(c=>c[0].toLowerCase().replace(/ё/g,'е').startsWith(q)).slice(0,12):[];
   const group=(names,items)=>names.map((g,k)=>{const w=items.filter(x=>x.g===k);return `<div style="margin:0 0 10px"><b class="small">${esc(g)} · ${w.length}</b><div class="chips" style="margin-top:4px">${w.slice(0,14).map(x=>`<span class="chip">${esc(x.w)}</span>`).join('')}${w.length>14?`<span class="chip">+${w.length-14}</span>`:''}</div></div>`;}).join('');
-  return head('Справочники','Имена героев собираются из двух слов и не повторяются. Город участник выбирает только из справочника — своего варианта нет.')+
+  return head('Справочники','Имя героя собирается из двух слов: первое — черта характера, цвет или зимнее, сказочное слово; второе — всегда персонаж: зверь, птица, сказочный или зимний герой. Город участник выбирает только из справочника — своего варианта нет.')+
   `<div class="grid g2"><div class="panel"><h2>Первое слово · ${D.ADJ.length}</h2>${group(D.ADJ_G,D.ADJ.map(a=>({w:a[0],g:a[2]})))}
       <div class="grid g3"><input class="in" placeholder="мужской род"><input class="in" placeholder="женский род"><select class="in">${D.ADJ_G.map(g=>`<option>${esc(g)}</option>`).join('')}</select></div><div style="margin-top:8px">${btn('Добавить','save',{cls:'sm'})}</div></div>
     <div class="panel"><h2>Второе слово · ${D.NOUNS.length}</h2>${group(D.NOUN_G,D.NOUNS.map(n=>({w:n[0],g:n[2]})))}
       <div class="grid g3"><input class="in" placeholder="слово"><select class="in"><option>мужской род</option><option>женский род</option></select><select class="in">${D.NOUN_G.map(g=>`<option>${esc(g)}</option>`).join('')}</select></div><div style="margin-top:8px">${btn('Добавить','save',{cls:'sm'})}</div></div></div>
-  <div class="note i" style="margin:0 0 16px">Сочетаний: ${num(D.ADJ.length*D.NOUNS.length)} — с запасом на 12–18 тысяч участников. Занятое имя предложить нельзя: участнику показываем свободные похожие.</div>
+  <div class="note i" style="margin:0 0 16px">Сочетаний: ${num(D.ADJ.length*D.NOUNS.length)}, а вместе с городом — в тысячу раз больше. Повторы допускаются: в турнирной таблице имя стоит вместе с городом, а участника однозначно определяет персональный код.</div>
   <div class="panel"><h2>Города · ${num(D.CITIES.length)}</h2><p class="muted">Справочник городов России (hflabs/city, CC BY-SA 4.0) с готовой формой «из …» для турнирной таблицы. Перед запуском сверяем со списком городов, где работают сотрудники банка, и добавляем недостающие.</p>
     <div class="grid g3" style="margin:0 0 10px"><input class="in" placeholder="Город"><input class="in" placeholder="Форма «из …», например «из Барнаула»"><div>${btn('Добавить город','save',{cls:'sm'})}</div></div>
     <input class="in" id="cq" placeholder="Найти город" value="${esc(sel.cq||'')}" style="max-width:320px">

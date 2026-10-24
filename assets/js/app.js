@@ -196,13 +196,12 @@ function board(){
   return list;
 }
 function nickOf(n){const N=NOUNS[n.n];return {nick:D.ADJ[n.a][N.g]+' '+N.w,g:N.g};}
-// Имена не повторяются: на платформе это проверяет сервер (уникальное сочетание «первое слово + второе»).
-// В прототипе занятые — имена соперников из таблицы и примерно треть сочетаний
-const TAKEN=new Set(FAKES.map(f=>f.nick));
-function nameTaken(a,n){const N=NOUNS[n];return TAKEN.has(D.ADJ[a][N.g]+' '+N.w)||((a*7919+n*104729)%100)<30;}
-function rndNick(){for(let t=0;t<500;t++){const x={a:Math.floor(Math.random()*D.ADJ.length),n:Math.floor(Math.random()*NOUNS.length)};if(!nameTaken(x.a,x.n))return x;}return {a:0,n:0};}
-// Свободные похожие: то же второе слово с другим первым или наоборот
-function nameAlts(a,n,k){const out=[],seen=new Set();for(let t=0;t<600&&out.length<(k||3);t++){const x=t%2?{a:Math.floor(Math.random()*D.ADJ.length),n}:{a,n:Math.floor(Math.random()*NOUNS.length)};const key=x.a+'.'+x.n;if(seen.has(key)||nameTaken(x.a,x.n))continue;seen.add(key);out.push(x);}return out;}
+// Повторы имён допускаются: в турнирной таблице имя стоит вместе с городом.
+// Случайное имя не предлагает тавтологий вроде «Морозный Мороз» или «Звёздная Звезда»
+const ODD=new Set(['зимний|зима','вьюжный|вьюга','снежный|снеговик','снежный|снегурочка','лесной|леший']);
+function nameOdd(a,n){const x=D.ADJ[a][0].toLowerCase().replace(/ё/g,'е'),y=NOUNS[n].w.toLowerCase().replace(/ё/g,'е');return x.slice(0,4)===y.slice(0,4)||ODD.has(x+'|'+y);}
+const rndI=k=>Math.floor(Math.random()*k);
+function rndNick(){for(let t=0;t<200;t++){const x={a:rndI(D.ADJ.length),n:rndI(NOUNS.length)};if(!nameOdd(x.a,x.n))return x;}return {a:0,n:0};}
 function ava(nick,size,me){return `<span class="ava${me?' me':''}" style="--s:${size}px"><b>${esc(initials(nick))}</b></span>`;}
 function genCode(prefix){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<8;i++){s+=a[Math.floor(Math.random()*a.length)];if(i===3)s+='-';}return prefix+'-'+s;}
 function v(m,f){return st.user&&st.user.g?f:m;}
@@ -388,25 +387,20 @@ const NK_AVA=()=>DESK?96:72;
 const lc=w=>String(w).toLowerCase().replace(/ё/g,'е');
 // Длинное имя («Смекалистый Можжевельник») — на табличке кегль меньше, чтобы слова не вылезали
 const nkLong=n=>n.length>=19||n.split(' ').some(w=>w.length>=11);
-function pkItem(k,i,w,busy,on){return `<button class="pk-i${on?' on':''}${busy?' busy':''}" data-act="${k==='a'?'pickA':'pickN'}" data-i="${i}" data-w="${lc(w)}"><span>${w}</span>${busy?'<small>занято</small>':''}</button>`;}
+function pkItem(k,i,w,on){return `<button class="pk-i${on?' on':''}" data-act="${k==='a'?'pickA':'pickN'}" data-i="${i}" data-w="${lc(w)}"><span>${w}</span></button>`;}
 // Списки слов по темам; у первого слова форма — по роду второго
 function pkItems(k){
   const g=NOUNS[ui.nick.n].g;
-  if(k==='a')return D.ADJ_G.map((t,gi)=>`<div class="pk-g">${t}</div>`+D.ADJ.map((x,i)=>x[2]===gi?pkItem('a',i,x[g],nameTaken(i,ui.nick.n),i===ui.nick.a):'').join('')).join('');
-  return D.NOUN_G.map((t,gi)=>`<div class="pk-g">${t}</div>`+NOUNS.map((x,j)=>x.gr===gi?pkItem('n',j,x.w,nameTaken(ui.nick.a,j),j===ui.nick.n):'').join('')).join('');
+  if(k==='a')return D.ADJ_G.map((t,gi)=>`<div class="pk-g">${t}</div>`+D.ADJ.map((x,i)=>x[2]===gi?pkItem('a',i,x[g],i===ui.nick.a):'').join('')).join('');
+  return D.NOUN_G.map((t,gi)=>`<div class="pk-g">${t}</div>`+NOUNS.map((x,j)=>x.gr===gi?pkItem('n',j,x.w,j===ui.nick.n):'').join('')).join('');
 }
 function pkBox(k,head){return `<div class="pk-box">${head||''}<input class="input pk-q" type="search" placeholder="Найти слово" autocomplete="off" aria-label="Найти слово"><div class="pk-list" data-k="${k}">${pkItems(k)}</div></div>`;}
-function nickStat(){
-  if(!nameTaken(ui.nick.a,ui.nick.n))return `<div class="nkstat ok">${svg('check','width="16" height="16"')}<span>Имя свободно — такого больше ни у кого не будет</span></div>`;
-  return `<div class="nkstat busy"><span>Такое имя уже есть у другого помощника. Свободные похожие:</span><div class="alts">${nameAlts(ui.nick.a,ui.nick.n).map(x=>`<button class="chip" data-act="pickPair" data-a="${x.a}" data-n="${x.n}">${esc(nickOf(x).nick)}</button>`).join('')}</div></div>`;
-}
 function vNick(){
   if(!ui.nick||ui.nick.a>=D.ADJ.length||ui.nick.n>=NOUNS.length)ui.nick=rndNick();
   const cur=nickOf(ui.nick);
   bar('Имя героя','Формирование персонажа · шаг 1 из 2','prologue');
   const plate=`<div class="nickplate">${flowers()}<div class="hint">Ваше игровое имя</div><div class="nk${nkLong(cur.nick)?' long':''}" id="nkText">${esc(cur.nick)}</div></div>`;
-  const hint=`<p class="note">Аватар — из инициалов: <span id="nkHint">«${esc(cur.nick)}» → «${esc(initials(cur.nick))}»</span>. Имена не повторяются: у каждого помощника — своё.</p>`;
-  const stat=`<div id="nkStat">${nickStat()}</div>`;
+  const hint=`<p class="note">Аватар — из инициалов: <span id="nkHint">«${esc(cur.nick)}» → «${esc(initials(cur.nick))}»</span>. Имя видно в турнирной таблице вместе с городом и ни на что в игре не влияет.</p>`;
   const dice=(act,l)=>`<button class="dice" data-act="${act}" aria-label="${l}" title="${l}">${svg('dice')}</button>`;
   const sug=citySugHTML();
   const city=`<div class="field"><span id="cityLbl">Ваш город — по желанию</span>
@@ -420,7 +414,7 @@ function vNick(){
   if(DESK)return {
     L:`${pt('Имя героя','Формирование персонажа · шаг 1 из 2','h1')}
       <div class="nick-hero"><img class="mascot" src="${A.bear_juggler}" alt=""><div class="nick-prev"><span id="nkAva">${ava(cur.nick,NK_AVA(),true)}</span>${plate}</div></div>${hint}${preview}`,
-    R:`${pt('Соберите имя','Случайное или из двух слов')}${regen}${stat}
+    R:`${pt('Соберите имя','Случайное или из двух слов')}${regen}
       <div class="pk2">${pkBox('a',`<div class="phd"><span>Первое слово</span>${dice('rndA','Случайное первое слово')}</div>`)}${pkBox('n',`<div class="phd"><span>Второе слово</span>${dice('rndN','Случайное второе слово')}</div>`)}</div>
       ${city}`,
     acts,nbt:false,dnote:'Уже участвуете? <a class="link" href="#" data-act="toLogin">Войти по коду</a>',pn:3,cls:'onb'};
@@ -428,7 +422,7 @@ function vNick(){
   const picker=(k,l,w)=>`<button class="picker" data-act="pkOpen" data-k="${k}"><span class="pk-tx"><span class="pk-l">${l}</span><b id="pk${k.toUpperCase()}">${esc(w)}</b></span>${svg('chev','width="18" height="18"')}</button>`;
   const N=NOUNS[ui.nick.n];
   const sh=ui.sheet==='pkA'||ui.sheet==='pkN'?sheet(`<h3 class="pk-t">${ui.sheet==='pkA'?'Первое слово':'Второе слово'}</h3>${pkBox(ui.sheet==='pkA'?'a':'n')}`,{cls:'pksheet'}):'';
-  return {M:`<div class="nk-prev"><span id="nkAva">${ava(cur.nick,NK_AVA(),true)}</span>${plate}</div>${hint}${stat}
+  return {M:`<div class="nk-prev"><span id="nkAva">${ava(cur.nick,NK_AVA(),true)}</span>${plate}</div>${hint}
     ${regen}<div class="pickers">${picker('a','Первое слово',D.ADJ[ui.nick.a][N.g])}${picker('n','Второе слово',N.w)}</div>
     ${city}${preview}<p class="note">Уже участвуете? <a class="link" href="#" data-act="toLogin">Войти по коду</a></p>`,acts,sheet:sh};
 }
@@ -439,10 +433,9 @@ function patchNick(scroll){
   const set=(sel,f)=>{const el=$(sel);if(el)f(el);};
   set('#nkRow',el=>el.innerHTML=nkRow(cur.nick));
   set('#nkText',el=>{el.textContent=cur.nick;el.classList.toggle('long',nkLong(cur.nick));});set('#nkAva',el=>el.innerHTML=ava(cur.nick,NK_AVA(),true));set('#nkHint',el=>el.textContent=`«${cur.nick}» → «${initials(cur.nick)}»`);
-  set('#nkStat',el=>el.innerHTML=nickStat());
   set('#pkA',el=>el.textContent=D.ADJ[ui.nick.a][g]);set('#pkN',el=>el.textContent=NOUNS[ui.nick.n].w);
-  $$('.pk-list[data-k=a] .pk-i').forEach(b=>{const i=+b.dataset.i,w=D.ADJ[i][g],busy=nameTaken(i,ui.nick.n);b.classList.toggle('on',i===ui.nick.a);b.classList.toggle('busy',busy);b.dataset.w=lc(w);b.innerHTML=`<span>${w}</span>${busy?'<small>занято</small>':''}`;});
-  $$('.pk-list[data-k=n] .pk-i').forEach(b=>{const j=+b.dataset.i,busy=nameTaken(ui.nick.a,j);b.classList.toggle('on',j===ui.nick.n);b.classList.toggle('busy',busy);b.innerHTML=`<span>${NOUNS[j].w}</span>${busy?'<small>занято</small>':''}`;});
+  $$('.pk-list[data-k=a] .pk-i').forEach(b=>{const i=+b.dataset.i,w=D.ADJ[i][g];b.classList.toggle('on',i===ui.nick.a);b.dataset.w=lc(w);b.innerHTML=`<span>${w}</span>`;});
+  $$('.pk-list[data-k=n] .pk-i').forEach(b=>b.classList.toggle('on',+b.dataset.i===ui.nick.n));
   $$('.pk-q').forEach(filterPk);
   if(scroll)$$('.pk-list').forEach(l=>{const on=l.querySelector('.pk-i.on');if(on)l.scrollTop=on.offsetTop-l.offsetTop-l.clientHeight/2+on.offsetHeight/2;});
 }
@@ -674,7 +667,6 @@ function vQuiz(){
 }
 
 /* ===== Лес ===== */
-function stageBar(n){return `<span>Этап ${n} из 20</span><b class="sprog"><i style="width:${n*5}%"></i></b>`;}
 const LITE_NOTE='<p class="note">Игра тормозит или не запускается? <a class="link" href="#" data-act="fLite">Альтернативный способ заработать баллы</a> — для старых браузеров и слабых компьютеров</p>';
 const FOREST_HELLO='тропа найдена! Папины подарки рассыпались по всему лесу — бежим вместе собирать. Управляешь мной ты. Всё, что соберём, пойдёт в общий счётчик банка.';
 function vForest(){
@@ -686,21 +678,20 @@ function vForest(){
     return {
       L:`${pt('Лес','Испытание 2 · соберите подарки, перепрыгните препятствия','h1')}${say('m_star','Старший сын',FOREST_HELLO)}`,
       R:`<div class="hud"><div>${ICON_HEART}<div><span>Жизни</span><b id="hLives" class="hearts">${hearts(3)}</b></div></div><div>${ICON_GIFT}<div><span>Подарки</span><b id="hGifts">0</b></div></div><div>${ICON_BANK}<div><span>В общий счётчик</span><b id="hBank">+0</b></div></div></div>
-        <p class="tale small">Бегите и собирайте подарки: чем больше, тем лучше. 20 этапов, и с каждым бег быстрее. У вас 3 жизни — каждое столкновение отнимает одну.</p>
+        <p class="tale small">Бегите и собирайте подарки: чем больше, тем лучше. Лес не кончается, а бег становится всё быстрее. У вас 3 жизни — каждое столкновение отнимает одну.</p>
         <p class="note left">Пробел, ↑ или клик по игре — прыжок · удерживайте → или «Быстрее» — ускорение</p>`,
       full:`<div class="stage" id="stage"><canvas id="cv" data-ratio=".5"></canvas>
           <div class="overlay" id="ov"><div class="inner"><div class="ov-t">${st.forest.runs?'Ещё забег?':'Готовы?'}</div>
             <button class="btn btn-gold btn-lg" data-act="fStart">Бежать!</button>
             ${st.forest.runs?`<p class="small">Лучший забег: ${best} ${plural(best,'подарок','подарка','подарков')}</p>`:''}</div></div></div>
-        <div class="ctrl" id="ctrl"><button class="btn btn-ghost" id="bJump">${svg('up','width="18" height="18"')} Прыжок</button><button class="btn btn-ghost" id="bFwd">Быстрее ${svg('arrow','width="18" height="18"')}</button>
-          <div class="stagebar" id="sbar">${stageBar(1)}</div></div>
+        <div class="ctrl" id="ctrl"><button class="btn btn-ghost" id="bJump">${svg('up','width="18" height="18"')} Прыжок</button><button class="btn btn-ghost" id="bFwd">Быстрее ${svg('arrow','width="18" height="18"')}</button></div>
         <p class="note hidden" id="fin"><a class="link" href="#" data-act="fExit">Закончить забег</a> — собранные подарки засчитаются</p>${LITE_NOTE}`,
       pn:11,cls:'forest'};
   }
   if(ui.fmode)return {raw:gameMode()};
   return {M:`${say('m_star','Старший сын',FOREST_HELLO,'compact')}
     <div class="howto"><div>${svg('up')}<b>Тап по игре</b><span>прыжок</span></div><div>${svg('arrow')}<b>Держите «Быстрее»</b><span>ускорение</span></div><div>${ICON_HEART}<b>3 жизни</b><span>столкновение — минус одна</span></div></div>
-    <p class="tale small center">Бегите и собирайте подарки: чем больше, тем лучше. 20 этапов, и с каждым бег быстрее.</p>
+    <p class="tale small center">Бегите и собирайте подарки: чем больше, тем лучше. Лес не кончается, а бег становится всё быстрее.</p>
     ${st.forest.runs?`<div class="rcs"><div><b>${best}</b><span>рекорд, подарков</span></div><div><b>${num(best*10)}</b><span>баллов в таблице</span></div><div><b>${st.forest.gifts}</b><span>всего в общем счётчике</span></div></div>`:''}
     ${LITE_NOTE}`,
     acts:[{t:st.forest.runs?'Ещё забег':'Бежать!',act:'fPlay',gold:1}]};
@@ -708,8 +699,7 @@ function vForest(){
 // Телефон: игра во весь экран — сверху жизни и подарки, в центре поле, снизу большие кнопки под большие пальцы
 function gameMode(){
   return `<div class="gm" id="gm">
-    <div class="gm-top"><span class="hearts" id="hLives">${hearts(3)}</span><span class="gm-g">${ICON_GIFT}<b id="hGifts">0</b></span>
-      <span class="gm-sb" id="sbar">${stageBar(1)}</span><button class="gm-x" data-act="fExit" aria-label="Закончить забег">×</button></div>
+    <div class="gm-top"><span class="hearts" id="hLives">${hearts(3)}</span><span class="gm-g">${ICON_GIFT}<b id="hGifts">0</b></span><button class="gm-x" data-act="fExit" aria-label="Закончить забег">×</button></div>
     <div class="gm-mid"><div class="stage" id="stage"><canvas id="cv" data-ratio="1.15" data-lw="620"></canvas>
       <div class="overlay" id="ov"><div class="inner"><div class="ov-t">Готовы?</div><button class="btn btn-gold btn-lg" data-act="fStart">Старт</button><p class="small">Тап по игре — тоже прыжок</p></div></div></div></div>
     <div class="gm-ctrl" id="ctrl"><button class="btn btn-ghost" id="bJump">${svg('up','width="22" height="22"')} Прыжок</button><button class="btn btn-ghost" id="bFwd">Быстрее ${svg('arrow','width="22" height="22"')}</button></div>
@@ -720,20 +710,19 @@ function mountForest(){
   if(!DESK)cv.dataset.maxh=String(Math.max(200,innerHeight-(innerWidth>innerHeight?110:250)));
   game=ForestGame(cv,{
     hud(S){const a=$('#hLives'),b=$('#hGifts'),c=$('#hBank');if(a)a.innerHTML=hearts(S.lives);if(b)b.textContent=S.gifts;if(c)c.textContent='+'+S.gifts;},
-    stage(n){const s=$('#sbar');if(s)s.innerHTML=stageBar(n);},
-    end(S){finishForest(S.gifts,S.score,S.early?S.stage:0,S.out?S.stage:0);}
+    end(S){finishForest(S.gifts,S.score,S.out);}
   });
   const j=$('#bJump'),f=$('#bFwd');
   j.addEventListener('pointerdown',e=>{e.preventDefault();game&&game.jump();});
   const on=e=>{e.preventDefault();game&&game.boost(true);},off=()=>game&&game.boost(false);
   f.addEventListener('pointerdown',on);f.addEventListener('pointerup',off);f.addEventListener('pointerleave',off);f.addEventListener('pointercancel',off);
 }
-function finishForest(gifts,score,earlyStage,outStage){
+function finishForest(gifts,score,out){
   const first=!st.forest.runs, prevBest=st.forest.bestGifts;
   st.forest.runs++;st.forest.gifts+=gifts;if(gifts>prevBest){addLog('forest',prevBest?`Новый рекорд: ${gifts} ${plural(gifts,'подарок','подарка','подарков')} (было ${prevBest})`:`Забег: ${gifts} ${plural(gifts,'подарок','подарка','подарков')}`,(gifts-prevBest)*10);st.forest.bestGifts=gifts;}save();
-  const head=outStage?`Жизни закончились на этапе ${outStage} из 20`:earlyStage?`Забег окончен на этапе ${earlyStage} из 20`:'Все 20 этапов пройдены';
+  const head=out?'Жизни закончились':'Забег окончен';
   const nx=st.day>=OPEN.tree?{t:'Дальше: «Ёлка»',act:'go',v:'tree',gold:1}:{t:'На маршрут',act:'go',v:'route',gold:1};
-  const line=outStage?'уф, споткнулись! Отдышимся — и ещё забег? Подарки, что успели собрать, уже в мешке.':'собрали! Бегу отдать папе мешок — а сестрёнка уже ждёт у ёлки.';
+  const line=out?'уф, споткнулись! Отдышимся — и ещё забег? Подарки, что успели собрать, уже в мешке.':'собрали! Бегу отдать папе мешок — а сестрёнка уже ждёт у ёлки.';
   const rec=`<div><b>${gifts>prevBest?'+'+(gifts-prevBest)*10:st.forest.bestGifts}</b><span>${gifts>prevBest?'баллов — новый рекорд':'ваш рекорд, подарков'}</span></div>`;
   const treeNote=st.day<OPEN.tree?`«Ёлка» откроется ${fmt(OPEN.tree)}`:'';
   if(DESK){
@@ -1251,15 +1240,14 @@ const ACT={
   toNick:(d,e,ev)=>{ev.preventDefault();saveDraft();go('nick');},
   pickA:d=>{ui.nick.a=+d.i;if(ui.sheet){ui.sheet=null;render();}else patchNick(false);},
   pickN:d=>{ui.nick.n=+d.i;if(ui.sheet){ui.sheet=null;render();}else patchNick(false);},
-  pickPair:d=>{ui.nick={a:+d.a,n:+d.n};patchNick(true);},
   pkOpen:d=>{ui.sheet=d.k==='a'?'pkA':'pkN';render();const on=$('.sheet .pk-i.on');if(on){const l=on.closest('.pk-list');l.scrollTop=on.offsetTop-l.offsetTop-l.clientHeight/2+on.offsetHeight/2;}},
-  rndA:()=>{for(let t=0;t<300;t++){const a=Math.floor(Math.random()*D.ADJ.length);if(!nameTaken(a,ui.nick.n)){ui.nick.a=a;break;}}patchNick(true);},
-  rndN:()=>{for(let t=0;t<300;t++){const n=Math.floor(Math.random()*NOUNS.length);if(!nameTaken(ui.nick.a,n)){ui.nick.n=n;break;}}patchNick(true);},
+  rndA:()=>{for(let t=0;t<100;t++){const a=rndI(D.ADJ.length);if(a!==ui.nick.a&&!nameOdd(a,ui.nick.n)){ui.nick.a=a;break;}}patchNick(true);},
+  rndN:()=>{for(let t=0;t<100;t++){const n=rndI(NOUNS.length);if(n!==ui.nick.n&&!nameOdd(ui.nick.a,n)){ui.nick.n=n;break;}}patchNick(true);},
   regen:()=>{ui.nick=rndNick();patchNick(true);},
   mailSend:()=>{const v2=$('#email').value.trim();ui.auth.email=v2;if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v2)){ui.auth.err='Похоже, в адресе ошибка — проверьте, пожалуйста';return render();}
     ui.auth.err='';ui.auth.sentTo=v2;saveDraft();render();toast('Код отправлен на '+v2);},
   mailEdit:()=>{ui.auth.sentTo=null;saveDraft();render();const e=$('#email');e&&e.focus();},
-  saveNick:()=>{if(nameTaken(ui.nick.a,ui.nick.n)){toast('Такое имя уже есть — выберите свободное');const st2=$('#nkStat');if(st2)st2.scrollIntoView({block:'center',behavior:'smooth'});return;}const q=cityQ();ui.city=cityFind(q);if(cityNorm(q)&&!ui.city){ui.cityErr=true;patchCity();const f=$('#city');if(f){f.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'});f.focus({preventScroll:true});}return;}
+  saveNick:()=>{const q=cityQ();ui.city=cityFind(q);if(cityNorm(q)&&!ui.city){ui.cityErr=true;patchCity();const f=$('#city');if(f){f.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'});f.focus({preventScroll:true});}return;}
     ui.cityQ=ui.city;const city=ui.city;const n=nickOf(ui.nick);ui.pending={nick:n.nick,g:n.g,city};saveDraft();go('auth');},
   citySel:d=>{ui.city=d.v;ui.cityQ=d.v;ui.cityErr=false;saveDraft();const f=$('#city');if(f){f.value=d.v;f.blur();}patchCity();},
   codeNext:()=>{if(!ui.auth.sentTo){ui.svOk=false;ui.sheet='savecode';render();return;}ACT.codeGo();},
