@@ -362,7 +362,7 @@ body[data-screen="cover"] main.app,body[data-screen="prologue"] main.app{min-hei
   box-shadow:0 0 0 3px #e9bd68,0 0 0 6px rgba(10,20,51,.95),0 0 0 7.5px rgba(233,189,104,.65),0 0 34px rgba(255,214,140,.28),0 16px 30px rgba(0,0,0,.55)}
 .cv-win img{width:100%;height:100%;object-fit:cover;object-position:64% 42%}
 /* Невысокие телефоны: окно с картинкой ниже, чтобы «У меня уже есть код» помещалось без прокрутки */
-@media (max-height:680px) and (max-width:899px){.cv-win{height:clamp(110px,21vh,170px)}}
+@media (max-height:680px) and (max-width:899px), (max-height:540px) and (hover:none){.cv-win{height:clamp(110px,21vh,170px)}}
 .cv-win::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 40px rgba(6,13,36,.65)}
 .cv-sub{margin:14px auto 0;max-width:340px;font:italic 400 17px/1.4 var(--text);color:var(--ink)}
 .cv-cta{display:flex;flex-direction:column;align-items:center;gap:12px;margin:16px 0 4px}
@@ -546,33 +546,46 @@ body[data-screen="cover"] main.app,body[data-screen="prologue"] main.app{min-hei
 .howto svg{width:24px;height:24px;color:var(--gold-hi)}
 .howto b{font:700 12.5px/1.2 var(--ui);color:var(--gold-hi)}
 .howto span{font-size:11.5px;line-height:1.3;color:var(--ink2)}
+/* подсказка на вступлении: играем горизонтально */
+.rot-hint{display:flex;align-items:center;justify-content:center;gap:8px;margin:-4px 0 12px;font:500 13px/1.3 var(--ui);color:var(--gold-hi)}
+.rot-hint svg{flex:none;width:22px;height:22px}
+/* Игровой режим на телефоне: только горизонтально. Поле в центре, по бокам круглые кнопки без подписей (подписи — в aria-label):
+   слева «Ускорение», справа «Прыжок»; крестик «Закончить забег» — над прыжком. Вертикально — подсказка «Поверните телефон» */
 .gm{position:fixed;top:0;bottom:0;left:50%;z-index:50;width:var(--col);transform:translateX(-50%);display:flex;flex-direction:column;
   padding:calc(6px + env(safe-area-inset-top)) 10px calc(14px + var(--safe-b));background:radial-gradient(ellipse at 50% 0%,#1d3474,#0a1435 55%,#050b22)}
-.gm-top{flex:none;display:flex;justify-content:flex-end;align-items:center;padding:4px 2px 0}
-.gm-top .hearts{grid-area:h;display:flex;gap:4px}
-.gm-top .hearts svg{width:26px;height:26px;fill:rgba(255,255,255,.2)}
-.gm-top .hearts svg.on{fill:#e8473f;filter:drop-shadow(0 0 4px rgba(255,90,80,.6))}
-.gm-x{grid-area:x;width:42px;height:42px;border-radius:50%;font-size:26px;line-height:1;color:var(--gold-hi);background:rgba(8,16,44,.6);box-shadow:inset 0 0 0 1px rgba(233,189,104,.5)}
-.gm-g{grid-area:g;justify-self:center;display:flex;align-items:center;gap:10px;font:700 46px/1 var(--ui);color:var(--gold-hi);filter:drop-shadow(0 3px 2px rgba(0,0,0,.6))}
-.gm-g svg{width:40px;height:40px}
+.gm-x{flex:none;align-self:flex-end;position:relative;z-index:6;width:42px;height:42px;border-radius:50%;font-size:26px;line-height:1;color:var(--gold-hi);background:rgba(8,16,44,.6);box-shadow:inset 0 0 0 1px rgba(233,189,104,.5)}
 .gm-mid{flex:1;min-height:0;display:flex;align-items:center}
 .gm-mid .stage{width:100%}
-.gm-ctrl{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-top:12px;flex:none}
-.gm-ctrl .btn{min-height:86px;border-radius:24px;font-size:18px;touch-action:none;user-select:none;-webkit-user-select:none}
-@media (orientation:landscape) and (max-height:540px){
-  .gm{width:100vw;padding:calc(4px + env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 8px max(10px,env(safe-area-inset-left))}
-  .gm-top{display:flex;gap:14px;height:44px;padding:0}
-  .gm-g{font-size:22px;gap:6px}.gm-g svg{width:22px;height:22px}
-  .gm-x{margin-left:auto}
-  .gm-top .hearts svg{width:22px;height:22px}
-  .gm{display:grid;grid-template-columns:92px minmax(0,1fr) 92px;grid-template-rows:auto minmax(0,1fr);column-gap:10px}
-  .gm-top{grid-column:1/-1}
-  .gm-mid{grid-column:2;grid-row:2}
-  .gm-ctrl{display:contents}
-  .gm-ctrl .btn{grid-row:2;align-self:end;flex-direction:column;gap:4px;min-height:120px;padding:10px 6px;border-radius:20px;font-size:15px;margin-bottom:6px}
-  #bJump{grid-column:1}
-  #bFwd{grid-column:3}
+.gm-b{display:grid;place-items:center;width:72px;height:72px;padding:0;border-radius:50%;color:var(--gold-hi);
+  background:radial-gradient(circle at 50% 32%,rgba(44,70,150,.9),rgba(8,16,44,.92) 72%);box-shadow:inset 0 0 0 1.5px rgba(233,189,104,.75),0 6px 16px rgba(0,0,0,.5);
+  touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;transition:transform .08s ease,box-shadow .12s ease}
+.gm-b svg{width:34px;height:34px;pointer-events:none}
+.gm-b:active,.gm-b.on{transform:scale(.93);background:radial-gradient(circle at 50% 40%,rgba(233,189,104,.5),rgba(8,16,44,.92) 75%);box-shadow:inset 0 0 0 2px var(--gold-hi),0 0 20px rgba(246,210,122,.55)}
+.gm-rot{display:none}
+.rot-mouse{display:none}
+@media (hover:hover) and (pointer:fine){.gm-rot .rot-touch{display:none}.gm-rot .rot-mouse{display:block}}
+@media (orientation:portrait){
+  .gm-mid,.gm-b{display:none}
+  .gm-rot{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px 30px calc(24px + var(--safe-b));text-align:center}
+  .gm-rot b{font:800 26px/1.15 var(--display);background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 1px rgba(0,0,0,.7))}
+  .gm-rot span{max-width:300px;font:400 15px/1.4 var(--text);color:var(--ink)}
+  .gm-rot small{max-width:280px;margin-top:6px;font:400 12.5px/1.35 var(--ui);color:var(--ink2)}
+  .rot-ph{width:96px;height:96px;margin-bottom:6px;color:var(--gold-hi)}
+  .rot-ph svg{width:96px;height:96px;filter:drop-shadow(0 0 12px rgba(246,210,122,.35));animation:rotPh 2.6s ease-in-out infinite}
 }
+@keyframes rotPh{0%,18%{transform:rotate(0)}46%,78%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
+@media (prefers-reduced-motion:reduce){.rot-ph svg{transform:rotate(-90deg)}}
+@media (orientation:landscape){
+  .gm{width:100vw;display:grid;grid-template-columns:84px minmax(0,1fr) 84px;grid-template-rows:auto minmax(0,1fr) auto;column-gap:12px;
+    padding:max(8px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,var(--safe-b)) max(10px,env(safe-area-inset-left))}
+  .gm-mid{grid-column:2;grid-row:1/-1}
+  .gm-x{grid-column:3;grid-row:1;align-self:start;justify-self:center}
+  .gm>#bFwd{grid-column:1;grid-row:3;justify-self:center;margin-bottom:6px}
+  .gm>#bJump{grid-column:3;grid-row:3;justify-self:center;margin-bottom:6px}
+}
+/* альтернативный способ (нажимать на подарки): кнопки игры не нужны, играть можно в любом положении */
+.gm.gm-lite .gm-mid{display:flex}
+.gm.gm-lite .gm-b,.gm.gm-lite .gm-rot{display:none}
 body.gm-on .demo-fab{display:none}
 .stage{position:relative;border-radius:14px;overflow:hidden;background:#0b1638;touch-action:manipulation;user-select:none;-webkit-user-select:none;
   box-shadow:0 0 0 2px #e9bd68,0 0 0 4px rgba(10,20,51,.95),0 0 0 5.5px rgba(233,189,104,.6),0 14px 30px rgba(0,0,0,.5)}
@@ -847,7 +860,7 @@ body[data-screen="izba"] main.app{padding-bottom:calc(var(--tb) + 76px)}
 /* ==========================================================================
    Десктоп — от 900 px: развороты книги в полной рамке-тереме, меню в шапке
    ========================================================================== */
-@media (min-width:900px){
+@media (min-width:900px) and (min-height:541px), (min-width:900px) and (hover:hover) and (pointer:fine){
   :root{--wfw:min(100vw - 40px, 1180px)}
   body.desk{--tb:0px}
   #app{width:auto;min-height:100vh}
@@ -1114,6 +1127,7 @@ body[data-screen="izba"] main.app{padding-bottom:calc(var(--tb) + 76px)}
   .stage.lite-on .overlay{min-height:380px}
   .ctrl{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:center;margin-top:16px}
   .ctrl .btn{min-height:54px;font-size:16px}
+  .ctrl .btn.on{background:rgba(233,189,104,.2);box-shadow:inset 0 0 0 1.5px var(--gold-hi),0 0 16px rgba(246,210,122,.35)}
   .resultcard{margin-top:16px;padding:16px;border-radius:16px;background:rgba(8,16,44,.55);box-shadow:inset 0 0 0 1px rgba(233,189,104,.55),inset 0 0 0 4px rgba(8,16,44,.65),inset 0 0 0 5px rgba(233,189,104,.24);animation:pgRise .35s ease}
   .resultcard .say{max-width:560px;margin:0 auto 12px}
   .rcs{gap:10px}
@@ -1278,11 +1292,11 @@ body[data-screen="izba"] main.app{padding-bottom:calc(var(--tb) + 76px)}
   .demo .marks button:hover,.demo .jump button:hover{background:#e0cd9c}
 }
 /* Шапка с логотипом ПСБ: на ноутбуках имя героя прячется — остаётся аватар (имя — во всплывающей подсказке и в кабинете) */
-@media (min-width:900px) and (max-width:1439px){
+@media (min-width:900px) and (max-width:1439px) and (min-height:541px), (min-width:900px) and (max-width:1439px) and (hover:hover) and (pointer:fine){
   .avabtn .nm{display:none}
   .avabtn{padding:2px}
 }
-@media (min-width:900px) and (max-width:1100px){
+@media (min-width:900px) and (max-width:1100px) and (min-height:541px), (min-width:900px) and (max-width:1100px) and (hover:hover) and (pointer:fine){
   .nav a{padding:10px 9px;font-size:14px}
   .spread.two>.pg{padding:8px 26px 6px}
   .spread.two>.pg.pl{padding-right:36px}
@@ -1376,7 +1390,7 @@ body[data-screen="izba"] main.app{padding-bottom:calc(var(--tb) + 76px)}
 .astats span{display:block;margin-top:4px;font:400 12.5px/1.3 var(--ui);color:var(--ink2)}
 .archive .wcard{height:auto;margin:12px 0;align-items:center}
 
-@media (min-width:900px){
+@media (min-width:900px) and (min-height:541px), (min-width:900px) and (hover:hover) and (pointer:fine){
   .nickplate .nk.long{font-size:clamp(22px,2.3vw,28px)}
   .pk2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 4px}
   .pk2 .pk-box{padding:10px;border-radius:14px;background:rgba(8,16,44,.5);box-shadow:inset 0 0 0 1px rgba(233,189,104,.42)}
@@ -1402,5 +1416,5 @@ body[data-screen="izba"] main.app{padding-bottom:calc(var(--tb) + 76px)}
 @media (hover:hover){.city-o:hover{background:rgba(233,189,104,.12)}}
 .city-o:focus-visible{outline:2px solid var(--gold-hi);outline-offset:-2px;background:rgba(233,189,104,.12)}
 #cityNote.err-t{margin:8px 0 0}
-@media (min-width:900px){.city-o{min-height:38px;padding:8px 12px;font-size:15px}}
+@media (min-width:900px) and (min-height:541px), (min-width:900px) and (hover:hover) and (pointer:fine){.city-o{min-height:38px;padding:8px 12px;font-size:15px}}
 .city-sug.up{top:auto;bottom:calc(100% + 6px)}

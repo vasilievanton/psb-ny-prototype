@@ -35,6 +35,9 @@ const I={
   chev:'<path d="M6 9l6 6 6-6"/>',
   user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
   arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+  jump:'<path d="M12 20V5M5 12l7-7 7 7"/>',
+  boost:'<path d="M4 6l6 6-6 6M12 6l6 6-6 6"/>',
+  rotate:'<rect x="2" y="9" width="20" height="12" rx="2.5"/><path d="M6.5 6.5a8 8 0 0 1 11 0"/><path d="M17.5 2.8v3.7h-3.7"/>',
   photo:'<rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="4"/><path d="M8 6l2-3h4l2 3"/>'
 };
 function svg(n,a=''){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ${a}>${I[n]}</svg>`;}
@@ -76,8 +79,9 @@ const ui={auth:AUTH0(),nick:null,pending:null,city:'',cityQ:null,cityErr:false,t
 const PAGE=document.body.dataset.page||'cover';
 const PAGES={cover:'index.html',prologue:'prologue.html',nick:'hero.html',auth:'code.html',login:'login.html',route:'route.html',quiz:'quiz.html',forest:'forest.html',tree:'tree.html',final:'final.html',chest:'chest.html',serial:'serial.html',chapter:'chapter.html',fulltale:'tale.html',izba:'izba.html',rating:'rating.html',profile:'profile.html'};
 const QS=new URLSearchParams(location.search);
-// Режим вёрстки: телефон (основной) или компьютер — от 900 px
-const MQ=window.matchMedia('(min-width:900px)');
+// Режим вёрстки: телефон (основной) или компьютер — от 900 px в ширину. Телефон, повёрнутый горизонтально, остаётся телефоном, даже если экран шире 900 px:
+// компьютер — это ещё и окно выше 540 px или управление мышью. То же условие — в медиазапросах style.css
+const MQ=window.matchMedia('(min-width:900px) and (min-height:541px), (min-width:900px) and (hover:hover) and (pointer:fine)');
 let DESK=MQ.matches;
 // Сессионные флаги, которые переходят на следующую страницу: анимация перелистывания и всплывающее сообщение
 const SS={get(k){try{return JSON.parse(sessionStorage.getItem('psb-'+k));}catch(e){return null;}},set(k,v){try{sessionStorage.setItem('psb-'+k,JSON.stringify(v));}catch(e){}},del(k){try{sessionStorage.removeItem('psb-'+k);}catch(e){}}};
@@ -678,33 +682,65 @@ function vForest(){
     return {
       L:`${pt('Лес','Испытание 2 · соберите подарки, перепрыгните препятствия','h1')}${say('m_star','Старший сын',FOREST_HELLO)}`,
       R:`<div class="hud"><div>${ICON_HEART}<div><span>Жизни</span><b id="hLives" class="hearts">${hearts(3)}</b></div></div><div>${ICON_GIFT}<div><span>Подарки</span><b id="hGifts">0</b></div></div><div>${ICON_BANK}<div><span>В общий счётчик</span><b id="hBank">+0</b></div></div></div>
-        <p class="tale small">Бегите и собирайте подарки: чем больше, тем лучше. Лес не кончается, а бег становится всё быстрее. У вас 3 жизни — каждое столкновение отнимает одну.</p>
-        <p class="note left">Пробел, ↑ или клик по игре — прыжок · чем дольше держите → или «Быстрее», тем быстрее бег</p>`,
+        <p class="tale small">Бегите и собирайте подарки: чем больше, тем лучше. Лес не кончается, а бег становится всё быстрее. На бревно и пень можно запрыгнуть сверху. У вас 3 жизни — каждое столкновение отнимает одну.</p>
+        <p class="note left">Пробел, ↑ или клик по игре — прыжок · держите → или «Ускорение» — бег сразу втрое быстрее и дальше разгоняется</p>`,
       full:`<div class="stage" id="stage"><canvas id="cv" data-ratio=".5"></canvas>
           <div class="overlay" id="ov"><div class="inner"><div class="ov-t">${st.forest.runs?'Ещё забег?':'Готовы?'}</div>
             <button class="btn btn-gold btn-lg" data-act="fStart">Бежать!</button>
             ${st.forest.runs?`<p class="small">Лучший забег: ${best} ${plural(best,'подарок','подарка','подарков')}</p>`:''}</div></div></div>
-        <div class="ctrl" id="ctrl"><button class="btn btn-ghost" id="bJump">${svg('up','width="18" height="18"')} Прыжок</button><button class="btn btn-ghost" id="bFwd">Быстрее ${svg('arrow','width="18" height="18"')}</button></div>
+        <div class="ctrl" id="ctrl"><button class="btn btn-ghost" id="bJump">${svg('jump','width="18" height="18"')} Прыжок</button><button class="btn btn-ghost" id="bFwd">Ускорение ${svg('boost','width="18" height="18"')}</button></div>
         <p class="note hidden" id="fin"><a class="link" href="#" data-act="fExit">Закончить забег</a> — собранные подарки засчитаются</p>${LITE_NOTE}`,
       pn:11,cls:'forest'};
   }
   if(ui.fmode)return {raw:gameMode()};
   return {M:`${say('m_star','Старший сын',FOREST_HELLO,'compact')}
-    <div class="howto"><div>${svg('up')}<b>Тап по игре</b><span>прыжок</span></div><div>${svg('arrow')}<b>Держите «Быстрее»</b><span>чем дольше, тем быстрее</span></div><div>${ICON_HEART}<b>3 жизни</b><span>столкновение — минус одна</span></div></div>
-    <p class="tale small center">Бегите и собирайте подарки: чем больше, тем лучше. Лес не кончается, а бег становится всё быстрее.</p>
+    <div class="howto"><div>${svg('jump')}<b>Прыжок</b><span>кнопка справа или тап по полю</span></div><div>${svg('boost')}<b>Ускорение</b><span>держите кнопку слева</span></div><div>${ICON_HEART}<b>3 жизни</b><span>столкновение — минус одна</span></div></div>
+    <p class="rot-hint">${svg('rotate')}<span>Играем горизонтально — поверните телефон</span></p>
+    <p class="tale small center">Бегите и собирайте подарки: чем больше, тем лучше. Лес не кончается, а бег становится всё быстрее. «Ускорение» разгоняет сразу втрое — подарки идут чаще, но и препятствия тоже.</p>
     ${st.forest.runs?`<div class="rcs"><div><b>${best}</b><span>рекорд, подарков</span></div><div><b>${num(best*10)}</b><span>баллов в таблице</span></div><div><b>${st.forest.gifts}</b><span>всего в общем счётчике</span></div></div>`:''}
     ${LITE_NOTE}`,
     acts:[{t:st.forest.runs?'Ещё забег':'Бежать!',act:'fPlay',gold:1}]};
 }
-// Телефон: игра во весь экран — сверху жизни и подарки, в центре поле, снизу большие кнопки под большие пальцы
+// Телефон: игра во весь экран и только горизонтально. В центре поле (жизни и подарки — на нём), по бокам круглые кнопки без подписей под большие пальцы:
+// слева «Ускорение», справа «Прыжок». Вертикально вместо игры — «Поверните телефон», идущий забег встаёт на паузу
+const ROT_PHONE='<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="19" y="5" width="26" height="54" rx="6"/><path d="M28 52h8"/></svg>';
 function gameMode(){
   return `<div class="gm" id="gm">
-    <div class="gm-top"><button class="gm-x" data-act="fExit" aria-label="Закончить забег">×</button></div>
+    <button class="gm-x" data-act="fExit" aria-label="Закончить забег">×</button>
     <div class="gm-mid"><div class="stage" id="stage"><canvas id="cv" data-ratio="1.15" data-lw="620"></canvas>
-      <div class="overlay" id="ov"><div class="inner"><div class="ov-t">Готовы?</div><button class="btn btn-gold btn-lg" data-act="fStart">Старт</button><p class="small">Тап по игре — тоже прыжок</p></div></div></div></div>
-    <div class="gm-ctrl" id="ctrl"><button class="btn btn-ghost" id="bJump">${svg('up','width="22" height="22"')} Прыжок</button><button class="btn btn-ghost" id="bFwd">Быстрее ${svg('arrow','width="22" height="22"')}</button></div>
+      <div class="overlay" id="ov"><div class="inner"><div class="ov-t">Готовы?</div><button class="btn btn-gold btn-lg" data-act="fStart">Старт</button><p class="small">Слева — ускорение, справа — прыжок. Тап по полю — тоже прыжок</p></div></div></div></div>
+    <button class="gm-b" id="bFwd" aria-label="Ускорение">${svg('boost')}</button>
+    <button class="gm-b" id="bJump" aria-label="Прыжок">${svg('jump')}</button>
+    <div class="gm-rot"><div class="rot-ph" aria-hidden="true">${ROT_PHONE}</div>
+      <b class="rot-touch">Поверните телефон</b><b class="rot-mouse">Сделайте окно шире</b>
+      <span>«Лес» — горизонтальная игра: ускорение под левым пальцем, прыжок — под правым</span>
+      <small class="rot-touch">Экран не поворачивается? Снимите блокировку поворота в быстрых настройках телефона</small></div>
   </div>`;
 }
+// Android-телефон: игра во весь экран и сразу горизонтально, даже если автоповорот выключен. iPhone так не умеет — там подсказка «Поверните телефон»
+function landscapeLock(){
+  try{
+    const el=document.documentElement, o=screen.orientation;
+    if(!/Android/i.test(navigator.userAgent)||Math.min(screen.width,screen.height)>540||!el.requestFullscreen||!o||!o.lock) return;
+    el.requestFullscreen({navigationUI:'hide'}).then(()=>o.lock('landscape')).catch(()=>{});
+  }catch(e){}
+}
+function landscapeUnlock(){
+  try{ if(screen.orientation&&screen.orientation.unlock)screen.orientation.unlock(); }catch(e){}
+  try{ if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(()=>{}); }catch(e){}
+}
+// Пауза: телефон повернули вертикально посреди забега или ушли из вкладки. Продолжают кнопкой на поле
+function pauseRun(){
+  if(!game||!game.state.run||game.state.paused) return;
+  game.pause(); const f=$('#bFwd'); if(f)f.classList.remove('on');
+  const ov=$('#ov'); if(!ov) return;
+  ov.innerHTML=`<div class="inner"><div class="ov-t">Пауза</div><button class="btn btn-gold btn-lg" data-act="fResume">Продолжить</button></div>`;
+  ov.classList.remove('hidden');
+}
+const PORTRAIT=window.matchMedia('(orientation:portrait)');
+const onPortrait=()=>{if(PORTRAIT.matches&&!DESK&&ui.fmode)pauseRun();};
+if(PORTRAIT.addEventListener)PORTRAIT.addEventListener('change',onPortrait);else PORTRAIT.addListener(onPortrait);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)pauseRun();});
 function mountForest(){
   const cv=$('#cv'); if(!cv) return;
   if(!DESK)cv.dataset.maxh=String(Math.max(200,innerHeight-(innerWidth>innerHeight?110:250)));
@@ -715,8 +751,10 @@ function mountForest(){
   });
   const j=$('#bJump'),f=$('#bFwd');
   j.addEventListener('pointerdown',e=>{e.preventDefault();game&&game.jump();});
-  const on=e=>{e.preventDefault();game&&game.boost(true);},off=()=>game&&game.boost(false);
+  // «Ускорение» работает, пока кнопку держат; подсвечена, пока зажата
+  const on=e=>{e.preventDefault();if(!game||!game.state.run||game.state.paused)return;f.classList.add('on');game.boost(true);},off=()=>{f.classList.remove('on');game&&game.boost(false);};
   f.addEventListener('pointerdown',on);f.addEventListener('pointerup',off);f.addEventListener('pointerleave',off);f.addEventListener('pointercancel',off);
+  [j,f].forEach(b=>b.addEventListener('contextmenu',e=>e.preventDefault()));   // долгое нажатие на телефоне не открывает меню
 }
 function finishForest(gifts,score,out){
   const first=!st.forest.runs, prevBest=st.forest.bestGifts;
@@ -753,6 +791,7 @@ function startLite(){
   if(game)game.destroy(),game=null;
   const ov=$('#ov'); if(!ov)return; ov.classList.remove('hidden');
   const sg=$('#stage');if(sg)sg.classList.add('lite-on');
+  const gm=$('#gm');if(gm)gm.classList.add('gm-lite');   // кнопки игры не нужны, и играть можно в любом положении телефона
   let n=0,got=0,cur=-1;
   ov.innerHTML=`<div class="inner"><div class="lbl-s">Альтернативный способ заработать баллы</div><p class="small">Нажимайте на подарки, пока они не исчезли</p><div class="lite" id="lite">${[...Array(9)].map((_,i)=>`<button data-li="${i}"></button>`).join('')}</div><div class="small" id="liteC">Собрано: 0</div></div>`;
   $('#lite').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-li]');if(b&&+b.dataset.li===cur){got++;cur=-1;b.classList.remove('has');b.textContent='';$('#liteC').textContent='Собрано: '+got;const g=$('#hGifts');if(g)g.textContent=got;const c=$('#hBank');if(c)c.textContent='+'+got;}});
@@ -1288,10 +1327,11 @@ const ACT={
   goQuiz:d=>go('quiz','?set='+(+d.i+1)),
   qAgain:()=>{ui.quiz=null;ui.quizRound=null;st.qrun=null;save();ui.turn=true;render();window.scrollTo(0,0);},
   // лес
-  fPlay:()=>{ui.fmode=true;render();},
+  fPlay:()=>{landscapeLock();ui.fmode=true;render();},
   fStart:()=>{if(!game)mountForest();const ov=$('#ov');if(ov)ov.classList.add('hidden');const fn=$('#fin');if(fn)fn.classList.remove('hidden');game.start();},
-  fAgain:()=>{ui.fmode=true;render();},
-  fExit:(d,e,ev)=>{ev&&ev.preventDefault&&ev.preventDefault();if(game&&game.state.run){game.finish();return;}if(DESK)return;ui.fmode=false;render();window.scrollTo(0,0);},
+  fAgain:()=>{if(!DESK)landscapeLock();ui.fmode=true;render();},
+  fResume:()=>{const ov=$('#ov');if(ov)ov.classList.add('hidden');if(game)game.resume();},
+  fExit:(d,e,ev)=>{ev&&ev.preventDefault&&ev.preventDefault();if(game&&game.state.run){game.finish();return;}if(DESK)return;landscapeUnlock();ui.fmode=false;render();window.scrollTo(0,0);},
   fLite:(d,e,ev)=>{ev&&ev.preventDefault();if(!DESK){ui.fmode=true;render();}startLite();},
   // ёлка
   tStyle:d=>{ui.tree.style=+d.i;render();},
