@@ -683,7 +683,7 @@ function vForest(){
       L:`${pt('Лес','Испытание 2 · соберите подарки, перепрыгните препятствия','h1')}${say('m_star','Старший сын',FOREST_HELLO)}`,
       R:`<div class="hud"><div>${ICON_HEART}<div><span>Жизни</span><b id="hLives" class="hearts">${hearts(3)}</b></div></div><div>${ICON_GIFT}<div><span>Подарки</span><b id="hGifts">0</b></div></div><div>${ICON_BANK}<div><span>В общий счётчик</span><b id="hBank">+0</b></div></div></div>
         <p class="tale small">Бегите и собирайте подарки: чем больше, тем лучше. Лес не кончается, а бег становится всё быстрее. На бревно и пень можно запрыгнуть сверху. У вас 3 жизни — каждое столкновение отнимает одну.</p>
-        <p class="note left">Пробел, ↑ или клик по игре — прыжок · держите → или «Ускорение» — бег сразу втрое быстрее и дальше разгоняется</p>`,
+        <p class="note left">Пробел, ↑ или клик по игре — прыжок · держите → или «Ускорение» — бег сразу вдвое быстрее и дальше разгоняется</p>`,
       full:`<div class="stage" id="stage"><canvas id="cv" data-ratio=".5"></canvas>
           <div class="overlay" id="ov"><div class="inner"><div class="ov-t">${st.forest.runs?'Ещё забег?':'Готовы?'}</div>
             <button class="btn btn-gold btn-lg" data-act="fStart">Бежать!</button>
@@ -696,7 +696,7 @@ function vForest(){
   return {M:`${say('m_star','Старший сын',FOREST_HELLO,'compact')}
     <div class="howto"><div>${svg('jump')}<b>Прыжок</b><span>кнопка справа или тап по полю</span></div><div>${svg('boost')}<b>Ускорение</b><span>держите кнопку слева</span></div><div>${ICON_HEART}<b>3 жизни</b><span>столкновение — минус одна</span></div></div>
     <p class="rot-hint">${svg('rotate')}<span>Играем горизонтально — поверните телефон</span></p>
-    <p class="tale small center">Бегите и собирайте подарки: чем больше, тем лучше. Лес не кончается, а бег становится всё быстрее. «Ускорение» разгоняет сразу втрое — подарки идут чаще, но и препятствия тоже.</p>
+    <p class="tale small center">Бегите и собирайте подарки: чем больше, тем лучше. Лес не кончается, а бег становится всё быстрее. «Ускорение» разгоняет сразу вдвое — подарки идут чаще, но и препятствия тоже.</p>
     ${st.forest.runs?`<div class="rcs"><div><b>${best}</b><span>рекорд, подарков</span></div><div><b>${num(best*10)}</b><span>баллов в таблице</span></div><div><b>${st.forest.gifts}</b><span>всего в общем счётчике</span></div></div>`:''}
     ${LITE_NOTE}`,
     acts:[{t:st.forest.runs?'Ещё забег':'Бежать!',act:'fPlay',gold:1}]};
