@@ -684,7 +684,7 @@ function vForest(){
       R:`<div class="hud"><div>${ICON_HEART}<div><span>Жизни</span><b id="hLives" class="hearts">${hearts(3)}</b></div></div><div>${ICON_GIFT}<div><span>Подарки</span><b id="hGifts">0</b></div></div><div>${ICON_BANK}<div><span>В общий счётчик</span><b id="hBank">+0</b></div></div></div>
         <p class="tale small">Бегите и собирайте подарки: чем больше, тем лучше. Лес не кончается, а бег становится всё быстрее. На бревно и пень можно запрыгнуть сверху. У вас 3 жизни — каждое столкновение отнимает одну.</p>
         <p class="note left">Пробел, ↑ или клик по игре — прыжок · держите → или «Ускорение» — бег сразу вдвое быстрее и дальше разгоняется</p>`,
-      full:`<div class="stage" id="stage"><canvas id="cv" data-ratio=".5"></canvas>
+      full:`<div class="stage" id="stage"><canvas id="cv" data-ratio=".5625" data-lw="840"></canvas>
           <div class="overlay" id="ov"><div class="inner"><div class="ov-t">${st.forest.runs?'Ещё забег?':'Готовы?'}</div>
             <button class="btn btn-gold btn-lg" data-act="fStart">Бежать!</button>
             ${st.forest.runs?`<p class="small">Лучший забег: ${best} ${plural(best,'подарок','подарка','подарков')}</p>`:''}</div></div></div>
@@ -694,7 +694,7 @@ function vForest(){
   }
   if(ui.fmode)return {raw:gameMode()};
   return {M:`${say('m_star','Старший сын',FOREST_HELLO,'compact')}
-    <div class="howto"><div>${svg('jump')}<b>Прыжок</b><span>кнопка справа или тап по полю</span></div><div>${svg('boost')}<b>Ускорение</b><span>держите кнопку слева</span></div><div>${ICON_HEART}<b>3 жизни</b><span>столкновение — минус одна</span></div></div>
+    <div class="howto"><div>${svg('jump')}<b>Прыжок</b><span>кнопка слева или тап по полю</span></div><div>${svg('boost')}<b>Ускорение</b><span>держите кнопку справа</span></div><div>${ICON_HEART}<b>3 жизни</b><span>столкновение — минус одна</span></div></div>
     <p class="rot-hint">${svg('rotate')}<span>Играем горизонтально — поверните телефон</span></p>
     <p class="tale small center">Бегите и собирайте подарки: чем больше, тем лучше. Лес не кончается, а бег становится всё быстрее. «Ускорение» разгоняет сразу вдвое — подарки идут чаще, но и препятствия тоже.</p>
     ${st.forest.runs?`<div class="rcs"><div><b>${best}</b><span>рекорд, подарков</span></div><div><b>${num(best*10)}</b><span>баллов в таблице</span></div><div><b>${st.forest.gifts}</b><span>всего в общем счётчике</span></div></div>`:''}
@@ -702,18 +702,18 @@ function vForest(){
     acts:[{t:st.forest.runs?'Ещё забег':'Бежать!',act:'fPlay',gold:1}]};
 }
 // Телефон: игра во весь экран и только горизонтально. В центре поле (жизни и подарки — на нём), по бокам круглые кнопки без подписей под большие пальцы:
-// слева «Ускорение», справа «Прыжок». Вертикально вместо игры — «Поверните телефон», идущий забег встаёт на паузу
+// слева «Прыжок», справа «Ускорение». Вертикально вместо игры — «Поверните телефон», идущий забег встаёт на паузу
 const ROT_PHONE='<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="19" y="5" width="26" height="54" rx="6"/><path d="M28 52h8"/></svg>';
 function gameMode(){
   return `<div class="gm" id="gm">
     <button class="gm-x" data-act="fExit" aria-label="Закончить забег">×</button>
     <div class="gm-mid"><div class="stage" id="stage"><canvas id="cv" data-ratio="1.15" data-lw="620"></canvas>
-      <div class="overlay" id="ov"><div class="inner"><div class="ov-t">Готовы?</div><button class="btn btn-gold btn-lg" data-act="fStart">Старт</button><p class="small">Слева — ускорение, справа — прыжок. Тап по полю — тоже прыжок</p></div></div></div></div>
-    <button class="gm-b" id="bFwd" aria-label="Ускорение">${svg('boost')}</button>
+      <div class="overlay" id="ov"><div class="inner"><div class="ov-t">Готовы?</div><button class="btn btn-gold btn-lg" data-act="fStart">Старт</button><p class="small">Слева — прыжок, справа — ускорение. Тап по полю — тоже прыжок</p></div></div></div></div>
     <button class="gm-b" id="bJump" aria-label="Прыжок">${svg('jump')}</button>
+    <button class="gm-b" id="bFwd" aria-label="Ускорение">${svg('boost')}</button>
     <div class="gm-rot"><div class="rot-ph" aria-hidden="true">${ROT_PHONE}</div>
       <b class="rot-touch">Поверните телефон</b><b class="rot-mouse">Сделайте окно шире</b>
-      <span>«Лес» — горизонтальная игра: ускорение под левым пальцем, прыжок — под правым</span>
+      <span>«Лес» — горизонтальная игра: прыжок под левым пальцем, ускорение — под правым</span>
       <small class="rot-touch">Экран не поворачивается? Снимите блокировку поворота в быстрых настройках телефона</small></div>
   </div>`;
 }
@@ -743,7 +743,8 @@ if(PORTRAIT.addEventListener)PORTRAIT.addEventListener('change',onPortrait);else
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pauseRun();});
 function mountForest(){
   const cv=$('#cv'); if(!cv) return;
-  if(!DESK)cv.dataset.maxh=String(Math.max(200,innerHeight-(innerWidth>innerHeight?110:250)));
+  // Компьютер: поле 16:9, но целиком влезает в окно вместе с кнопками под ним (шапка сверху закреплена)
+  if(DESK){const hd=$('header.top');cv.dataset.vfit=String((hd?hd.offsetHeight:64)+112);}
   game=ForestGame(cv,{
     hud(S){const a=$('#hLives'),b=$('#hGifts'),c=$('#hBank');if(a)a.innerHTML=hearts(S.lives);if(b)b.textContent=S.gifts;if(c)c.textContent='+'+S.gifts;},
     end(S){finishForest(S.gifts,S.score,S.out);},
@@ -755,6 +756,13 @@ function mountForest(){
   const on=e=>{e.preventDefault();if(!game||!game.state.run||game.state.paused)return;f.classList.add('on');game.boost(true);},off=()=>{f.classList.remove('on');game&&game.boost(false);};
   f.addEventListener('pointerdown',on);f.addEventListener('pointerup',off);f.addEventListener('pointerleave',off);f.addEventListener('pointercancel',off);
   [j,f].forEach(b=>b.addEventListener('contextmenu',e=>e.preventDefault()));   // долгое нажатие на телефоне не открывает меню
+}
+// Компьютер: на старте поле и кнопки под ним целиком в окне — если не помещаются, страница прокручивается к полю
+function fitField(){
+  if(!DESK)return; const sg=$('#stage'),ct=$('#ctrl'),hd=$('header.top'); if(!sg)return;
+  const top=(hd?hd.offsetHeight:0)+10, a=sg.getBoundingClientRect(), b=(ct||sg).getBoundingClientRect();
+  if(a.top>=top&&b.bottom<=innerHeight-6)return;
+  window.scrollTo({top:Math.max(0,a.top+scrollY-top),behavior:reduced()?'auto':'smooth'});
 }
 function finishForest(gifts,score,out){
   const first=!st.forest.runs, prevBest=st.forest.bestGifts;
@@ -1328,7 +1336,7 @@ const ACT={
   qAgain:()=>{ui.quiz=null;ui.quizRound=null;st.qrun=null;save();ui.turn=true;render();window.scrollTo(0,0);},
   // лес
   fPlay:()=>{landscapeLock();ui.fmode=true;render();},
-  fStart:()=>{if(!game)mountForest();const ov=$('#ov');if(ov)ov.classList.add('hidden');const fn=$('#fin');if(fn)fn.classList.remove('hidden');game.start();},
+  fStart:()=>{if(!game)mountForest();const ov=$('#ov');if(ov)ov.classList.add('hidden');const fn=$('#fin');if(fn)fn.classList.remove('hidden');game.start();fitField();},
   fAgain:()=>{if(!DESK)landscapeLock();ui.fmode=true;render();},
   fResume:()=>{const ov=$('#ov');if(ov)ov.classList.add('hidden');if(game)game.resume();},
   fExit:(d,e,ev)=>{ev&&ev.preventDefault&&ev.preventDefault();if(game&&game.state.run){game.finish();return;}if(DESK)return;landscapeUnlock();ui.fmode=false;render();window.scrollTo(0,0);},
