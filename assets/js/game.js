@@ -147,7 +147,7 @@ function ForestGame(canvas, hooks){
   // не раньше чем через LIFE_AFTER_HIT секунд после удара, с шансом LIFE_CHANCE вместо высокого подарка. На поле — не больше одного, жизней — не больше трёх
   const LIFE_EVERY=15, LIFE_AFTER_HIT=6, LIFE_CHANCE=.3, LIFE_D=34;
   let LW=800, TOP=0, sc=1, dpr=1, raf=0, last=0, alive=true;
-  const S={run:false,done:false,lives:3,out:false,t:0,dist:0,gifts:0,score:0,cleared:0,py:GROUND,vy:0,ground:true,stun:0,inv:0,boost:false,objs:[],parts:[],next:520,jumpAt:-1e9,lowAt:-1e9,lifeAt:-1e9,hitAt:-1e9,bk:1,best:0,paused:false,ph:0,rt:0,v0:280};
+  const S={run:false,done:false,lives:3,out:false,t:0,dist:0,gifts:0,score:0,cleared:0,py:GROUND,vy:0,ground:true,stun:0,inv:0,boost:false,objs:[],parts:[],next:520,jumpAt:-1e9,lowAt:-1e9,lifeAt:-1e9,hitAt:-1e9,bk:1,best:0,paused:false,ph:0,rt:0,v0:280,dj:false,flip:0};
   // Лес бесконечный: скорость плавно растёт со временем бега — каждые RAMP_EVERY секунд на RAMP от стартовой V0, без потолка
   // (через 30 секунд — в 2,5 раза быстрее, через минуту — в 4). Забег идёт, пока есть жизни, — рано или поздно скорость становится непосильной
   const V0=280, RAMP=.25, RAMP_EVERY=5;
@@ -161,7 +161,7 @@ function ForestGame(canvas, hooks){
   const NEAR=130;
   const rawKind=i=>{const r=hsh(i,SEED+21); return r<.09?'gap':r<.14?'izba':r<.18?'deco':r<.28?'birch':r<.31?'snowman':r<.40?'bush':'fir';};
   // редкие — избушка, наряженная ёлка, снеговик — не ближе GAP ячеек к такому же; иначе в ячейке обычная ель
-  const GAP={izba:6,deco:8,snowman:10};
+  const GAP={izba:10,deco:10,snowman:12};
   const nearKind=i=>{const k=rawKind(i), g=GAP[k]; if(g) for(let j=1;j<=g;j++) if(rawKind(i-j)===k) return 'fir'; return k;};
   const isIzba=i=>F.izba.length>0&&nearKind(i)==='izba';
   const lampRaw=i=>hsh(i,SEED+22)<.14;
@@ -175,14 +175,25 @@ function ForestGame(canvas, hooks){
     const maxH=box&&box.clientHeight>0?box.clientHeight-16:vfit?Math.max(360,innerHeight-vfit):+(canvas.dataset.maxh||440);
     const h=Math.max(180,Math.min(maxH,Math.round(w*ratio)));
     dpr=Math.min(2,window.devicePixelRatio||1); canvas.width=Math.round(w*dpr); canvas.height=Math.round(h*dpr); canvas.style.height=h+'px';
-    sc=h/LH; if(minLW&&w/sc<minLW)sc=w/minLW; LW=w/sc; TOP=Math.max(0,h/sc-LH);
+    // data-lh — сколько единиц в высоту видно минимум: над верхней точкой двойного прыжка остаётся небо, медведь не уходит за край
+    const minLH=+(canvas.dataset.lh||0);
+    sc=h/LH; if(minLW&&w/sc<minLW)sc=w/minLW; if(minLH&&h/sc<minLH)sc=h/minLH; LW=w/sc; TOP=Math.max(0,h/sc-LH);
   }
   resize(); window.addEventListener('resize',resize);
   // Телефон: поле меняет размер при повороте и когда появляется из-под подсказки «Поверните телефон» — следим за его коробкой
   let ro=null, boxW=0, boxH=0;
   const gmBox=canvas.closest('.gm-mid');
   if(gmBox&&window.ResizeObserver){ ro=new ResizeObserver(()=>{ if(gmBox.clientWidth!==boxW||gmBox.clientHeight!==boxH){ boxW=gmBox.clientWidth; boxH=gmBox.clientHeight; resize(); } }); ro.observe(gmBox); }
-  function jump(){ if(!S.run||S.paused) return; if(S.ground){S.vy=-920;S.ground=false;} }
+  // Прыжок: с опоры — обычный (0,8 с, до 184 вверх). В воздухе — один невысокий второй: до +60 к высоте (если нажать в верхней точке; раньше — меньше), с сальто.
+  // Третьего нет; приземлился — второй снова доступен. Сорвался с края без прыжка — второй тоже можно
+  const J1=920, J2=525, FLIP=.5;
+  function jump(){
+    if(!S.run||S.paused) return;
+    if(S.ground){S.vy=-J1;S.ground=false;S.dj=false;return;}
+    if(S.dj) return;
+    S.dj=true; S.vy=-Math.max(J2,-S.vy*1.1); S.flip=FLIP;
+    for(let i=0;i<9;i++)S.parts.push({k:'sp',x:PX+rnd(-18,18),y:S.py-6,vx:rnd(-110,110),vy:rnd(30,140),life:rnd(.3,.55)});   // снежная пыль из-под лап
+  }
   // Размер и зона столкновения препятствия: из PNG, если он уже загружен, иначе — векторные
   function obSize(type){
     const d=FOREST_OBSTACLES.find(o=>o.k===type)||FOREST_OBSTACLES[0], img=F.ob[type];
@@ -302,6 +313,7 @@ function ForestGame(canvas, hooks){
     const n=Math.max(1,Math.ceil(v*dt/24));
     for(let i=0;i<n;i++) step(dt/n,v);
     if(S.run) S.ph=(S.ph+Math.min(v,ANIM_V)*dt)%RUN_CYCLE;
+    if(S.ground){S.dj=false;S.flip=0;} else if(S.flip>0) S.flip=Math.max(0,S.flip-dt);
     S.objs=S.objs.filter(o=>o.x+(o.w||26)>S.dist-200&&!o.gone);
     for(const p of S.parts){p.life-=dt; if(p.k==='sp'){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=400*dt;} else p.y-=40*dt;}
     S.parts=S.parts.filter(p=>p.life>0);
@@ -552,7 +564,11 @@ function ForestGame(canvas, hooks){
     const fr=bearFrame(), sy=surfAt(d+PX,S.py);
     if(sy<=GROUND){ctx.fillStyle='rgba(20,40,90,.28)';ctx.beginPath();ctx.ellipse(PX,sy+4,(fr?40:34)*(S.ground?1:.7),7,0,0,7);ctx.fill();}
     if(!(S.inv>0&&Math.floor(S.t*14)%2)){
-      if(fr){const w=BEAR_H*fr.naturalWidth/fr.naturalHeight; ctx.drawImage(fr,PX-w/2,S.py-BEAR_H+BEAR_SINK,w,BEAR_H);}
+      if(fr&&S.flip>0){                                                  // сальто на втором прыжке: полный оборот вперёд вокруг середины медведя
+        const w=BEAR_H*fr.naturalWidth/fr.naturalHeight, a=(1-S.flip/FLIP), e=a<.5?2*a*a:1-2*(1-a)*(1-a);
+        ctx.save(); ctx.translate(PX,S.py-BEAR_H/2+BEAR_SINK); ctx.rotate(e*Math.PI*2); ctx.drawImage(fr,-w/2,-BEAR_H/2,w,BEAR_H); ctx.restore();
+      }
+      else if(fr){const w=BEAR_H*fr.naturalWidth/fr.naturalHeight; ctx.drawImage(fr,PX-w/2,S.py-BEAR_H+BEAR_SINK,w,BEAR_H);}
       else{
         const bob=S.ground&&S.run?Math.abs(Math.sin(t*13))*-4:0;
         ctx.save();ctx.translate(PX,S.py+bob);ctx.rotate(S.ground?Math.sin(t*13)*.03:-.1);
@@ -566,11 +582,12 @@ function ForestGame(canvas, hooks){
       else{ctx.globalAlpha=Math.min(1,p.life*1.5);ctx.fillStyle=p.c;ctx.font='700 20px "PT Serif", Georgia, serif';ctx.fillText(p.t,p.x,p.y);}
     } ctx.globalAlpha=1;
     // передний план: детали в снегу у нижнего края экрана. Они ближе медведя — едут чуть быстрее земли (×1.2) и ничего не закрывают: верх не выше GROUND+34
-    if(F.fg.length){const f0=d*1.2, i0=Math.floor((f0-140)/110), i1=Math.ceil((f0+LW+140)/110);
+    // Редко: деталь — примерно в каждой пятой ячейке по 180 единиц, 26–42 единицы в высоту
+    if(F.fg.length){const FC=180, f0=d*1.2, i0=Math.floor((f0-140)/FC), i1=Math.ceil((f0+LW+140)/FC);
       for(let i=i0;i<=i1;i++){
-        if(hsh(i,SEED+41)<.42) continue;
-        const im=F.fg[Math.floor(hsh(i,SEED+42)*F.fg.length)], hh=30+22*hsh(i,SEED+43), w=hh*im.naturalWidth/im.naturalHeight;
-        const x=i*110+(hsh(i,SEED+44)-.5)*50-f0, base=Math.max(GROUND+34+hh,LH+4+8*hsh(i,SEED+45));
+        if(hsh(i,SEED+41)<.8) continue;
+        const im=F.fg[Math.floor(hsh(i,SEED+42)*F.fg.length)], hh=26+16*hsh(i,SEED+43), w=hh*im.naturalWidth/im.naturalHeight;
+        const x=i*FC+(hsh(i,SEED+44)-.5)*80-f0, base=Math.max(GROUND+34+hh,LH+2+6*hsh(i,SEED+45));
         if(hsh(i,SEED+46)<.5){ctx.save();ctx.translate(x,0);ctx.scale(-1,1);ctx.drawImage(im,-w/2,base-hh,w,hh);ctx.restore();}
         else ctx.drawImage(im,x-w/2,base-hh,w,hh);
       }}
@@ -613,14 +630,14 @@ function ForestGame(canvas, hooks){
   }
   raf=requestAnimationFrame(loop);
   const onKey=e=>{
-    if(['Space','ArrowUp','KeyW'].includes(e.code)){e.preventDefault();jump();}
+    if(['Space','ArrowUp','KeyW'].includes(e.code)){e.preventDefault(); if(e.type==='keydown'&&!e.repeat) jump();}   // зажатая клавиша и отпускание — не второй прыжок
     if(['ArrowRight','KeyD'].includes(e.code)){e.preventDefault();S.boost=e.type==='keydown';}
   };
   window.addEventListener('keydown',onKey);window.addEventListener('keyup',onKey);
   const onTap=e=>{e.preventDefault();jump();};
   canvas.addEventListener('pointerdown',onTap);
   return {
-    start(){Object.assign(S,{run:true,done:false,dist:0,rt:0,v0:V0,gifts:0,score:0,cleared:0,objs:[],parts:[],next:520,jumpAt:-1e9,lowAt:-1e9,lifeAt:-1e9,hitAt:-1e9,bk:1,best:hooks.best?(+hooks.best()||0):0,stun:0,inv:0,early:false,out:false,lives:3,py:GROUND,vy:0,ground:true,paused:false,ph:0,boost:false});hooks.hud(S);},
+    start(){Object.assign(S,{run:true,done:false,dist:0,rt:0,v0:V0,gifts:0,score:0,cleared:0,objs:[],parts:[],next:520,jumpAt:-1e9,lowAt:-1e9,lifeAt:-1e9,hitAt:-1e9,bk:1,best:hooks.best?(+hooks.best()||0):0,stun:0,inv:0,early:false,out:false,lives:3,py:GROUND,vy:0,ground:true,paused:false,ph:0,boost:false,dj:false,flip:0});hooks.hud(S);},
     jump, boost(v){S.boost=v;}, state:S,
     // Пауза: телефон повернули вертикально или ушли из вкладки. Мир замирает, ускорение отпускается
     pause(){if(S.run&&!S.paused){S.paused=true;S.boost=false;S.bk=1;}},

@@ -673,6 +673,29 @@ function vQuiz(){
 /* ===== Лес ===== */
 const LITE_NOTE='<p class="note">Игра тормозит или не запускается? <a class="link" href="#" data-act="fLite">Альтернативный способ заработать баллы</a> — для старых браузеров и слабых компьютеров</p>';
 const FOREST_HELLO='тропа найдена! Папины подарки рассыпались по всему лесу — бежим вместе собирать. Управляешь мной ты. Всё, что соберём, пойдёт в общий счётчик банка.';
+// Перед стартом — на самом поле: коротко правила плитками с картинками из игры и кнопка старта.
+// Компьютер — пять плиток с пояснениями; телефон (поле невысокое) — четыре компактные
+const FIMG=n=>`<img src="assets/img/forest/${n}.png" alt="" onerror="this.style.visibility='hidden'">`;
+function forestRules(desk){
+  const best=st.forest.bestGifts, runs=st.forest.runs;
+  const tiles=desk?[
+    [`<span class="ri">${svg('jump')}</span>`,'Прыжок','пробел, ↑ или клик. В воздухе ещё раз — второй прыжок'],
+    [`<span class="ri">${svg('boost')}</span>`,'Ускорение','держите → — бег вдвое быстрее, но и препятствия чаще'],
+    [FIMG('gift_1'),'Подарки','каждый идёт в общий счётчик банка'],
+    [FIMG('heart'),'3 жизни','удар или яма — минус жизнь, сердечко вернёт её'],
+    [FIMG('obstacle_stump'),'Препятствия','на пень и бревно можно запрыгнуть, сугроб — только перепрыгнуть']
+  ]:[
+    [`<span class="ri">${svg('jump')}</span>`,'Прыжок','слева или тап; в воздухе — ещё раз'],
+    [`<span class="ri">${svg('boost')}</span>`,'Ускорение','держите кнопку справа'],
+    [FIMG('gift_1'),'Подарки','в счётчик банка'],
+    [FIMG('heart'),'3 жизни','сердечко вернёт']
+  ];
+  const sub=runs?`Лучший забег — ${best} ${plural(best,'подарок','подарка','подарков')}: баллы дают подарки сверх него, по 10 за каждый`:'Каждый подарок — 10 баллов';
+  return `<div class="inner wide"><div class="ov-t">${runs&&desk?'Ещё забег?':'Готовы?'}</div>
+    <div class="rules">${tiles.map(([i,b,t])=>`<div>${i}<b>${b}</b><span>${t}</span></div>`).join('')}</div>
+    <button class="btn btn-gold btn-lg" data-act="fStart">${desk?'Бежать!':'Старт'}</button>
+    ${desk?`<p class="small">${sub}</p>`:''}</div>`;
+}
 function vForest(){
   bar('Лес','Испытание 2 · бег за подарками','route');
   if(st.day<OPEN.forest)return lockView('«Лес» откроется 8 декабря','После того как тропа найдена, герой вместе со Старшим сыном попадает в лес, где рассыпаны подарки Деда Мороза.','m_star');
@@ -683,18 +706,16 @@ function vForest(){
       L:`${pt('Лес','Испытание 2 · соберите подарки, перепрыгните препятствия','h1')}${say('m_star','Старший сын',FOREST_HELLO)}`,
       R:`<div class="hud"><div>${ICON_HEART}<div><span>Жизни</span><b id="hLives" class="hearts">${hearts(3)}</b></div></div><div>${ICON_GIFT}<div><span>Подарки</span><b id="hGifts">0</b></div></div><div>${ICON_BANK}<div><span>В общий счётчик</span><b id="hBank">+0</b></div></div></div>
         <p class="tale small">Бегите и собирайте подарки: чем больше, тем лучше. Лес не кончается, а бег становится всё быстрее. На бревно и пень можно запрыгнуть сверху. У вас 3 жизни — каждое столкновение отнимает одну.</p>
-        <p class="note left">Пробел, ↑ или клик по игре — прыжок · держите → или «Ускорение» — бег сразу вдвое быстрее и дальше разгоняется</p>`,
-      full:`<div class="stage" id="stage"><canvas id="cv" data-ratio=".5625" data-lw="840"></canvas>
-          <div class="overlay" id="ov"><div class="inner"><div class="ov-t">${st.forest.runs?'Ещё забег?':'Готовы?'}</div>
-            <button class="btn btn-gold btn-lg" data-act="fStart">Бежать!</button>
-            ${st.forest.runs?`<p class="small">Лучший забег: ${best} ${plural(best,'подарок','подарка','подарков')}</p>`:''}</div></div></div>
+        <p class="note left">Пробел, ↑ или клик по игре — прыжок, в воздухе ещё раз — второй прыжок · держите → или «Ускорение» — бег сразу вдвое быстрее и дальше разгоняется</p>`,
+      full:`<div class="stage" id="stage"><canvas id="cv" data-ratio=".5625" data-lw="840" data-lh="440"></canvas>
+          <div class="overlay" id="ov">${forestRules(true)}</div></div>
         <div class="ctrl" id="ctrl"><button class="btn btn-ghost" id="bJump">${svg('jump','width="18" height="18"')} Прыжок</button><button class="btn btn-ghost" id="bFwd">Ускорение ${svg('boost','width="18" height="18"')}</button></div>
         <p class="note hidden" id="fin"><a class="link" href="#" data-act="fExit">Закончить забег</a> — собранные подарки засчитаются</p>${LITE_NOTE}`,
       pn:11,cls:'forest'};
   }
   if(ui.fmode)return {raw:gameMode()};
   return {M:`${say('m_star','Старший сын',FOREST_HELLO,'compact')}
-    <div class="howto"><div>${svg('jump')}<b>Прыжок</b><span>кнопка слева или тап по полю</span></div><div>${svg('boost')}<b>Ускорение</b><span>держите кнопку справа</span></div><div>${ICON_HEART}<b>3 жизни</b><span>столкновение — минус одна</span></div></div>
+    <div class="howto"><div>${svg('jump')}<b>Прыжок</b><span>кнопка слева или тап, в воздухе — ещё раз</span></div><div>${svg('boost')}<b>Ускорение</b><span>держите кнопку справа</span></div><div>${ICON_HEART}<b>3 жизни</b><span>столкновение — минус одна</span></div></div>
     <p class="rot-hint">${svg('rotate')}<span>Играем горизонтально — поверните телефон</span></p>
     <p class="tale small center">Бегите и собирайте подарки: чем больше, тем лучше. Лес не кончается, а бег становится всё быстрее. «Ускорение» разгоняет сразу вдвое — подарки идут чаще, но и препятствия тоже.</p>
     ${st.forest.runs?`<div class="rcs"><div><b>${best}</b><span>рекорд, подарков</span></div><div><b>${num(best*10)}</b><span>баллов в таблице</span></div><div><b>${st.forest.gifts}</b><span>всего в общем счётчике</span></div></div>`:''}
@@ -707,8 +728,8 @@ const ROT_PHONE='<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stro
 function gameMode(){
   return `<div class="gm" id="gm">
     <button class="gm-x" data-act="fExit" aria-label="Закончить забег">×</button>
-    <div class="gm-mid"><div class="stage" id="stage"><canvas id="cv" data-ratio="1.15" data-lw="620"></canvas>
-      <div class="overlay" id="ov"><div class="inner"><div class="ov-t">Готовы?</div><button class="btn btn-gold btn-lg" data-act="fStart">Старт</button><p class="small">Слева — прыжок, справа — ускорение. Тап по полю — тоже прыжок</p></div></div></div></div>
+    <div class="gm-mid"><div class="stage" id="stage"><canvas id="cv" data-ratio="1.15" data-lw="620" data-lh="440"></canvas>
+      <div class="overlay" id="ov">${forestRules(false)}</div></div></div>
     <button class="gm-b" id="bJump" aria-label="Прыжок">${svg('jump')}</button>
     <button class="gm-b" id="bFwd" aria-label="Ускорение">${svg('boost')}</button>
     <div class="gm-rot"><div class="rot-ph" aria-hidden="true">${ROT_PHONE}</div>
@@ -773,14 +794,15 @@ function finishForest(gifts,score,out){
   const rec=`<div><b>${gifts>prevBest?'+'+(gifts-prevBest)*10:st.forest.bestGifts}</b><span>${gifts>prevBest?'баллов — новый рекорд':'ваш рекорд, подарков'}</span></div>`;
   const treeNote=st.day<OPEN.tree?`«Ёлка» откроется ${fmt(OPEN.tree)}`:'';
   if(DESK){
-    // Десктоп: итоги — карточкой под игровым полем
+    // Десктоп: итоги — прямо на поле, крутить страницу не нужно: цифры, реплика Старшего сына, «Ещё забег» и «Дальше».
+    // «Дальше» прокручивает к блоку под полем — там переходы: «Ёлка», ещё забег, маршрут
     const fn=$('#fin');if(fn)fn.classList.add('hidden');
-    const ov=$('#ov');if(ov){ov.classList.remove('hidden');ov.innerHTML=`<div class="inner"><div class="lbl-s">${head}</div><div class="ov-t">${gifts} ${plural(gifts,'подарок','подарка','подарков')}</div><p class="small">Итоги и кнопки — под игрой ↓</p></div>`;}
-    const ctrl=$('#ctrl');if(!ctrl)return;
-    ctrl.outerHTML=`<div class="resultcard" id="ctrl">${say('m_star','Старший сын',line,'compact')}
+    const ov=$('#ov');if(ov){ov.classList.remove('hidden');ov.innerHTML=`<div class="inner wide res"><div class="lbl-s">${head}</div>
       <div class="rcs"><div><b>${gifts}</b><span>${plural(gifts,'подарок','подарка','подарков')} собрано</span></div><div><b>+${gifts}</b><span>в общий счётчик банка</span></div>${rec}</div>
-      ${nextBar([nx,{t:'Ещё забег',act:'fAgain'},nx.v!=='route'?ROUTE_BTN:null],treeNote)}</div>`;
-    const rc=$('#ctrl');if(rc)rc.scrollIntoView({behavior:reduced()?'auto':'smooth',block:'center'});
+      ${say('m_star','Старший сын',line,'compact')}
+      <div class="ov-acts"><button class="btn btn-gold btn-lg" data-act="fAgain">Ещё забег</button><button class="btn btn-ghost btn-lg" data-act="fNext">Дальше ${svg('chev','width="18" height="18"')}</button></div></div>`;}
+    const ctrl=$('#ctrl');if(!ctrl)return;
+    ctrl.outerHTML=`<div class="resultcard" id="ctrl">${nextBar([nx,{t:'Ещё забег',act:'fAgain'},nx.v!=='route'?ROUTE_BTN:null],treeNote)}</div>`;
   } else {
     // Телефон: итоги — шторкой поверх игры
     const gm=$('#gm');if(!gm)return;
@@ -1203,7 +1225,7 @@ function lockView(title,text,img){
 
 /* ===== Рендер ===== */
 const VIEWS={route:vRoute,profile:vProfile,quiz:vQuiz,forest:vForest,tree:vTree,final:vFinal,serial:vSerial,chapter:vChapter,fulltale:vFullTale,izba:vIzba,chest:vChest,rating:vRating};
-const MOUNTS={forest:()=>{if(DESK||ui.fmode)mountForest();},chapter:mountChapter,izba:mountIzba};
+const MOUNTS={forest:()=>{if(DESK||ui.fmode)mountForest(); if(DESK&&ui.fauto&&game){ui.fauto=false;ACT.fStart();}},chapter:mountChapter,izba:mountIzba};
 const FOOT=`<div class="foot"><span class="psb">${LOGO}</span><p>Прототип платформы · Deep × ПСБ · контент и цифры — примеры</p></div>`;
 function render(){
   clearTimers();
@@ -1337,7 +1359,8 @@ const ACT={
   // лес
   fPlay:()=>{landscapeLock();ui.fmode=true;render();},
   fStart:()=>{if(!game)mountForest();const ov=$('#ov');if(ov)ov.classList.add('hidden');const fn=$('#fin');if(fn)fn.classList.remove('hidden');game.start();fitField();},
-  fAgain:()=>{if(!DESK)landscapeLock();ui.fmode=true;render();},
+  fAgain:()=>{if(DESK){ui.fauto=true;render();return;}landscapeLock();ui.fmode=true;render();},   // компьютер: новый забег стартует сразу
+  fNext:()=>{const c=$('#ctrl');if(c)c.scrollIntoView({behavior:reduced()?'auto':'smooth',block:'center'});},
   fResume:()=>{const ov=$('#ov');if(ov)ov.classList.add('hidden');if(game)game.resume();},
   fExit:(d,e,ev)=>{ev&&ev.preventDefault&&ev.preventDefault();if(game&&game.state.run){game.finish();return;}if(DESK)return;landscapeUnlock();ui.fmode=false;render();window.scrollTo(0,0);},
   fLite:(d,e,ev)=>{ev&&ev.preventDefault();if(!DESK){ui.fmode=true;render();}startLite();},

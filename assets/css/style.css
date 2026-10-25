@@ -592,6 +592,30 @@ body.gm-on .demo-fab{display:none}
 .stage canvas{display:block;width:100%;height:auto}
 .overlay{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:12px;background:rgba(6,12,34,.6);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
 .overlay .inner{max-width:420px}
+/* «Лес»: правила перед стартом и итоги — прямо на поле */
+.overlay .inner.wide{max-width:min(900px,96%);width:100%}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:4px 0 16px}
+.rules>div{display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 8px 11px;border-radius:14px;text-align:center;background:rgba(8,16,44,.66);box-shadow:inset 0 0 0 1px rgba(233,189,104,.5)}
+.rules img,.rules .ri{height:42px;width:auto;max-width:100%;object-fit:contain;display:grid;place-items:center;filter:drop-shadow(0 3px 4px rgba(0,0,0,.45))}
+.rules .ri svg{width:30px;height:30px;color:var(--gold-hi)}
+.rules b{font:700 14.5px/1.2 var(--ui);color:var(--gold-hi)}
+.rules span{font-size:12.5px;line-height:1.35;color:var(--ink)}
+.overlay .res .lbl-s{display:block}
+.overlay .res .rcs{max-width:620px;margin:8px auto 12px}
+.overlay .res .rcs>div{background:rgba(8,16,44,.7)}
+.overlay .res .say{max-width:620px;margin:0 auto 14px;text-align:left}
+.ov-acts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.ov-acts .btn{min-width:180px}
+/* телефон: поле невысокое — четыре компактные плитки */
+.gm .overlay{padding:8px}
+.gm .overlay .ov-t{font-size:24px;margin:0 0 6px}
+.gm .rules{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:2px 0 10px}
+.gm .rules>div{padding:8px 4px 7px;gap:3px}
+.gm .rules img,.gm .rules .ri{height:28px}
+.gm .rules .ri svg{width:22px;height:22px}
+.gm .rules b{font-size:12.5px}
+.gm .rules span{font-size:10.5px}
+@media (max-height:340px){.gm .rules span{display:none}}
 .overlay .ov-t{font:800 30px/1.1 var(--display);background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent;margin:4px 0 12px;filter:drop-shadow(0 2px 1px rgba(0,0,0,.8))}
 .overlay .small{color:var(--ink2);margin:10px 0 0}
 .stage.lite-on canvas{display:none}
