@@ -1356,7 +1356,7 @@ body[data-screen="izba"] main.app{padding-bottom:calc(var(--tb) + 76px)}
   background:linear-gradient(180deg,#081232,#0d1a44) padding-box,linear-gradient(180deg,#c99a4a,#6e4a1c) border-box;border:1.5px solid transparent;box-shadow:inset 0 2px 6px rgba(0,0,0,.45)}
 .picker .pk-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .picker .pk-l{font:500 10.5px/1.1 var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--gold)}
-.picker b{font:500 17px/1.2 var(--ui);color:var(--ink);overflow-wrap:anywhere}
+.picker b{font:500 clamp(14px,4.1vw,17px)/1.2 var(--ui);color:var(--ink);overflow-wrap:anywhere}
 .picker svg{flex:none;width:18px;height:18px;color:var(--gold-hi)}
 .picker:focus-visible,.pk-i:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px}
 @media (max-width:359px){.pickers{grid-template-columns:1fr}}
@@ -1444,3 +1444,134 @@ body[data-screen="izba"] main.app{padding-bottom:calc(var(--tb) + 76px)}
 #cityNote.err-t{margin:8px 0 0}
 @media (min-width:900px) and (min-height:541px), (min-width:900px) and (hover:hover) and (pointer:fine){.city-o{min-height:38px;padding:8px 12px;font-size:15px}}
 .city-sug.up{top:auto;bottom:calc(100% + 6px)}
+
+/* ==========================================================================
+   Сцена — главная и регистрация в стиле «Леса»: ночная поляна вместо книжной рамки,
+   контент — на заснеженных стеклянных панелях. Включается классом body.scene (вид отдаёт scene:1)
+   ========================================================================== */
+body.scene{--bg:url(../img/scene/bg_m.webp)}
+@media (min-aspect-ratio:1/1){body.scene{--bg:url(../img/scene/bg_d.webp)}}
+body.scene::before{background:linear-gradient(180deg,rgba(3,10,36,.06) 0%,rgba(3,10,36,.22) 100%),var(--bg0) var(--bg) center bottom/cover no-repeat}
+body.scene::after{background:radial-gradient(ellipse at 50% 38%,rgba(0,8,30,0) 0%,rgba(0,8,30,.28) 70%,rgba(0,6,24,.55) 100%)}
+/* идёт снег: два слоя снежинок — мелкие падают медленнее, крупные быстрее. Двигаем слой transform'ом на высоту плитки — без перерисовки и без рывка на стыке цикла */
+body.scene #app::before,body.scene #app::after{content:"";position:fixed;left:0;right:0;z-index:-1;pointer-events:none;will-change:transform}
+body.scene #app::before{top:-260px;bottom:0;
+  background-image:
+    radial-gradient(circle at 10% 20%,rgba(255,255,255,.85) 0 1.6px,transparent 2.2px),radial-gradient(circle at 70% 8%,rgba(255,255,255,.7) 0 1.2px,transparent 1.8px),
+    radial-gradient(circle at 40% 62%,rgba(255,255,255,.8) 0 1.4px,transparent 2px),radial-gradient(circle at 88% 74%,rgba(255,255,255,.65) 0 1.1px,transparent 1.7px);
+  background-size:260px 260px;animation:snowfall-s 15s linear infinite}
+body.scene #app::after{top:-410px;bottom:0;
+  background-image:
+    radial-gradient(circle at 25% 85%,rgba(255,255,255,.55) 0 2.2px,transparent 3px),radial-gradient(circle at 58% 33%,rgba(255,255,255,.5) 0 2.6px,transparent 3.4px),
+    radial-gradient(circle at 82% 45%,rgba(255,255,255,.45) 0 2.4px,transparent 3.2px);
+  background-size:410px 410px;animation:snowfall-b 13s linear infinite}
+@keyframes snowfall-s{from{transform:translate3d(0,0,0)}to{transform:translate3d(0,260px,0)}}
+@keyframes snowfall-b{from{transform:translate3d(0,0,0)}to{transform:translate3d(0,410px,0)}}
+.scn{position:relative}
+.scn.m{padding:34px 8px 10px}
+/* панель — тёмное «стекло»; размытие фона — только на десктопе (на телефоне фон под панелями и так почти не виден, а блюр нагружает прокрутку) */
+.sp{position:relative;isolation:isolate;border-radius:22px;background:linear-gradient(180deg,rgba(17,34,88,.86),rgba(7,16,48,.93));
+  box-shadow:inset 0 0 0 1px rgba(196,220,255,.24),inset 0 2px 0 rgba(255,255,255,.14),0 22px 44px rgba(0,4,20,.55)}
+.sp-in{position:relative;padding:30px 18px 20px}
+.sp-in>:last-child{margin-bottom:0}
+@media (min-width:900px) and (min-height:541px), (min-width:900px) and (hover:hover) and (pointer:fine){
+  .scn.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:30px;width:min(100vw - 48px,1160px);margin:58px auto 34px;align-items:start}
+  .scn.one{width:min(100vw - 48px,620px);margin:62px auto 34px}
+  .sp-in{padding:38px 34px 28px}
+  .sp{background:linear-gradient(180deg,rgba(17,34,88,.76),rgba(7,16,48,.88));-webkit-backdrop-filter:blur(8px) saturate(1.15);backdrop-filter:blur(8px) saturate(1.15)}
+}
+/* снежная шапка с сосульками на каждой панели: концы — целиком, середина повторяется без шва (border-image round) */
+.sp::before{content:"";position:absolute;z-index:2;pointer-events:none;left:-8px;right:-8px;top:-25px;height:44px;
+  border-style:solid;border-color:transparent;border-width:44px 95px 0 92px;
+  border-image:url(../img/scene/cap.png) 120 258 0 252 / 44px 95px 0 92px round;
+  filter:drop-shadow(0 3px 3px rgba(0,8,34,.32))}
+.scn.m>.sp+.sp{margin-top:42px}
+.sc-col{display:flex;flex-direction:column;gap:50px;min-width:0}
+/* то, что стоит на поляне над панелями */
+.sc-stage{position:relative;margin:0 0 40px}
+.sc-hero{display:flex;align-items:flex-end;gap:12px;padding:0 6px}
+.sc-ava{flex:none;width:86px;margin-bottom:-8px;filter:drop-shadow(0 12px 16px rgba(0,0,0,.55))}
+.sc-hb{min-width:0;padding-bottom:4px}
+.sc-t{margin:0;font:800 clamp(27px,8vw,32px)/1.08 var(--display);letter-spacing:.005em;text-wrap:balance;
+  background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 2px 1px rgba(0,0,0,.85)) drop-shadow(0 0 16px rgba(255,210,130,.28))}
+.sc-sub{margin:8px 0 0;font:500 11px/1.4 var(--ui);letter-spacing:.09em;text-transform:uppercase;color:var(--gold-hi);text-shadow:0 1px 3px rgba(0,0,0,.9),0 0 10px rgba(0,0,0,.6)}
+/* медведь и его слова — облачко из инея прямо на поляне */
+.sc-stage .code-hero{align-items:end;gap:6px}
+.sc-stage .code-hero .mascot{width:96px;margin-bottom:-6px}
+.sc-stage .code-hero .tale{position:relative;padding:12px 14px;border-radius:16px;font-size:15px;line-height:1.5;color:#f3f6ff;
+  background:linear-gradient(180deg,rgba(28,52,124,.72),rgba(10,22,66,.8));-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  box-shadow:inset 0 0 0 1px rgba(196,220,255,.3),0 10px 24px rgba(0,4,20,.45)}
+.sc-stage .code-hero .tale::before{content:"";position:absolute;left:-7px;bottom:22px;width:14px;height:14px;transform:rotate(45deg);
+  background:rgba(16,32,88,.82);box-shadow:inset 1px -1px 0 rgba(196,220,255,.3)}
+/* табличка с именем — деревянная, со снегом; на телефоне аватар — на самой табличке */
+.scene .nickplate{border-radius:0;box-shadow:none;background:none;color:#3b1d06;padding:0}
+.scene .nickplate .fl{display:none}
+.scene .nickplate .hint{color:#7a4413;opacity:.9}
+.scene .nickplate .nk{color:#2c1404;text-shadow:0 1px 0 rgba(255,226,170,.55)}
+.sc-stage .nk-prev{position:relative;margin:0 auto;max-width:420px;aspect-ratio:720/290;padding:13.4% 12.5% 5.6%;gap:10px;
+  background:url(../img/scene/sign.webp) center/100% 100% no-repeat;filter:drop-shadow(0 14px 18px rgba(0,0,0,.5))}
+.sc-stage .nk-prev .ava{--s:58px!important}
+.sc-stage .nk-prev .nickplate{text-align:left}
+/* код — во льду */
+.scene .codebox{border:0;background:linear-gradient(180deg,rgba(214,232,255,.15),rgba(150,190,255,.05));
+  box-shadow:inset 0 0 0 1.5px rgba(205,226,255,.42),inset 0 12px 26px rgba(255,255,255,.06),0 8px 20px rgba(0,6,30,.3)}
+.scene .codebox .code{text-shadow:0 0 16px rgba(251,228,164,.4)}
+@media (min-width:900px) and (min-height:541px), (min-width:900px) and (hover:hover) and (pointer:fine){
+  .sp::before{left:-12px;right:-12px;top:-29px;height:50px;border-width:50px 108px 0 105px;border-image-width:50px 108px 0 105px}
+  .sc-stage{width:min(100vw - 48px,1160px);margin:34px auto -14px;text-align:center}
+  .sc-stage .sc-t{font-size:clamp(38px,3.6vw,50px)}
+  .sc-stage .sc-sub{font-size:12.5px;margin-top:10px}
+  /* табличка: аватар — на доске слева, имя справа; кегль и аватар — от ширины таблички (cqi), две строки всегда помещаются под снегом */
+  .scene .nick-hero{align-items:center}
+  .scene .nick-prev{flex-direction:row;align-items:center;gap:10px;width:100%;aspect-ratio:720/290;padding:12.6% 11.6% 4.6%;container-type:inline-size;
+    background:url(../img/scene/sign.webp) center/100% 100% no-repeat;filter:drop-shadow(0 14px 18px rgba(0,0,0,.45))}
+  .scene .nick-prev .ava{--s:clamp(50px,17.5cqi,76px)!important}
+  .scene .nickplate{flex:1;min-width:0;text-align:left;container-type:inline-size}
+  .scene .nickplate .hint{font-size:10px;margin-bottom:3px}
+  .scene .nickplate .nk{font-size:clamp(17px,11.6cqi,30px);line-height:1.06}
+  .scene .nickplate .nk.long{font-size:clamp(15px,10cqi,25px)}
+}
+.sc-title .sc-t::before,.sc-title .sc-t::after{content:"";display:inline-block;width:.4em;height:.4em;margin:0 .34em;vertical-align:.16em;
+  background:var(--p-star) center/contain no-repeat;filter:drop-shadow(0 0 8px rgba(255,214,140,.6))}
+/* на панели не нужен лишний отступ сверху и рамка внутри рамки: одиночная карточка становится самой панелью */
+.sp-in>:first-child,.sp-in>:first-child>.lbl:first-child{margin-top:0}
+.sp-in>.cart:only-child{margin:0;padding:0;background:none;box-shadow:none}
+.sp-in>.cart:only-child::before{display:none}
+.sp-in>.codebox:only-child{margin:0;padding:2px 0 0;background:none;box-shadow:none}
+.sp-in>.bank:only-child{overflow:visible}
+.sp-in>.bank:only-child .deco{right:-6px;bottom:-14px}
+
+/* ==========================================================================
+   Мир сказки — испытания, рейтинг, кабинет, сундук (те же сцена и панели, что у главной и регистрации)
+   ========================================================================== */
+/* реплики героев в мире — облачка из инея, а не пергамент книги */
+.scene .say .bubble{color:#eef3ff;background:linear-gradient(180deg,#26458f,#152c70);box-shadow:inset 0 0 0 1px rgba(196,220,255,.34),0 10px 22px rgba(0,4,20,.4)}
+.scene .say .bubble::before{background:#24438c;box-shadow:-1px 1px 0 0 rgba(196,220,255,.34)}
+.scene .say .bubble b{color:var(--gold-hi)}
+.sc-stage .say{margin:0}
+.sc-stage .qbar,.sc-stage .wiz{margin:0 2px 14px}
+/* одиночная карточка «Ваше место» — сама панель */
+.sp-in>.mypos:only-child{margin:0;padding:0;background:none;box-shadow:none}
+/* в «Лесе» снег за панелями не идёт и фон не размывается — видеокарта целиком для игры */
+body[data-screen=forest] #app::before,body[data-screen=forest] #app::after{display:none}
+/* переход между экранами мира: реплика и панели мягко поднимаются одна за другой */
+.turn .sc-stage,.turn .sp{animation:pgRise .5s ease both}
+.turn .scn>.sp:nth-of-type(2),.turn .sc-col>.sp:nth-child(2),.turn .sc-col:nth-child(2)>.sp:first-child{animation-delay:.07s}
+.turn .scn>.sp:nth-of-type(n+3),.turn .sc-col>.sp:nth-child(n+3),.turn .sc-col:nth-child(2)>.sp:nth-child(2){animation-delay:.14s}
+@media (min-width:900px) and (min-height:541px), (min-width:900px) and (hover:hover) and (pointer:fine){
+  /* широкая панель под колонками — поле «Леса» */
+  .scn.wide{width:min(100vw - 48px,1160px);margin:50px auto 34px}
+  body[data-screen=forest] .sp{-webkit-backdrop-filter:none;backdrop-filter:none;background:linear-gradient(180deg,rgba(17,34,88,.9),rgba(7,16,48,.95))}
+  .profile .nick-prev{max-width:430px;margin:0 auto 16px}
+}
+/* «Спроси дорогу»: слово — на деревянном указателе со снегом, узор остаётся на светлом полотне */
+.scene .qword-wrap.is-w .plabel{margin:0 auto 4px}
+.scene .qword-wrap.is-w .qword{aspect-ratio:720/290;padding:12.4% 12% 4.6%;border-radius:0;display:grid;place-items:center;container-type:inline-size;
+  background:url(../img/scene/sign.webp) center/100% 100% no-repeat;box-shadow:none;filter:drop-shadow(0 12px 16px rgba(0,0,0,.45))}
+.scene .qword-wrap.is-w .qword .fl{display:none}
+.scene .qword-wrap.is-w .qword .w{color:#2c1404;text-shadow:0 1px 0 rgba(255,226,170,.55);letter-spacing:.02em;
+  font-size:clamp(18px,min(14cqi,calc(100cqi / var(--n,6))),52px)}
+@media (min-width:900px) and (min-height:541px), (min-width:900px) and (hover:hover) and (pointer:fine){
+  .scene .qword-wrap.is-w{max-width:440px;margin-left:auto;margin-right:auto}
+}
