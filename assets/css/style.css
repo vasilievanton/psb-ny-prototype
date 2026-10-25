@@ -1575,3 +1575,11 @@ body[data-screen=forest] #app::before,body[data-screen=forest] #app::after{displ
 @media (min-width:900px) and (min-height:541px), (min-width:900px) and (hover:hover) and (pointer:fine){
   .scene .qword-wrap.is-w{max-width:440px;margin-left:auto;margin-right:auto}
 }
+/* «Лес»: выключатель звука — на компьютере в правом верхнем углу поля, на телефоне в игровом режиме — слева сверху, напротив крестика */
+.snd{position:absolute;top:10px;right:10px;z-index:4;display:grid;place-items:center;width:40px;height:40px;padding:0;border-radius:50%;color:var(--gold-hi);
+  background:rgba(8,16,44,.62);box-shadow:inset 0 0 0 1px rgba(233,189,104,.5)}
+.snd svg{width:20px;height:20px}
+.snd[aria-pressed=false]{color:var(--ink2);box-shadow:inset 0 0 0 1px rgba(196,210,240,.3)}
+.gm>.snd{position:relative;top:auto;right:auto;flex:none;width:42px;height:42px;z-index:6}
+@media (orientation:portrait){.gm>.snd{display:none}}
+@media (orientation:landscape){.gm>.snd{grid-column:1;grid-row:1;align-self:start;justify-self:center}}
