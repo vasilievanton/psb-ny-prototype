@@ -126,8 +126,69 @@ function loadForestArt(){
 // На странице «Леса» картинки грузятся сразу, пока игрок читает правила
 if(document.body&&document.body.dataset.page==='forest')loadForestArt();
 
+/* ===== Звуки «Леса» =====
+   Эффекты и музыка — из бесплатных наборов с лицензией CC0 (список и источники — в README, раздел 6.5).
+   Эффекты играет Web Audio: без задержки и по нескольку сразу. Музыка — элемент <audio>: длинный файл не раскодируется в память целиком,
+   идёт по кругу. Браузеры дают звук только после касания или клика, поэтому звук «включается» на кнопке старта (unlock).
+   Выключатель — кнопка на поле; выбор запоминается на устройстве. Страница открыта прямо с диска (file://) — эффекты через <audio>. */
+// имя → [файл, громкость]; громкость музыки задана в самом файле (на iPhone громкость элемента <audio> не меняется)
+const FOREST_SFX={jump:['jump',.5],jump2:['jump2',.55],land:['land',.3],gift:['gift',.55],heart:['heart',.6],hit:['hit',.85],fall:['fall',.7],boost:['boost',.55],over:['over',.7],record:['record',.75]};
+const ForestSound=(()=>{
+  const DIR='assets/audio/', AC=window.AudioContext||window.webkitAudioContext, WA=!!AC&&location.protocol!=='file:';
+  let ctx=null, out=null, music=null, on=true, want=false;
+  const bufs={};
+  try{on=localStorage.getItem('psb-sound')!=='0';}catch(e){}
+  // звук можно включать только сразу после касания или клика (иначе браузер ругается в консоли), музыку — после первого касания страницы
+  const UA=navigator.userActivation, now=()=>!UA||UA.isActive, ever=()=>!UA||UA.hasBeenActive;
+  // у MP3 в начале бывают миллисекунды тишины: играем с первого звучащего сэмпла
+  const lead=b=>{const d=b.getChannelData(0),n=Math.min(d.length,8192);let i=0;while(i<n&&Math.abs(d[i])<.0015)i++;return i<n?i/b.sampleRate:0;};
+  function load(){
+    Object.values(FOREST_SFX).forEach(([f])=>{
+      if(f in bufs) return; bufs[f]=null;
+      fetch(DIR+f+'.mp3').then(r=>r.ok?r.arrayBuffer():Promise.reject(r.status))
+        .then(a=>new Promise((res,rej)=>ctx.decodeAudioData(a,res,rej))).then(b=>{bufs[f]={b,off:lead(b)};}).catch(()=>{});
+    });
+  }
+  // вызывать из обработчика касания или клика
+  function unlock(){
+    if(!now()) return;
+    if(WA&&!ctx){
+      try{ctx=new AC(); out=ctx.createGain(); out.connect(ctx.destination);
+        const s=ctx.createBufferSource(); s.buffer=ctx.createBuffer(1,1,22050); s.connect(out); s.start(0);   // iPhone: «разогреть» звук внутри касания
+        load();}catch(e){ctx=null;}
+    }
+    if(ctx&&ctx.state==='suspended') ctx.resume().catch(()=>{});
+  }
+  function play(name,o){
+    const d=FOREST_SFX[name]; if(!on||!d) return;
+    const vol=d[1]*((o&&o.vol)||1), rate=(o&&o.rate)||1;
+    if(ctx){
+      const x=bufs[d[0]]; if(!x) return;
+      const s=ctx.createBufferSource(), g=ctx.createGain(); s.buffer=x.b; s.playbackRate.value=rate; g.gain.value=vol;
+      s.connect(g); g.connect(out); s.start(0,x.off); return;
+    }
+    if(WA||!ever()) return;   // Web Audio есть, но звук ещё не включён касанием
+    try{const a=new Audio(DIR+d[0]+'.mp3'); a.volume=Math.min(1,vol); a.preservesPitch=false; a.playbackRate=rate; const p=a.play(); if(p&&p.catch)p.catch(()=>{});}catch(e){}
+  }
+  function musicPlay(){
+    want=true; if(!on||!ever()) return;
+    if(!music){ music=new Audio(DIR+'music.mp3'); music.loop=true; music.preload='auto'; }
+    const p=music.play(); if(p&&p.catch)p.catch(()=>{});
+  }
+  function musicPause(){ want=false; if(music) music.pause(); }
+  function set(v){
+    on=!!v; try{localStorage.setItem('psb-sound',on?'1':'0');}catch(e){}
+    if(on&&want) musicPlay(); else if(music) music.pause();   // включили посреди забега — музыка продолжается
+  }
+  return {unlock,play,musicPlay,musicPause,set,get on(){return on;}};
+})();
+
 function ForestGame(canvas, hooks){
   const ctx=canvas.getContext('2d'), F=FOREST_ART; loadForestArt();
+  const sfx=(n,o)=>{if(hooks.sfx)hooks.sfx(n,o);};
+  // подарки подряд (меньше чем через GIFT_RUN секунды) звучат всё выше — по ступеням мажорной пентатоники
+  const GIFT_RUN=1.1, GIFT_STEPS=[1,1.122,1.26,1.498,1.682,2];
+  let giftT=-9, giftN=0;
   const head=new Image(); head.src=A.m_star; // векторная заглушка медведя: бюст Старшего сына + дорисованные ноги и руки
   const LH=400, GROUND=328, PX=96;
   // PNG в единицах игры: кадр медведя — BEAR_H в высоту, лапы на земле; RUN_CYCLE — сколько медведь пробегает за все кадры бега; подарок — GIFT_D по большей стороне
@@ -189,9 +250,9 @@ function ForestGame(canvas, hooks){
   const J1=920, J2=525, FLIP=.5;
   function jump(){
     if(!S.run||S.paused) return;
-    if(S.ground){S.vy=-J1;S.ground=false;S.dj=false;return;}
+    if(S.ground){S.vy=-J1;S.ground=false;S.dj=false;sfx('jump');return;}
     if(S.dj) return;
-    S.dj=true; S.vy=-Math.max(J2,-S.vy*1.1); S.flip=FLIP;
+    S.dj=true; S.vy=-Math.max(J2,-S.vy*1.1); S.flip=FLIP; sfx('jump2');
     for(let i=0;i<9;i++)S.parts.push({k:'sp',x:PX+rnd(-18,18),y:S.py-6,vx:rnd(-110,110),vy:rnd(30,140),life:rnd(.3,.55)});   // снежная пыль из-под лап
   }
   // Размер и зона столкновения препятствия: из PNG, если он уже загружен, иначе — векторные
@@ -280,8 +341,9 @@ function ForestGame(canvas, hooks){
       S.lowAt=c; S.next=c+v*rnd(.25,.45);
     }
   }
-  function hit(){
+  function hit(pit){
     if(S.inv>0||!S.run) return; S.stun=.6; S.inv=1.4; S.lives--; S.bk=1; S.hitAt=S.dist+PX;
+    sfx(pit?'fall':'hit');
     S.parts.push({k:'txt',x:PX+30,y:S.py-110,t:S.lives>0?'Ой! −1 жизнь':'Жизни кончились',life:1.1,c:'#ffb3a8'});
     hooks.hud(S);
     if(S.lives<=0){S.run=false;S.done=true;S.out=true;setTimeout(()=>hooks.end(S),700);}
@@ -325,7 +387,7 @@ function ForestGame(canvas, hooks){
     if(front<S.py-STEP&&front<under-STEP) wall(front);
     if(S.py>GROUND+40){                                                 // провалился в яму: минус жизнь, выбирается на дальнем краю
       const o=S.objs.find(o=>o.k==='pit'&&px+PX>o.x-30&&px+PX<o.x+o.w+30);
-      if(S.run&&S.inv<=0)hit();
+      if(S.run&&S.inv<=0)hit(true);
       if(o) S.dist=Math.max(S.dist,o.x+o.w-PX+8);
       S.py=GROUND; S.vy=0; S.ground=true; return;
     }
@@ -334,7 +396,7 @@ function ForestGame(canvas, hooks){
       else if(under>S.py+1){ if(under-S.py>8){S.ground=false;S.vy=0;} else S.py=under; }   // сбежал с края — падает
     } else {
       S.vy+=2300*dt; const ny=S.py+S.vy*dt;
-      if(S.vy>=0&&ny>=under){S.py=under;S.vy=0;S.ground=true;} else S.py=ny;
+      if(S.vy>=0&&ny>=under){ if(S.run&&S.vy>500)sfx('land',{vol:Math.min(1,S.vy/1100)}); S.py=under;S.vy=0;S.ground=true; } else S.py=ny;
     }
     const pr={x:px+PX-26,y:S.py-84,w:54,h:76};
     for(const o of S.objs){
@@ -349,8 +411,9 @@ function ForestGame(canvas, hooks){
         const cx=o.x+13, cy=o.y+12;
         if(cx>pr.x-14&&cx<pr.x+pr.w+14&&cy>pr.y-14&&cy<pr.y+pr.h+10){
           o.gone=1;
-          if(o.k==='life'){ if(S.lives<3)S.lives++; S.parts.push({k:'txt',x:cx-px-20,y:cy-20,t:'+1 жизнь',life:1.1,c:'#ffb8c8'}); }
-          else { S.gifts++;S.score+=10; S.parts.push({k:'txt',x:cx-px,y:cy-20,t:'+1',life:.9,c:'#fde7a8'}); }
+          if(o.k==='life'){ if(S.lives<3)S.lives++; S.parts.push({k:'txt',x:cx-px-20,y:cy-20,t:'+1 жизнь',life:1.1,c:'#ffb8c8'}); sfx('heart'); }
+          else { S.gifts++;S.score+=10; S.parts.push({k:'txt',x:cx-px,y:cy-20,t:'+1',life:.9,c:'#fde7a8'});
+            giftN=S.t-giftT<GIFT_RUN?Math.min(giftN+1,GIFT_STEPS.length-1):0; giftT=S.t; sfx('gift',{rate:GIFT_STEPS[giftN]}); }
           hooks.hud(S);
           for(let i=0;i<10;i++)S.parts.push({k:'sp',x:cx-px,y:cy,vx:rnd(-120,120),vy:rnd(-160,40),life:rnd(.4,.8)});
         }
@@ -631,14 +694,15 @@ function ForestGame(canvas, hooks){
   raf=requestAnimationFrame(loop);
   const onKey=e=>{
     if(['Space','ArrowUp','KeyW'].includes(e.code)){e.preventDefault(); if(e.type==='keydown'&&!e.repeat) jump();}   // зажатая клавиша и отпускание — не второй прыжок
-    if(['ArrowRight','KeyD'].includes(e.code)){e.preventDefault();S.boost=e.type==='keydown';}
+    if(['ArrowRight','KeyD'].includes(e.code)){e.preventDefault();setBoost(e.type==='keydown');}
   };
   window.addEventListener('keydown',onKey);window.addEventListener('keyup',onKey);
+  function setBoost(v){ if(v&&!S.boost&&S.run&&!S.paused)sfx('boost'); S.boost=v; }
   const onTap=e=>{e.preventDefault();jump();};
   canvas.addEventListener('pointerdown',onTap);
   return {
-    start(){Object.assign(S,{run:true,done:false,dist:0,rt:0,v0:V0,gifts:0,score:0,cleared:0,objs:[],parts:[],next:520,jumpAt:-1e9,lowAt:-1e9,lifeAt:-1e9,hitAt:-1e9,bk:1,best:hooks.best?(+hooks.best()||0):0,stun:0,inv:0,early:false,out:false,lives:3,py:GROUND,vy:0,ground:true,paused:false,ph:0,boost:false,dj:false,flip:0});hooks.hud(S);},
-    jump, boost(v){S.boost=v;}, state:S,
+    start(){giftN=0;giftT=-9;Object.assign(S,{run:true,done:false,dist:0,rt:0,v0:V0,gifts:0,score:0,cleared:0,objs:[],parts:[],next:520,jumpAt:-1e9,lowAt:-1e9,lifeAt:-1e9,hitAt:-1e9,bk:1,best:hooks.best?(+hooks.best()||0):0,stun:0,inv:0,early:false,out:false,lives:3,py:GROUND,vy:0,ground:true,paused:false,ph:0,boost:false,dj:false,flip:0});hooks.hud(S);},
+    jump, boost:setBoost, state:S,
     // Пауза: телефон повернули вертикально или ушли из вкладки. Мир замирает, ускорение отпускается
     pause(){if(S.run&&!S.paused){S.paused=true;S.boost=false;S.bk=1;}},
     resume(){if(S.paused){S.paused=false;S.boost=false;last=0;}},

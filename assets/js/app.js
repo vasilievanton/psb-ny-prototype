@@ -38,7 +38,9 @@ const I={
   jump:'<path d="M12 20V5M5 12l7-7 7 7"/>',
   boost:'<path d="M4 6l6 6-6 6M12 6l6 6-6 6"/>',
   rotate:'<rect x="2" y="9" width="20" height="12" rx="2.5"/><path d="M6.5 6.5a8 8 0 0 1 11 0"/><path d="M17.5 2.8v3.7h-3.7"/>',
-  photo:'<rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="4"/><path d="M8 6l2-3h4l2 3"/>'
+  photo:'<rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="4"/><path d="M8 6l2-3h4l2 3"/>',
+  snd:'<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>',
+  sndOff:'<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/>'
 };
 function svg(n,a=''){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ${a}>${I[n]}</svg>`;}
 const ICON_STAR='<svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7.1L12 17.3 5.8 21l1.6-7.1L2 9.2l7.1-.6z" fill="#f3c96b"/></svg>';
@@ -91,7 +93,7 @@ function flash(m){SS.set('toast',m);}
 function saveDraft(){st.draft={nick:ui.nick,city:ui.city,cityQ:ui.cityQ,pending:ui.pending,auth:{code:ui.auth.code,email:ui.auth.email,sentTo:ui.auth.sentTo}};save();}
 if(st.draft){ui.nick=st.draft.nick||null;ui.city=st.draft.city||'';ui.cityQ=st.draft.cityQ!=null?st.draft.cityQ:null;ui.pending=st.draft.pending||null;ui.auth=Object.assign(AUTH0(),st.draft.auth||{});}
 let game=null, timers=[];
-function clearTimers(){timers.forEach(t=>clearInterval(t));timers=[];if(game){game.destroy();game=null;}}
+function clearTimers(){timers.forEach(t=>clearInterval(t));timers=[];if(game){game.destroy();game=null;ForestSound.musicPause();}}
 
 /* ===== Производные ===== */
 // Квиз: в таблицу идёт результат первой попытки, повторные прохождения — без баллов
@@ -713,6 +715,8 @@ function forestRules(desk){
     <button class="btn btn-gold btn-lg" data-act="fStart">${desk?'Бежать!':'Старт'}</button>
     ${desk?`<p class="small">${sub}</p>`:''}</div>`;
 }
+// Выключатель звука и музыки «Леса» (выбор запоминается на устройстве)
+function sndBtn(){const on=ForestSound.on;return `<button class="snd" data-act="fSound" aria-pressed="${on}" aria-label="Звук" title="${on?'Выключить звук':'Включить звук'}">${svg(on?'snd':'sndOff')}</button>`;}
 function vForest(){
   bar('Лес','Испытание 2 · бег за подарками','route');
   if(st.day<OPEN.forest)return lockView('«Лес» откроется 8 декабря','После того как тропа найдена, герой вместе со Старшим сыном попадает в лес, где рассыпаны подарки Деда Мороза.','m_star');
@@ -725,7 +729,7 @@ function vForest(){
         <p class="tale small">Бегите и собирайте подарки: чем больше, тем лучше. Лес не кончается, а бег становится всё быстрее. На бревно и пень можно запрыгнуть сверху. У вас 3 жизни — каждое столкновение отнимает одну.</p>
         <p class="note left">Пробел, ↑ или клик по игре — прыжок, в воздухе ещё раз — второй прыжок · держите → или «Ускорение» — бег сразу вдвое быстрее и дальше разгоняется</p>`,
       full:`<div class="stage" id="stage"><canvas id="cv" data-ratio=".5625" data-lw="840" data-lh="440"></canvas>
-          <div class="overlay" id="ov">${forestRules(true)}</div></div>
+          <div class="overlay" id="ov">${forestRules(true)}</div>${sndBtn()}</div>
         <div class="ctrl" id="ctrl"><button class="btn btn-ghost" id="bJump">${svg('jump','width="18" height="18"')} Прыжок</button><button class="btn btn-ghost" id="bFwd">Ускорение ${svg('boost','width="18" height="18"')}</button></div>
         <p class="note hidden" id="fin"><a class="link" href="#" data-act="fExit">Закончить забег</a> — собранные подарки засчитаются</p>${LITE_NOTE}`,
       pn:11,cls:'forest'};
@@ -744,7 +748,7 @@ function vForest(){
 const ROT_PHONE='<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="19" y="5" width="26" height="54" rx="6"/><path d="M28 52h8"/></svg>';
 function gameMode(){
   return `<div class="gm" id="gm">
-    <button class="gm-x" data-act="fExit" aria-label="Закончить забег">×</button>
+    ${sndBtn()}<button class="gm-x" data-act="fExit" aria-label="Закончить забег">×</button>
     <div class="gm-mid"><div class="stage" id="stage"><canvas id="cv" data-ratio="1.15" data-lw="620" data-lh="440"></canvas>
       <div class="overlay" id="ov">${forestRules(false)}</div></div></div>
     <button class="gm-b" id="bJump" aria-label="Прыжок">${svg('jump')}</button>
@@ -770,7 +774,7 @@ function landscapeUnlock(){
 // Пауза: телефон повернули вертикально посреди забега или ушли из вкладки. Продолжают кнопкой на поле
 function pauseRun(){
   if(!game||!game.state.run||game.state.paused) return;
-  game.pause(); const f=$('#bFwd'); if(f)f.classList.remove('on');
+  game.pause(); ForestSound.musicPause(); const f=$('#bFwd'); if(f)f.classList.remove('on');
   const ov=$('#ov'); if(!ov) return;
   ov.innerHTML=`<div class="inner"><div class="ov-t">Пауза</div><button class="btn btn-gold btn-lg" data-act="fResume">Продолжить</button></div>`;
   ov.classList.remove('hidden');
@@ -786,6 +790,7 @@ function mountForest(){
   game=ForestGame(cv,{
     hud(S){const a=$('#hLives'),b=$('#hGifts'),c=$('#hBank');if(a)a.innerHTML=hearts(S.lives);if(b)b.textContent=S.gifts;if(c)c.textContent='+'+S.gifts;},
     end(S){finishForest(S.gifts,S.score,S.out);},
+    sfx:(n,o)=>ForestSound.play(n,o),
     best:()=>st.forest.bestGifts||0   // рекорд — для полоски «до рекорда» на поле
   });
   const j=$('#bJump'),f=$('#bFwd');
@@ -804,6 +809,7 @@ function fitField(){
 }
 function finishForest(gifts,score,out){
   const first=!st.forest.runs, prevBest=st.forest.bestGifts;
+  ForestSound.musicPause(); if(gifts>prevBest)ForestSound.play('record'); else if(out)ForestSound.play('over');
   st.forest.runs++;st.forest.gifts+=gifts;if(gifts>prevBest){addLog('forest',prevBest?`Новый рекорд: ${gifts} ${plural(gifts,'подарок','подарка','подарков')} (было ${prevBest})`:`Забег: ${gifts} ${plural(gifts,'подарок','подарка','подарков')}`,(gifts-prevBest)*10);st.forest.bestGifts=gifts;}save();
   const head=out?'Жизни закончились':'Забег окончен';
   const nx=st.day>=OPEN.tree?{t:'Дальше: «Ёлка»',act:'go',v:'tree',gold:1}:{t:'На маршрут',act:'go',v:'route',gold:1};
@@ -841,7 +847,7 @@ function startLite(){
   const gm=$('#gm');if(gm)gm.classList.add('gm-lite');   // кнопки игры не нужны, и играть можно в любом положении телефона
   let n=0,got=0,cur=-1;
   ov.innerHTML=`<div class="inner"><div class="lbl-s">Альтернативный способ заработать баллы</div><p class="small">Нажимайте на подарки, пока они не исчезли</p><div class="lite" id="lite">${[...Array(9)].map((_,i)=>`<button data-li="${i}"></button>`).join('')}</div><div class="small" id="liteC">Собрано: 0</div></div>`;
-  $('#lite').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-li]');if(b&&+b.dataset.li===cur){got++;cur=-1;b.classList.remove('has');b.textContent='';$('#liteC').textContent='Собрано: '+got;const g=$('#hGifts');if(g)g.textContent=got;const c=$('#hBank');if(c)c.textContent='+'+got;}});
+  $('#lite').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-li]');if(b&&+b.dataset.li===cur){got++;cur=-1;ForestSound.play('gift');b.classList.remove('has');b.textContent='';$('#liteC').textContent='Собрано: '+got;const g=$('#hGifts');if(g)g.textContent=got;const c=$('#hBank');if(c)c.textContent='+'+got;}});
   const t=setInterval(()=>{
     $$('#lite button').forEach(b=>{b.classList.remove('has');b.textContent='';});
     if(n>=18){clearInterval(t);finishForest(got,got*10);return;}
@@ -1382,11 +1388,13 @@ const ACT={
   qAgain:()=>{ui.quiz=null;ui.quizRound=null;st.qrun=null;save();ui.turn=true;render();window.scrollTo(0,0);},
   // лес
   fPlay:()=>{landscapeLock();ui.fmode=true;render();},
-  fStart:()=>{if(!game)mountForest();const ov=$('#ov');if(ov)ov.classList.add('hidden');const fn=$('#fin');if(fn)fn.classList.remove('hidden');game.start();fitField();},
+  fStart:()=>{ForestSound.unlock();if(!game)mountForest();const ov=$('#ov');if(ov)ov.classList.add('hidden');const fn=$('#fin');if(fn)fn.classList.remove('hidden');game.start();ForestSound.musicPlay();fitField();},
   fAgain:()=>{if(DESK){ui.fauto=true;render();return;}landscapeLock();ui.fmode=true;render();},   // компьютер: новый забег стартует сразу
   fNext:()=>{const c=$('#ctrl');if(c)c.scrollIntoView({behavior:reduced()?'auto':'smooth',block:'center'});},
-  fResume:()=>{const ov=$('#ov');if(ov)ov.classList.add('hidden');if(game)game.resume();},
-  fExit:(d,e,ev)=>{ev&&ev.preventDefault&&ev.preventDefault();if(game&&game.state.run){game.finish();return;}if(DESK)return;landscapeUnlock();ui.fmode=false;render();window.scrollTo(0,0);},
+  fResume:()=>{ForestSound.unlock();const ov=$('#ov');if(ov)ov.classList.add('hidden');if(game){game.resume();ForestSound.musicPlay();}},
+  fSound:(d,t)=>{ForestSound.unlock();ForestSound.set(!ForestSound.on);const on=ForestSound.on;
+    $$('.snd').forEach(b=>{b.innerHTML=svg(on?'snd':'sndOff');b.setAttribute('aria-pressed',on);b.title=on?'Выключить звук':'Включить звук';});if(t&&t.blur)t.blur();},
+  fExit:(d,e,ev)=>{ev&&ev.preventDefault&&ev.preventDefault();if(game&&game.state.run){game.finish();return;}if(DESK)return;ForestSound.musicPause();landscapeUnlock();ui.fmode=false;render();window.scrollTo(0,0);},
   fLite:(d,e,ev)=>{ev&&ev.preventDefault();if(!DESK){ui.fmode=true;render();}startLite();},
   // ёлка
   tStyle:d=>{ui.tree.style=+d.i;render();},
