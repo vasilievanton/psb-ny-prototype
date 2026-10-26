@@ -43,6 +43,8 @@ const A={
 "tile_quiz": "assets/img/tile_quiz.webp",
 "tile_tree": "assets/img/tile_tree.webp",
 "forest_head": "assets/img/forest_head.webp",
+"quiz_head": "assets/img/quiz_head.webp",
+"tree_head": "assets/img/tree_head.webp",
 "tree_big": "assets/img/tree_big.webp",
 "toy0": "assets/img/toy0.webp",
 "toy1": "assets/img/toy1.webp",
