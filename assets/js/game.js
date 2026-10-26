@@ -664,9 +664,12 @@ function ForestGame(canvas, hooks){
     const x0=10, y0=10, hs=22, gap=4, rec=S.best>0;
     const giftX=x0+12+3*(hs+gap)+10, cnt=String(S.gifts), over=rec&&S.gifts>S.best;
     const label=!rec?'Каждый подарок — 10 баллов':over?`Новый рекорд · +${(S.gifts-S.best)*10} баллов`:S.gifts===S.best?'Рекорд повторён · дальше +10 за подарок':`До рекорда ${S.best-S.gifts} ${plural(S.best-S.gifts,'подарок','подарка','подарков')}`;
+    // таймер забега: время бега без пауз и экрана «Готовы?»
+    const sec=Math.floor(S.rt||0), tm=Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
     ctx.font='500 11px '+UI_FONT; const lw=ctx.measureText(label).width;
     ctx.font='700 19px '+UI_FONT; const cw=ctx.measureText(cnt).width;
-    const pw=Math.max(170, giftX-x0+30+cw+12, lw+24), ph=58;
+    ctx.font='700 15px '+UI_FONT; const tw=ctx.measureText(tm).width;
+    const pw=Math.max(170, giftX-x0+30+cw+18+18+tw+12, lw+24), ph=58;
     ctx.fillStyle='rgba(8,16,44,.6)'; ctx.strokeStyle='rgba(233,189,104,.55)'; ctx.lineWidth=1;
     ctx.beginPath(); if(ctx.roundRect)ctx.roundRect(x0,y0,pw,ph,12); else ctx.rect(x0,y0,pw,ph); ctx.fill(); ctx.stroke();
     for(let i=0;i<3;i++){
@@ -678,6 +681,12 @@ function ForestGame(canvas, hooks){
     const gi=F.gifts[0];
     if(gi) ctx.drawImage(gi,giftX,y0+6,24,24); else {ctx.fillStyle='#d8423a'; ctx.fillRect(giftX+3,y0+11,18,15); ctx.fillStyle='#fde7a8'; ctx.fillRect(giftX+10,y0+9,4,17);}
     ctx.fillStyle='#fde7a8'; ctx.textBaseline='middle'; ctx.textAlign='left'; ctx.fillText(cnt,giftX+30,y0+19);
+    // часы и время — справа в верхней строке панели
+    const tx=x0+pw-12-tw, cx=tx-10, cy=y0+19;
+    ctx.strokeStyle='rgba(243,201,107,.9)'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(cx,cy,6.2,0,7); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx,cy-3.6); ctx.lineTo(cx,cy); ctx.lineTo(cx+2.6,cy+1.6); ctx.stroke();
+    ctx.font='700 15px '+UI_FONT; ctx.fillStyle='rgba(235,240,255,.95)'; ctx.fillText(tm,tx,cy+.5);
+    ctx.font='700 19px '+UI_FONT;
     // полоска: сколько осталось до рекорда; баллы начисляются только за подарки сверх него
     const bx=x0+12, by=y0+38, bw=pw-24, bh=6, k=rec?Math.min(1,S.gifts/S.best):0;
     if(rec){ctx.fillStyle='rgba(255,255,255,.14)'; ctx.beginPath(); if(ctx.roundRect)ctx.roundRect(bx,by,bw,bh,3); else ctx.rect(bx,by,bw,bh); ctx.fill();}
@@ -689,7 +698,7 @@ function ForestGame(canvas, hooks){
   function loop(ts){
     if(!alive) return;
     const dt=Math.min(.033,(ts-(last||ts))/1000); last=ts;
-    update(dt); draw(); hudDraw(); raf=requestAnimationFrame(loop);
+    update(dt); draw(); hudDraw(); if(hooks.tick)hooks.tick(S); raf=requestAnimationFrame(loop);
   }
   raf=requestAnimationFrame(loop);
   const onKey=e=>{
@@ -788,22 +797,20 @@ async function renderBall(src, styleIdx){
 }
 
 /* ===== Общая ёлка банка ===== */
+// Общая ёлка: картинка ёлки без игрушек, поверх — игрушки коллег. Силуэт ёлки — ширина кроны по высоте
+// в единицах viewBox 600×720: игрушки висят только на ветках, не выходят за край
+const TREE_SIL=[[80,269,330],[100,266,333],[120,249,346],[140,232,365],[160,235,368],[180,202,389],[200,192,402],[220,200,419],[240,188,419],[260,162,422],[280,143,439],[300,138,450],[320,170,474],[340,130,477],[360,119,470],[380,117,487],[400,85,502],[420,77,500],[440,77,510],[460,96,547],[480,74,555],[500,53,549],[520,34,553],[540,29,573],[560,30,575],[580,30,571],[600,9,591],[620,6,595],[640,10,590]];
+function treeSil(y){let l=-1e9,r=1e9,f=false;for(const [yy,a,b] of TREE_SIL)if(Math.abs(yy-y)<=20){l=Math.max(l,a);r=Math.min(r,b);f=true;}return f?[l,r]:null;}
+const MINE_Y=272;   // своя игрушка — по центру, ближе к верхушке
 function treeSVG(mineSrc, balls, seed){
   const rr=rng(seed||77);
-  let t='';
-  const L=[[300,48,170,210],[300,140,220,330],[300,240,262,450],[300,350,300,575]];
-  L.forEach(([x,top,hw,bot],i)=>{
-    t+=`<path d="M${x} ${top} L${x+hw} ${bot} Q${x} ${bot+26} ${x-hw} ${bot} Z" fill="${i%2?'#0f3b3f':'#124447'}"/>`;
-    t+=`<path d="M${x} ${top+10} L${x+hw*.35} ${bot-6} L${x} ${bot+8}Z" fill="#000" opacity=".12"/>`;
-    for(let k=-hw+14;k<hw-14;k+=22){t+=`<ellipse cx="${x+k+11}" cy="${bot-1+(1-Math.abs(k+11)/hw)*12}" rx="12" ry="6" fill="#eef5ff"/>`;}
-  });
-  t+=`<rect x="284" y="575" width="32" height="50" fill="#3a2418"/>`;
-  let gl='';[[170,300,380],[250,410,480],[300,500,560]].forEach(([w,y1,y2])=>{gl+=`<path d="M${300-w*.7} ${y1} Q300 ${y2} ${300+w*.7} ${y1}" fill="none" stroke="#f3c96b" stroke-width="1.6" opacity=".7"/>`;for(let k=0;k<9;k++){const tt=k/8,x=(1-tt)*(1-tt)*(300-w*.7)+2*(1-tt)*tt*300+tt*tt*(300+w*.7),y=(1-tt)*(1-tt)*y1+2*(1-tt)*tt*y2+tt*tt*y1;gl+=`<circle cx="${x}" cy="${y}" r="3.2" fill="#fff1b8"><animate attributeName="opacity" values="1;.3;1" dur="${1.4+k%3*.4}s" repeatCount="indefinite"/></circle>`;}});
   const cols=['#e2554e','#2f56c8','#e9bd68','#bcd3ff','#ee8a4f','#9a5bd6'];
   let bs='';const placed=[];
-  for(let n=0;n<400&&placed.length<balls.length;n++){
-    const y=110+rr()*455; const tier=L.find(l=>y<l[3])||L[3]; const hw=(y-tier[1])/(tier[3]-tier[1])*tier[2]*.82; const x=300+(rr()*2-1)*hw;
-    if(placed.some(p=>Math.hypot(p[0]-x,p[1]-y)<32))continue; if(mineSrc&&Math.hypot(x-300,y-262)<60)continue; placed.push([x,y]);
+  for(let n=0;n<700&&placed.length<balls.length;n++){
+    const y=150+rr()*450, s=treeSil(y); if(!s)continue;
+    const l=s[0]+26, r=s[1]-26; if(r<=l)continue;
+    const x=l+rr()*(r-l);
+    if(placed.some(p=>Math.hypot(p[0]-x,p[1]-y)<34))continue; if(mineSrc&&Math.hypot(x-300,y-MINE_Y)<66)continue; placed.push([x,y]);
   }
   // каждый шар можно открыть: увидеть его поближе и кто его повесил
   placed.forEach(([x,y],i)=>{const o=balls[i];const c=cols[i%cols.length];
@@ -811,15 +818,14 @@ function treeSVG(mineSrc, balls, seed){
     if(o.img>=0) bs+=`<g ${at}><use href="#tb${o.img}" x="${x-20}" y="${y-27}"/></g>`;
     else bs+=`<g ${at}><line x1="${x}" y1="${y-16}" x2="${x}" y2="${y-11}" stroke="#d8b26a" stroke-width="2"/><circle cx="${x}" cy="${y}" r="12" fill="${c}"/><circle cx="${x-4}" cy="${y-4}" r="3.5" fill="#fff" opacity=".55"/><text x="${x}" y="${y+4}" text-anchor="middle" font-size="9" font-weight="800" font-family="PT Serif,Georgia,serif" fill="#fff">${esc(initials(o.nick))}</text></g>`;
   });
-  // своя игрушка — по центру, ближе к верхушке
   let mine='';
-  if(mineSrc) mine=`<g class="mine" data-tip="Ваша игрушка" data-act="ballView" data-me="1" role="button" aria-label="Ваша игрушка"><line x1="300" y1="198" x2="300" y2="210" stroke="#f3c96b" stroke-width="2"/><image href="${mineSrc}" x="256" y="208" width="88" height="103"/></g>`;
-  return `<svg class="treesvg" viewBox="0 0 600 640" role="img" aria-label="Общая ёлка банка">
-    <defs><radialGradient id="tg" cx="50%" cy="55%" r="55%"><stop offset="0" stop-color="#ffdca0" stop-opacity=".22"/><stop offset="1" stop-color="#ffdca0" stop-opacity="0"/></radialGradient>
+  if(mineSrc) mine=`<g class="mine" data-tip="Ваша игрушка" data-act="ballView" data-me="1" role="button" aria-label="Ваша игрушка"><line x1="300" y1="${MINE_Y-64}" x2="300" y2="${MINE_Y-52}" stroke="#f3c96b" stroke-width="2"/><image href="${mineSrc}" x="256" y="${MINE_Y-52}" width="88" height="103"/></g>`;
+  return `<svg class="treesvg" viewBox="0 0 600 720" role="img" aria-label="Общая ёлка банка">
+    <defs><radialGradient id="tg" cx="50%" cy="55%" r="55%"><stop offset="0" stop-color="#ffdca0" stop-opacity=".2"/><stop offset="1" stop-color="#ffdca0" stop-opacity="0"/></radialGradient>
     ${[0,1,2,3,4,5].map(i=>`<image id="tb${i}" href="${A['toy'+i]||A['ball'+i]}" width="40" height="47"/>`).join('')}</defs>
-    <ellipse cx="300" cy="360" rx="300" ry="300" fill="url(#tg)"/>
-    <g class="tiers">${t}${gl}</g><g class="tballs">${bs}${mine}</g>
-    <g transform="translate(300 40)"><path d="M0 -34 L9 -10 L34 -10 L14 5 L22 30 L0 15 L-22 30 L-14 5 L-34 -10 L-9 -10Z" fill="#f6cf6c" stroke="#fff3c9" stroke-width="2"/><circle r="40" fill="#fff3c9" opacity=".15"/></g>
+    <ellipse cx="300" cy="430" rx="300" ry="320" fill="url(#tg)"/>
+    <image href="${A.tree_big}" x="0" y="0" width="600" height="720"/>
+    <g class="tballs">${bs}${mine}</g>
   </svg>`;
 }
 

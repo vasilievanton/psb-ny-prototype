@@ -51,6 +51,7 @@ function hearts(n){return [0,1,2].map(i=>`<svg viewBox="0 0 24 24" class="${i<n?
 const LOGO='<svg class="psb-logo" xmlns="http://www.w3.org/2000/svg" viewBox="719.99 477.87 479.43 125" role="img" aria-label="ПСБ"><path fill="#ff6200" d="M803.15,477.87l-41.49,41.78h41.49v83.22l41.84-41.43v-83.57h-41.84Z"/><path fill="#8d87ff" d="M761.83,602.87l41.49-41.78h-41.49v-83.22l-41.84,41.43v83.57h41.84Z"/><path fill="#fff" d="M1160.4,573.06h-24.01v-24.69h24.01c9.14,0,13.39,3.92,13.39,12.26s-4.24,12.42-13.39,12.42ZM1110.43,483.31v114.44h51.27c24.33,0,37.72-13.41,37.72-37.11s-13.39-36.95-37.72-36.95h-25.31v-15.2h55.69v-25.18h-81.65ZM1019.31,540.37c0-20.11,11.1-33.84,26.94-33.84,11.92,0,21.23,7.68,23.35,20.27h27.11c-2.78-27.47-23.35-45.77-50.46-45.77-31.68,0-54.05,24.85-54.05,59.34s22.37,59.34,54.05,59.34c27.44,0,48.17-18.96,50.62-46.76h-27.27c-1.63,13.24-11.11,21.25-23.35,21.25-15.84,0-26.94-13.73-26.94-33.84ZM887.37,483.31v114.44h26.62v-88.77h38.21v88.77h26.45v-114.44h-91.28Z"/></svg>';
 const PSB=`<span class="psb">${LOGO}</span><i class="vr" aria-hidden="true"></i>`;
 const ICON_HEART='<svg viewBox="0 0 24 24"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z" fill="#e8473f"/></svg>';
+const ICON_CLOCK='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="#18306f" stroke="#f3c96b" stroke-width="2"/><path d="M12 6.8V12l3.6 2.2" stroke="#fde7a8" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>';
 
 /* ===== Состояние ===== */
 const KEY='psb-ny-proto-v6';
@@ -387,18 +388,13 @@ function howList(k){
     `Четыре набора по 10 вопросов, новый — раз в неделю: ${D.QUIZ.map(r=>dateOf(r.open).getDate()).join(', ')} декабря.`,
     '20 баллов за каждый верный ответ с первой попытки. Набор можно пройти ещё раз — для себя, без баллов.',
     'Бросили набор на середине — продолжите с того же вопроса.'];
-  if(k==='forest')return ['Бегите по лесу и собирайте подарки. Лес не кончается, а бег становится всё быстрее.',
-    DESK?'Прыжок — пробел, ↑ или клик по полю. В воздухе можно прыгнуть ещё раз.':'Прыжок — кнопка слева или тап по полю. В воздухе можно прыгнуть ещё раз.',
-    DESK?'Ускорение — держите →: бег сразу вдвое быстрее, но и препятствия чаще.':'Ускорение — держите кнопку справа: бег вдвое быстрее, но и препятствия чаще.',
-    'На пень и бревно можно запрыгнуть, сугроб — только перепрыгнуть. Жизней три, сердечко возвращает одну.',
-    '10 баллов за подарок в лучшем забеге. Новый рекорд добавляет баллы за разницу.'];
   if(k==='tree')return ['Выберите игрушку: шар, звезду, колокольчик, сосульку, сердце или фонарик.',
     'Загрузите любую картинку — фото, рисунок, открытку, зимний пейзаж.',
     'ИИ перерисует её в стиле ёлочной игрушки. Игрушка у каждого одна, её можно скачать.',
     'Повесьте игрушку на общую ёлку банка — сразу +100 баллов. Всем её покажем после проверки модератором.'];
   return [];
 }
-const HOW_T={quiz:'Как играть: Спроси дорогу',forest:'Как играть: Лес',tree:'Как украсить ёлку'};
+const HOW_T={quiz:'Как играть: Спроси дорогу',tree:'Как украсить ёлку'};
 function howHTML(k){const l=howList(k);return l.length?`<div class="info"><h3 class="info-t">${HOW_T[k]}</h3><ul class="info-l">${l.map(x=>`<li>${nb(x)}</li>`).join('')}</ul></div>`:'';}
 // шар с общей ёлки — поближе: картинка и кто его повесил
 function ballHTML(){
@@ -546,9 +542,9 @@ function vLogin(){
    состояние и одна кнопка — золотая только у следующего шага). От тропы — ветки к сказке-сериалу и Пряничной избушке,
    у третьего испытания — общая ёлка банка (10–20 шаров, их можно открыть), под ёлкой — Сундук чудес */
 const STOPS=[
-  {k:'quiz',n:1,l:'Квиз',t:'Спроси дорогу',d:'Расспросите местных, куда идти дальше',m:'m_mlad',who:'Младший сын',art:'art_quiz'},
-  {k:'forest',n:2,l:'Игра',t:'Лес',d:'Помогите собрать подарки из порванного мешка',m:'m_star',who:'Старший сын',art:'art_forest'},
-  {k:'tree',n:3,l:'Творчество',t:'Ёлка',d:'Нарядите общую ёлку банка своей игрушкой',m:'m_doch',who:'Дочь',art:'art_tree'}
+  {k:'quiz',n:1,l:'Квиз',t:'Спроси дорогу',d:'Узнайте у местных, куда ушёл Михаил: в каждом краю говорят по-своему',m:'m_mlad',who:'Младший сын',art:'tile_quiz'},
+  {k:'forest',n:2,l:'Игра',t:'Лес',d:'В тайге порвался мешок с подарками — помогите их собрать',m:'m_star',who:'Старший сын',art:'tile_forest'},
+  {k:'tree',n:3,l:'Творчество',t:'Ёлка',d:'Подарки собраны — осталось нарядить общую ёлку банка',m:'m_doch',who:'Дочь',art:'tile_tree'}
 ];
 // Состояние плитки: cls — locked / done, note — строка о прогрессе, live — оранжевая метка, cta — кнопка
 function stopState(s,now){
@@ -641,40 +637,29 @@ function treeSt(ns){
     <div class="mp-cb"><span class="rt-l">Под ёлкой</span><b class="mp-ct">Сундук чудес${fresh?' <span class="chip live">итоги</span>':''}</b>
       <span class="mp-cs">${nb(out?'Розыгрыш прошёл — посмотрите, кому достались подарки':`Розыгрыш подарков — ${fmt(OPEN.chest)}`)}</span>
       ${btn({t:out?'Итоги розыгрыша':'Как пройдёт розыгрыш',act:'go',v:'chest',cls:'btn-sm',noarrow:1,gold:ns==='chest'?1:0})}</div></div>`;
-  return `<section class="mp-st st-tree"><div class="mp-sth"><div><span class="rt-l">У третьего испытания</span><h3 class="mp-t">Общая ёлка банка</h3></div></div>
+  return `<section class="mp-st st-tree"><div class="mp-sth"><div><span class="rt-l">Наряжаем вместе</span><h3 class="mp-t">Общая ёлка банка</h3></div></div>
     <p class="mp-x">${nb(lead)}</p><div class="mp-tree" id="mtree">${tree}</div>
     ${open?`<p class="note">${DESK?'Нажмите на шар — увидите его поближе и кто его повесил':'Нажмите на шар — увидите его поближе'}</p>`:''}
     <div class="mp-a">${cta}</div>${chest}</section>`;
 }
-// Подводка: название проекта, завязка сценой-комиксом, три пункта о том, что происходит на платформе
-function introHTML(){
-  const d=k=>dateOf(OPEN[k]).getDate();
-  const how=[
-    ['med1,med2,med3','Три испытания',`Спроси дорогу, Лес и Ёлка открываются ${d('quiz')}, ${d('forest')} и ${fmt(OPEN.tree)}. Ведут дети Михаила, за каждое — баллы в <a class="link" href="${href('rating')}">турнирную таблицу</a>.`],
-    ['ball0','Вместе с коллегами',`Наряжаем общую ёлку банка, голосованием пишем сказку-сериал — за голос ${VOTE_PTS} баллов — и слушаем с детьми аудиосказки.`],
-    ['chest','Призы',`Топ-10 турнирной таблицы получат мерч, а ${fmt(OPEN.chest)} Сундук чудес разыграет подарки среди тех, кто ввёл свой код на внутренней платформе ПСБ.`]
-  ];
-  const cap=(c,t)=>`<p class="cm-cap ${c}">${nb(t)}</p>`;
-  return `<div class="intro">
-    <div class="in-h"><h1 class="sc-t">Новогодняя ночь длиной в страну</h1><p class="sc-sub">Помогите Михаилу успеть во все полуночи</p></div>
-    <figure class="comic"><div class="cm-pic"><img src="${A.story}" alt="Дед Мороз Михаил спешит через всю страну"></div>
-      ${cap('c1','В новогоднюю ночь Дед Мороз — медведь Михаил Потапыч — идёт через всю страну с востока на запад.')}
-      ${cap('c2','Одиннадцать Новых годов за одну ночь. Тайга, горы, тундра — и в каждом краю говорят по-своему.').replace('по-своему','<span class="in-nw">по-своему</span>')}
-      <p class="cm-say">${nb('Один я не успею!')}</p>
-      ${cap('c3','Нужен помощник — и это вы.')}</figure>
-    <ul class="in-how">${how.map(([img,t,x])=>{const im=img.split(',');
-      return `<li><span class="in-ic${im.length>1?' trio':''}">${im.map(k=>`<img src="${A[k]}" alt="">`).join('')}</span><div><b>${t}</b><span>${nb(x)}</span></div></li>`;}).join('')}</ul>
-    <p class="in-note">${nb(`Платформа работает до ${fmt(LAST_DAY)} · новое открывается в 00:00 по Москве`)}</p>
-  </div>`;
+// Первый экран главной: картинка на фоне, сбоку — название проекта и короткое описание (завязка)
+const HERO_LEAD='В новогоднюю ночь Дед Мороз — медведь Михаил Потапыч — идёт через всю страну с востока на запад. Одиннадцать полуночей за одну ночь, и в каждом краю говорят <span class="nw">по-своему</span>. Одному не успеть — нужен помощник, и это вы.';
+function heroHTML(){
+  return `<section class="hero"><img class="hero-pic" src="${A.story}" alt="Дед Мороз Михаил Потапыч спешит через всю страну, за ним — одиннадцать часов с полуночью">
+    <div class="hero-in"><h1 class="sc-t">Новогодняя ночь длиной в${'\u00a0'}страну</h1><p class="hero-lead">${nb(HERO_LEAD)}</p></div></section>`;
+}
+// Второй экран — карта: заголовок на поляне, ниже панель с тропой
+function mapHead(){
+  return `<div class="map-h"><h2 class="sc-t">Маршрут помощника</h2><p class="map-sub">${nb('Три испытания открываются по датам — проходите в любом порядке. За каждое — баллы в турнирную таблицу')}</p></div>`;
 }
 function vRoute(){
   bar('Маршрут');
   const ns=nextStep();
   // карта: тропа через три испытания; на компьютере ветки — справа от тропы, на телефоне — под своими испытаниями
   const rows=[[STOPS[0],serialSt()],[STOPS[1],izbaSt()],[STOPS[2],treeSt(ns)]];
-  const map=`${lbl('Маршрут помощника')}<div class="map">${rows.map(([s,x],i)=>`<div class="mp-row r${i+1}">${stopCard(s,ns)}<i class="mp-br" aria-hidden="true"></i>${x}</div>`).join('')}</div>`;
-  const intro=introHTML();
-  return {pre:endBanner(),wide:[map],M:[map],cls:'home',dstage:intro,stage:intro,scene:1};
+  const map=`<div class="map">${rows.map(([s,x],i)=>`<div class="mp-row r${i+1}">${stopCard(s,ns)}<i class="mp-br" aria-hidden="true"></i>${x}</div>`).join('')}</div>`;
+  const head=mapHead();
+  return {pre:endBanner()+heroHTML(),wide:[map],M:[map],cls:'home',dstage:head,stage:head,scene:1};
 }
 
 /* ===== Испытания: единая шапка =====
@@ -739,7 +724,13 @@ function vQuiz(){
 
 /* ===== Лес ===== */
 const LITE_NOTE='<p class="note">Игра тормозит или не запускается? <a class="link" href="#" data-act="fLite">Альтернативный способ заработать баллы</a> — для старых браузеров и слабых компьютеров</p>';
-const FOREST_HELLO='беда! В тайге папин мешок порвался о еловый сук — подарки рассыпались по всему лесу. Бежим собирать! Управляешь мной ты: чем больше подарков соберём, тем больше баллов.';
+// Шапка Леса — на всю ширину: слева название и подводка (что случилось), справа картинка — Старший сын зовёт собирать подарки.
+// Правила, баллы и прошлый результат — в окне перед стартом, прямо на поле
+const FOREST_LEAD='В тайге мешок Деда Мороза зацепился за еловый сук и порвался — подарки рассыпались по всему лесу. Михаилу нельзя задерживаться: впереди ещё десять полуночей. Помогите его старшему сыну собрать подарки, пока их не замело снегом.';
+function forestHero(){
+  return `<div class="act-hero"><div class="ah-txt">${DESK?'<h1 class="sc-t">Лес</h1>':''}<p class="ah-lead">${nb(FOREST_LEAD)}</p></div>
+    <div class="ah-pic"><img src="${A.forest_head}" alt="Старший сын Михаила зовёт собирать подарки из порванного мешка"><span class="ah-say">${nb('Бежим собирать!')}</span></div></div>`;
+}
 // Перед стартом — на самом поле: коротко правила плитками с картинками из игры и кнопка старта.
 // Компьютер — пять плиток с пояснениями; телефон (поле невысокое) — четыре компактные
 const FIMG=n=>`<img src="assets/img/forest/${n}.png" alt="" onerror="this.style.visibility='hidden'">`;
@@ -757,32 +748,38 @@ function forestRules(desk){
     [FIMG('gift_1'),'Подарки','за них — баллы'],
     [FIMG('heart'),'3 жизни','сердечко вернёт']
   ];
-  const sub=runs?`Лучший забег — ${best} ${plural(best,'подарок','подарка','подарков')}: баллы дают подарки сверх него, по 10 за каждый`:'Каждый подарок — 10 баллов';
-  return `<div class="inner wide"><div class="ov-t">${runs&&desk?'Ещё забег?':'Готовы?'}</div>
+  // что делать и как считается результат; если уже бегали — рекорд и прошлый забег
+  const lead=desk?'Бегите как можно дальше и собирайте подарки — за каждый 10 баллов. В зачёт идёт лучший забег: рекорд сохраняется, а за новый рекорд добавляются баллы за разницу'
+    :'Собирайте как можно больше подарков: в зачёт идёт лучший забег, рекорд сохраняется';
+  const last=st.forest.last, gp=n=>`${n} ${plural(n,'подарок','подарка','подарков')}`;
+  const prev=runs?(desk?`<b>Ваш рекорд — ${gp(best)}</b> · +${num(best*10)} баллов${last?` · прошлый забег — ${gp(last.g)} за ${mmss(last.t)}`:''}`
+    :`<b>Рекорд — ${gp(best)}</b>${last?` · прошлый — ${last.g} за ${mmss(last.t)}`:''}`):'';
+  return `<div class="inner wide"><div class="ov-t">Готовы?</div>
+    <p class="ov-lead">${nb(lead)}</p>
     <div class="rules">${tiles.map(([i,b,t])=>`<div>${i}<b>${b}</b><span>${t}</span></div>`).join('')}</div>
-    <button class="btn btn-gold btn-lg" data-act="fStart">${desk?'Бежать!':'Старт'}</button>
-    ${desk?`<p class="small">${sub}</p>`:''}</div>`;
+    ${prev?`<p class="ov-prev">${prev}</p>`:''}
+    <button class="btn btn-gold btn-lg" data-act="fStart">${desk?'Бежать!':'Старт'}</button></div>`;
 }
 // Выключатель звука и музыки «Леса» (выбор запоминается на устройстве)
 function sndBtn(){const on=ForestSound.on;return `<button class="snd" data-act="fSound" aria-pressed="${on}" aria-label="Звук" title="${on?'Выключить звук':'Включить звук'}">${svg(on?'snd':'sndOff')}</button>`;}
 function vForest(){
   bar('Лес',null,'route');
   if(st.day<OPEN.forest)return lockView('Лес откроется 8 декабря','В тайге у Деда Мороза рвётся мешок — подарки рассыпаются по всему лесу. Собирать их герой будет вместе со Старшим сыном.','m_star');
-  const best=st.forest.bestGifts, H=actHead('forest','Лес','m_star','Старший сын',FOREST_HELLO);
+  const best=st.forest.bestGifts, head=forestHero();
   if(DESK){
     // Компьютер: шапка испытания на поляне, ниже — одна широкая панель: жизни, подарки и рекорд, игровое поле, кнопки
-    const field=`<div class="hud"><div>${ICON_HEART}<div><span>Жизни</span><b id="hLives" class="hearts">${hearts(3)}</b></div></div><div>${ICON_GIFT}<div><span>Подарки</span><b id="hGifts">0</b></div></div><div>${ICON_STAR}<div><span>Рекорд</span><b>${best}</b></div></div></div>
+    const field=`<div class="hud"><div>${ICON_HEART}<div><span>Жизни</span><b id="hLives" class="hearts">${hearts(3)}</b></div></div><div>${ICON_GIFT}<div><span>Подарки</span><b id="hGifts">0</b></div></div><div>${ICON_CLOCK}<div><span>Время</span><b id="hTime">0:00</b></div></div><div>${ICON_STAR}<div><span>Рекорд</span><b>${best}</b></div></div></div>
       <div class="stage" id="stage"><canvas id="cv" data-ratio=".5625" data-lw="840" data-lh="440"></canvas>
         <div class="overlay" id="ov">${forestRules(true)}</div>${sndBtn()}</div>
       <div class="ctrl" id="ctrl"><button class="btn btn-ghost" id="bJump">${svg('jump','width="18" height="18"')} Прыжок</button><button class="btn btn-ghost" id="bFwd">Ускорение ${svg('boost','width="18" height="18"')}</button></div>
       <p class="note hidden" id="fin"><a class="link" href="#" data-act="fExit">Закончить забег</a> — собранные подарки засчитаются</p>${LITE_NOTE}`;
-    return {wide:[field],dstage:H.d,cls:'forest',scene:1};
+    return {wide:[head,field],cls:'forest',scene:1};
   }
   if(ui.fmode)return {raw:gameMode()};
   const rec=st.forest.runs?`<div class="rcs"><div><b>${best}</b><span>рекорд, подарков</span></div><div><b>${num(best*10)}</b><span>баллов в таблице</span></div><div><b>${st.forest.runs}</b><span>${plural(st.forest.runs,'забег','забега','забегов')}</span></div></div>`:'';
-  return {stage:H.m,
-    M:`${rec}<p class="rot-hint">${svg('rotate')}<span>Играем горизонтально — поверните телефон</span></p>${LITE_NOTE}`,
-    acts:[{t:st.forest.runs?'Ещё забег':'Бежать!',act:'fPlay',gold:1}]};
+  return {scene:1,cls:'forest',
+    M:[head,`${rec}<p class="rot-hint">${svg('rotate')}<span>Играем горизонтально — поверните телефон</span></p>${LITE_NOTE}`],
+    acts:[{t:'Бежать!',act:'fPlay',gold:1}]};
 }
 // Телефон: игра во весь экран и только горизонтально. В центре поле (жизни и подарки — на нём), по бокам круглые кнопки без подписей под большие пальцы:
 // слева «Прыжок», справа «Ускорение». Вертикально вместо игры — «Поверните телефон», идущий забег встаёт на паузу
@@ -830,7 +827,8 @@ function mountForest(){
   if(DESK){const hd=$('header.top');cv.dataset.vfit=String((hd?hd.offsetHeight:64)+112);}
   game=ForestGame(cv,{
     hud(S){const a=$('#hLives'),b=$('#hGifts');if(a)a.innerHTML=hearts(S.lives);if(b)b.textContent=S.gifts;},
-    end(S){finishForest(S.gifts,S.score,S.out);},
+    tick(S){const t=$('#hTime');if(t){const v=mmss(S.rt);if(t.textContent!==v)t.textContent=v;}},
+    end(S){finishForest(S.gifts,S.score,S.out,S.rt);},
     sfx:(n,o)=>ForestSound.play(n,o),
     best:()=>st.forest.bestGifts||0   // рекорд — для полоски «до рекорда» на поле
   });
@@ -848,8 +846,9 @@ function fitField(){
   if(a.top>=top&&b.bottom<=innerHeight-6)return;
   window.scrollTo({top:Math.max(0,a.top+scrollY-top),behavior:reduced()?'auto':'smooth'});
 }
-function finishForest(gifts,score,out){
+function finishForest(gifts,score,out,time){
   const prevBest=st.forest.bestGifts;
+  st.forest.last={g:gifts,t:Math.round(time||0)};
   ForestSound.musicPause(); if(gifts>prevBest)ForestSound.play('record'); else if(out)ForestSound.play('over');
   st.forest.runs++;st.forest.gifts+=gifts;if(gifts>prevBest){addLog('forest',prevBest?`Новый рекорд: ${gifts} ${plural(gifts,'подарок','подарка','подарков')} (было ${prevBest})`:`Забег: ${gifts} ${plural(gifts,'подарок','подарка','подарков')}`,(gifts-prevBest)*10);st.forest.bestGifts=gifts;}save();
   const head=out?'Жизни закончились':'Забег окончен';
@@ -862,7 +861,7 @@ function finishForest(gifts,score,out){
     // «Дальше» прокручивает к блоку под полем — там переходы: «Ёлка», ещё забег, маршрут
     const fn=$('#fin');if(fn)fn.classList.add('hidden');
     const ov=$('#ov');if(ov){ov.classList.remove('hidden');ov.innerHTML=`<div class="inner wide res"><div class="lbl-s">${head}</div>
-      <div class="rcs"><div><b>${gifts}</b><span>${plural(gifts,'подарок','подарка','подарков')} собрано</span></div>${rec}</div>
+      <div class="rcs"><div><b>${gifts}</b><span>собрано подарков</span></div>${rec}<div><b>${mmss(time)}</b><span>время забега</span></div></div>
       ${say('m_star','Старший сын',line,'compact')}
       <div class="ov-acts"><button class="btn btn-gold btn-lg" data-act="fAgain">Ещё забег</button><button class="btn btn-ghost btn-lg" data-act="fNext">Дальше ${svg('chev','width="18" height="18"')}</button></div></div>`;}
     const ctrl=$('#ctrl');if(!ctrl)return;
@@ -874,7 +873,7 @@ function finishForest(gifts,score,out){
     gm.insertAdjacentHTML('beforeend',sheet(`<div class="lbl-s center">${head}</div>
       <div class="fres"><b>${gifts}</b><span>${plural(gifts,'подарок','подарка','подарков')}</span></div>
       ${say('m_star','Старший сын',line,'compact')}
-      <div class="rcs">${rec}</div>
+      <div class="rcs">${rec}<div><b>${mmss(time)}</b><span>время забега</span></div></div>
       <div class="sheet-acts">${btn(nx)}${btn({t:'Ещё забег',act:'fAgain'})}${nx.v!=='route'?btn(ROUTE_BTN):''}</div>
       ${treeNote?`<p class="note">${treeNote}</p>`:''}`,{cls:'darksheet',close:'fAgain'}));
   }
@@ -890,7 +889,7 @@ function startLite(){
   $('#lite').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-li]');if(b&&+b.dataset.li===cur){got++;cur=-1;ForestSound.play('gift');b.classList.remove('has');b.textContent='';$('#liteC').textContent='Собрано: '+got;const g=$('#hGifts');if(g)g.textContent=got;}});
   const t=setInterval(()=>{
     $$('#lite button').forEach(b=>{b.classList.remove('has');b.textContent='';});
-    if(n>=18){clearInterval(t);finishForest(got,got*10);return;}
+    if(n>=18){clearInterval(t);finishForest(got,got*10,false,n*.85);return;}
     cur=Math.floor(Math.random()*9);const b=$(`#lite [data-li="${cur}"]`);b.classList.add('has');b.textContent='🎁';n++;
   },850); timers.push(t);
 }
@@ -1156,7 +1155,7 @@ function vIzba(){
     M:`<img class="illo" src="${A.izba}" alt="">${hello}${stats}${lbl('Сказки на ночь','s')}${tales}${stream}`,
     post:player,pn:25,cls:'izba'};
 }
-function mmss(s){s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
+function mmss(s){s=Math.max(0,Math.floor(s||0));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
 // Пауза и плей — без перерисовки экрана: окно сказки не мигает
 function patchPlayer(){
   const pl=ui.izba.playing;
@@ -1226,9 +1225,9 @@ function pointsBlocks(){
   const srow=S.kind==='vote'?pbRow(`Глава ${ROMAN[S.cur]}: идёт голосование`,`до ${fmt(S.c.day+1)}, 23:59 мск`,pbBtn('Голосовать',{act:'openCh',i:S.cur,gold:1}))
     :nx>=0?pbRow(`Глава ${ROMAN[nx]} выйдет ${fmt(nx>=0?ch[nx].day:0)}`,`голосование — 48 часов · ваших голосов ${nv} из ${ch.length}`,pbLock(ch[nx].day),'locked')
     :pbRow('Все голосования прошли',`ваших голосов — ${nv} из ${ch.length}`,'','done');
-  return `<section class="pb">${pbHead('Спроси дорогу',P.q,qmax,'art_quiz')}${qrows}</section>
-    <section class="pb">${pbHead('Лес',P.f,0,'art_forest')}${frow}</section>
-    <section class="pb">${pbHead('Ёлка',P.t,100,'art_tree')}${trow}</section>
+  return `<section class="pb">${pbHead('Спроси дорогу',P.q,qmax,'tile_quiz')}${qrows}</section>
+    <section class="pb">${pbHead('Лес',P.f,0,'tile_forest')}${frow}</section>
+    <section class="pb">${pbHead('Ёлка',P.t,100,'tile_tree')}${trow}</section>
     <section class="pb">${pbHead('Сказка-сериал',P.s,ch.length*VOTE_PTS,'serial',1)}${chips}${srow}</section>`;
 }
 function vProfile(){

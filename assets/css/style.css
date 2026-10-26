@@ -670,6 +670,13 @@ body.gm-on .demo-fab{display:none}
 @media (max-height:340px){.gm .rules span{display:none}}
 .overlay .ov-t{font:800 30px/1.1 var(--display);background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent;margin:4px 0 12px;filter:drop-shadow(0 2px 1px rgba(0,0,0,.8))}
 .overlay .small{color:var(--ink2);margin:10px 0 0}
+/* окно перед стартом: что делать и как считается результат, прошлый результат — над кнопкой старта */
+.overlay .ov-lead{max-width:640px;margin:-4px auto 12px;font:500 14px/1.45 var(--ui);color:var(--ink);text-wrap:balance}
+.overlay .ov-prev{margin:-4px auto 12px;font:400 13px/1.4 var(--ui);color:var(--ink2)}
+.overlay .ov-prev b{font-weight:700;color:var(--gold-hi)}
+.gm .overlay .ov-lead{margin:-2px auto 8px;font-size:12px;line-height:1.35}
+.gm .overlay .ov-prev{margin:-2px auto 8px;font-size:11.5px}
+@media (max-height:340px){.gm .overlay .ov-lead{display:none}}
 .stage.lite-on canvas{display:none}
 .stage.lite-on .overlay{position:relative;inset:auto;min-height:300px;padding:18px 12px;background:none;-webkit-backdrop-filter:none;backdrop-filter:none}
 .lite{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:min(66vw,240px);margin:12px auto}
@@ -716,7 +723,7 @@ body.gm-on .demo-fab{display:none}
 .treesvg .tb{cursor:pointer;transition:transform .2s;transform-box:fill-box;transform-origin:center}
 .treesvg .mine{animation:bob 2.4s ease-in-out infinite;transform-box:fill-box;transform-origin:center top}
 @keyframes bob{50%{transform:rotate(6deg)}}
-.treebox .tballs{transform-origin:300px 360px}
+.treebox .tballs{transform-origin:300px 400px}
 .treebox.out-l .tballs{animation:tOutL .23s ease-in forwards}
 .treebox.out-r .tballs{animation:tOutR .23s ease-in forwards}
 .treebox.in-r .tballs{animation:tInR .32s ease-out}
@@ -1175,7 +1182,7 @@ body[data-screen="izba"] main.app{padding-bottom:calc(var(--tb) + 76px)}
   .gain{font-size:17px;margin:0 0 10px}
 
   /* лес */
-  .hud{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 14px}
+  .hud{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:4px 0 14px}
   .hud>div{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:999px;min-width:0;
     background:linear-gradient(180deg,#22397e,#0f1d4d) padding-box,linear-gradient(180deg,#ffe7a8,#8a5a1f) border-box;border:1.5px solid transparent;box-shadow:0 4px 10px rgba(0,0,0,.35)}
   .hud svg{width:24px;height:24px;flex:none}
@@ -1556,50 +1563,39 @@ body.scene #app::after{top:-410px;bottom:0;
   .scene .nickplate .nk{font-size:clamp(17px,11.6cqi,30px);line-height:1.06}
   .scene .nickplate .nk.long{font-size:clamp(15px,10cqi,25px)}
 }
-/* ===== Главная: подводка и карта маршрута =====
-   Подводка стоит на поляне: название проекта, завязка сценой-комиксом (картинка и подписи), три пункта о том, что здесь происходит.
-   Карта — на снежной панели: тропа пунктиром через три испытания, от тропы — ветки к сериалу, избушке и ёлке с сундуком */
-.intro{text-align:center}
-.in-h{padding:0 4px}
-.comic{position:relative;margin:18px 0 0}
-.cm-pic{position:relative;aspect-ratio:16/10;border-radius:16px;overflow:hidden;box-shadow:0 0 0 2px rgba(243,207,127,.75),0 0 0 5px rgba(8,16,44,.7),0 16px 34px rgba(0,4,20,.55)}
-.cm-pic img{width:100%;height:100%;object-fit:cover;object-position:72% 50%}
-/* подписи-«плашки» как в комиксе: светлая бумага, тёмный текст */
-.cm-cap{margin:10px 0 0;padding:10px 13px;border-radius:4px;text-align:left;font:400 14.5px/1.45 var(--text);color:#1a2350;background:#f8eed6;
-  box-shadow:0 0 0 1.5px #c99a4a,0 8px 18px rgba(0,4,20,.4)}
-.cm-cap.c3{font-weight:700;color:#2b1a05;background:linear-gradient(180deg,#fbe4a4,#f1c565)}
-.cm-say{position:absolute;left:5%;top:9%;max-width:46%;margin:0;padding:9px 13px;border-radius:18px;font:800 15px/1.2 var(--display);color:#1a2350;background:#fff;
-  box-shadow:0 0 0 2px #1a2350,0 8px 16px rgba(0,4,20,.35)}
-.cm-say::after{content:"";position:absolute;right:-12px;bottom:6px;border:9px solid transparent;border-left:16px solid #fff;filter:drop-shadow(2px 0 0 #1a2350)}
-.in-how{list-style:none;margin:14px 0 0;padding:2px 15px;text-align:left;border-radius:16px;background:linear-gradient(180deg,rgba(26,49,118,.9),rgba(9,20,62,.93));
-  box-shadow:inset 0 0 0 1px rgba(196,220,255,.28),0 12px 26px rgba(0,4,20,.45)}
-.in-how li{display:flex;gap:12px;align-items:flex-start;padding:11px 0}
-.in-how li+li{border-top:1px solid rgba(196,220,255,.14)}
-.in-ic{flex:none;display:flex;align-items:center;justify-content:center;width:52px;height:44px}
-.in-ic img{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,.45))}
-.in-ic.trio img{width:24px;height:24px}
-.in-ic.trio img+img{margin-left:-10px}
-.in-how b{display:block;font:700 15px/1.25 var(--ui);color:var(--gold-hi)}
-.in-how div>span{display:block;margin-top:3px;font:400 13.5px/1.45 var(--ui);color:#d5e0fb}
-.in-note{margin:12px 8px 0;text-align:center;font:500 12px/1.45 var(--ui);color:#b8c7ee;text-shadow:0 1px 3px rgba(0,0,0,.85)}
-.in-nw{white-space:nowrap}
+/* ===== Главная: первый экран и карта маршрута =====
+   Первый экран — картинка на фоне (Михаил Потапыч и одиннадцать полуночей), сбоку — название проекта и короткое описание.
+   Телефон: картинка сверху во всю ширину, текст — под ней, на её растворяющемся нижнем крае.
+   Второй экран — карта: заголовок на поляне, ниже снежная панель с тропой через три испытания и ветками */
+.hero{position:relative;isolation:isolate;display:flex;flex-direction:column;justify-content:flex-end;min-height:clamp(470px,calc(100svh - 150px),600px);overflow:hidden}
+.hero-pic{position:absolute;z-index:-1;left:0;top:0;width:100%;height:68%;object-fit:cover;object-position:70% 42%;
+  -webkit-mask-image:linear-gradient(180deg,#000 62%,transparent 100%);mask-image:linear-gradient(180deg,#000 62%,transparent 100%)}
+.hero::before{content:"";position:absolute;z-index:-1;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(4,11,42,0) 40%,rgba(4,11,42,.78) 62%,rgba(4,11,42,.86) 86%,rgba(4,11,42,0) 100%)}
+.hero-in{position:relative;padding:0 20px 18px}
+.hero .sc-t{font-size:clamp(31px,8.6vw,38px);text-align:left}
+.hero-lead{margin:12px 0 0;font:400 16px/1.52 var(--text);color:#eef2ff;text-shadow:0 1px 3px rgba(0,0,0,.85),0 0 14px rgba(0,8,40,.8);text-wrap:pretty}
+.nw{white-space:nowrap}
+.map-h{text-align:center;padding:0 10px}
+.map-h .sc-t{font-size:clamp(26px,7.4vw,32px)}
+.map-sub{margin:10px auto 0;max-width:640px;font:400 14.5px/1.5 var(--ui);color:#dce5ff;text-shadow:0 1px 3px rgba(0,0,0,.85);text-wrap:balance}
 /* карта: плитки испытаний и ветки. Тропа — пунктир за плитками, медальон с номером стоит на ней */
 .map{position:relative;display:flex;flex-direction:column;gap:14px}
 .mp-row{position:relative;display:flex;flex-direction:column;gap:14px}
 .mp-row::before{content:"";position:absolute;z-index:0;left:22px;top:0;bottom:-14px;border-left:3px dotted rgba(243,207,127,.6)}
 .mp-row.r1::before{top:30px}
 .mp-row.r3::before{display:none}
-.mp-stop{position:relative;z-index:1;display:grid;grid-template-columns:104px minmax(0,1fr);gap:12px;margin-left:22px;padding:10px 12px 12px 30px;border-radius:16px;
+.mp-stop{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-left:22px;padding:12px 12px 14px 30px;border-radius:16px;
   background:linear-gradient(180deg,#1a3278,#0d1d52);box-shadow:inset 0 0 0 1px rgba(233,189,104,.45),0 10px 22px rgba(0,4,20,.35)}
 .mp-stop.now{box-shadow:inset 0 0 0 1.5px rgba(251,228,164,.95),0 0 0 4px rgba(233,189,104,.13),0 0 28px rgba(251,214,140,.22),0 10px 22px rgba(0,4,20,.35)}
 .mp-med{position:absolute;z-index:2;left:-22px;top:8px;width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 4px 7px rgba(0,0,0,.55))}
 .mp-ok{position:absolute;z-index:3;left:10px;top:36px;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:var(--ok);color:#0b2a18;box-shadow:0 0 0 2px #0e1b3c}
 .mp-art{position:relative;align-self:start}
 /* герой-проводник — маленький, выглядывает из угла картинки и зовёт в испытание */
-.mp-who{position:absolute;right:-14px;bottom:-12px;width:50%;pointer-events:none}
+.mp-who{position:absolute;right:-10px;bottom:-12px;width:30%;max-width:96px;pointer-events:none}
 .mp-who img{display:block;width:100%;filter:drop-shadow(0 6px 8px rgba(0,0,0,.55))}
 .mp-stop.locked .mp-who{filter:grayscale(.7) brightness(.6)}
-.mp-pic{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;box-shadow:0 0 0 1.5px rgba(243,207,127,.7),0 8px 16px rgba(0,4,20,.4)}
+.mp-pic{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;box-shadow:0 0 0 1.5px rgba(243,207,127,.7),0 8px 16px rgba(0,4,20,.4)}
 .mp-stop.locked .mp-pic{filter:grayscale(.7) brightness(.55)}
 .mp-stop.locked .mp-med{filter:grayscale(.85) brightness(.6) drop-shadow(0 4px 7px rgba(0,0,0,.55))}
 .mp-b{min-width:0;display:flex;flex-direction:column;align-items:flex-start;text-align:left}
@@ -1637,33 +1633,24 @@ body.scene #app::after{top:-410px;bottom:0;
 .mp-cb .btn{margin-top:6px}
 .treesvg .tb,.treesvg .mine{cursor:pointer}
 @media (min-width:900px) and (min-height:541px), (min-width:900px) and (hover:hover) and (pointer:fine){
-  .intro{padding-bottom:30px}
-  .in-h .sc-t{font-size:clamp(38px,3.8vw,54px)}
-  .comic{margin-top:22px}
-  .cm-pic{aspect-ratio:21/9}
-  .cm-pic img{object-position:50% 46%}
-  .cm-cap{position:absolute;margin:0;max-width:31%;font-size:16px}
-  .cm-cap.c1{left:2.5%;top:7%}
-  .cm-cap.c2{left:2.5%;top:34%}
-  .cm-cap.c3{left:2.5%;bottom:8%;font-size:17px}
-  .cm-say{left:auto;right:30%;top:12%;max-width:none;font-size:18px}
-  .in-how{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:26px;padding:22px 4px 20px;border-radius:20px;
-    -webkit-backdrop-filter:blur(8px) saturate(1.15);backdrop-filter:blur(8px) saturate(1.15);background:linear-gradient(180deg,rgba(24,46,112,.8),rgba(8,18,56,.88))}
-  .in-how li{flex-direction:column;align-items:center;gap:10px;padding:0 26px;text-align:center}
-  .in-how li+li{border-top:0;border-left:1px solid rgba(196,220,255,.14)}
-  .in-ic{width:auto;height:64px}
-  .in-ic img{width:64px;height:64px}
-  .in-ic.trio img{width:40px;height:40px}
-  .in-ic.trio img+img{margin-left:-12px}
-  .in-how b{font-size:16px}
-  .in-how div>span{margin-top:5px;font-size:14px;line-height:1.5}
-  .in-note{margin-top:14px;font-size:12.5px}
+  .hero{justify-content:center;min-height:clamp(540px,calc(100vh - 64px),760px)}
+  .hero-pic{height:100%;object-position:62% 45%;-webkit-mask-image:linear-gradient(180deg,#000 82%,transparent 100%);mask-image:linear-gradient(180deg,#000 82%,transparent 100%)}
+  .hero::before{background:linear-gradient(90deg,rgba(4,11,42,.9) 0%,rgba(4,11,42,.74) 28%,rgba(4,11,42,.22) 52%,rgba(4,11,42,0) 66%);
+    -webkit-mask-image:linear-gradient(180deg,#000 82%,transparent 100%);mask-image:linear-gradient(180deg,#000 82%,transparent 100%)}
+  .hero-in{width:min(100vw - 48px,1160px);margin:0 auto;padding:0 0 30px}
+  .hero-in>*{max-width:540px}
+  .hero .sc-t{font-size:clamp(46px,4.4vw,64px)}
+  .hero-lead{margin-top:18px;font-size:19px;line-height:1.55}
+  .home.scn.wide{margin-top:34px}
+  .map-h .sc-t{font-size:clamp(34px,3.2vw,44px)}
+  .map-sub{font-size:16px}
   /* компьютер: тропа слева, ветки справа от неё, на одной высоте со своим испытанием */
   .map{gap:20px}
-  .mp-row{display:grid;grid-template-columns:minmax(0,1.08fr) 56px minmax(0,1fr);gap:0;align-items:start}
+  .mp-row{display:grid;grid-template-columns:minmax(0,1.24fr) 48px minmax(0,1fr);gap:0;align-items:start}
   .mp-row::before{display:block;bottom:-20px}
   .mp-row.r3::before{display:block;bottom:auto;height:30px}
-  .mp-stop{grid-template-columns:176px minmax(0,1fr);gap:18px;padding:14px 18px 16px 36px}
+  .mp-stop{grid-template-columns:236px minmax(0,1fr);gap:20px;padding:14px 18px 16px 36px}
+  .mp-pic{aspect-ratio:4/3}
   .mp-t{font-size:22px}
   .mp-d{font-size:14.5px}
   .mp-br{display:block;align-self:start;margin-top:100px;border-top:3px dotted rgba(243,207,127,.6)}
@@ -1672,6 +1659,23 @@ body.scene #app::after{top:-410px;bottom:0;
   .mp-tree{max-width:380px}
   /* третье испытание едет рядом с ёлкой, пока её листают */
   .mp-row.r3 .mp-stop{position:sticky;top:96px}
+}
+/* ===== Лес: шапка на всю ширину — слева название и подводка, справа картинка: Старший сын зовёт собирать подарки =====
+   Телефон: картинка сверху во всю ширину панели, подводка — под ней */
+.act-hero{display:flex;flex-direction:column;gap:16px}
+.ah-pic{position:relative;order:-1;margin:-30px -18px 0;aspect-ratio:16/9;border-radius:22px 22px 0 0;overflow:hidden}
+.ah-pic img{display:block;width:100%;height:100%;object-fit:cover;object-position:60% 50%}
+.ah-say{position:absolute;right:33%;top:10%;padding:7px 11px;border-radius:16px;background:#fff;color:#1a2350;font:800 clamp(12px,3.7vw,15px)/1.15 var(--display);white-space:nowrap;
+  box-shadow:0 0 0 2px #1a2350,0 8px 16px rgba(0,4,20,.35)}
+.ah-say::after{content:"";position:absolute;right:-12px;bottom:4px;border:8px solid transparent;border-left:15px solid #fff;filter:drop-shadow(2px 0 0 #1a2350)}
+.ah-lead{margin:0;font:400 16px/1.55 var(--text);color:var(--ink);text-wrap:pretty}
+@media (min-width:900px) and (min-height:541px), (min-width:900px) and (hover:hover) and (pointer:fine){
+  .act-hero{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:34px;align-items:center}
+  .ah-pic{order:0;align-self:stretch;margin:-38px -34px -28px 0;aspect-ratio:auto;min-height:340px;border-radius:0 22px 22px 0}
+  .ah-pic::before{content:"";position:absolute;z-index:1;inset:0;background:linear-gradient(90deg,rgba(9,19,58,.75),rgba(9,19,58,0) 18%);pointer-events:none}
+  .ah-say{z-index:2;font-size:18px;padding:10px 15px}
+  .act-hero .sc-t{text-align:left;font-size:clamp(42px,3.8vw,56px)}
+  .ah-lead{margin-top:16px;font-size:18px;line-height:1.6}
 }
 /* ===== Испытания: единая шапка (название, подводка героя-проводника, «Как играть») ===== */
 .act-head{text-align:left}
