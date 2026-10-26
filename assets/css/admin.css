@@ -93,8 +93,6 @@ select.in{padding-right:6px}
 .mod{display:flex;flex-direction:column;gap:6px;padding:10px;border:1px solid var(--line);border-radius:var(--r);background:#fff}
 .mod .img{aspect-ratio:480/560;display:grid;place-items:center;border-radius:8px;background:#121a3a;overflow:hidden}
 .mod .img img{width:100%;height:100%;object-fit:contain}
-.mod .img.ava{aspect-ratio:1}
-.mod .img.ava img{width:78%;height:78%;border-radius:50%;object-fit:cover;box-shadow:0 0 0 3px #e9bd68}
 .mod b{font-size:13px}
 .mod .acts{display:flex;gap:6px;margin-top:2px}
 .mod .acts .btn{flex:1;justify-content:center}

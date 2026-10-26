@@ -35,7 +35,17 @@ const A={
 "sample_girl": "assets/img/sample_girl.webp",
 "sample_team": "assets/img/sample_team.webp",
 "sample_draw": "assets/img/sample_draw.webp",
-"sun": "assets/img/frame/sun.webp"
+"sun": "assets/img/frame/sun.webp",
+"story": "assets/img/story.webp",
+"art_quiz": "assets/img/art_quiz.webp",
+"art_forest": "assets/img/art_forest.webp",
+"art_tree": "assets/img/art_tree.webp",
+"toy0": "assets/img/toy0.webp",
+"toy1": "assets/img/toy1.webp",
+"toy2": "assets/img/toy2.webp",
+"toy3": "assets/img/toy3.webp",
+"toy4": "assets/img/toy4.webp",
+"toy5": "assets/img/toy5.webp"
 };
 /* Встроенные копии картинок, которые рисуются на canvas и сохраняются в PNG (карточка героя, ёлочный шар).
    Встроены, чтобы скачивание работало и при открытии страниц прямо с диска. */
