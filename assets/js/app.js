@@ -653,20 +653,40 @@ function chestStrip(ns){
       <span class="rt-cs">${nb(out?'Михаил открыл сундук — посмотрите, кому достались подарки':`${fmt(OPEN.chest)} Михаил разыграет подарки среди всех помощников. Делать ничего не нужно — вы уже участвуете`)}</span></div>
     ${btn({t:out?'Итоги розыгрыша':'Как пройдёт розыгрыш',act:'go',v:'chest',cls:'btn-sm',noarrow:1,gold:ns==='chest'?1:0})}</div>`;
 }
+// Подводка на поляне над панелями: о чём сказка и что происходит на платформе — испытания, финал, общие активности, призы.
+// Компьютер: Михаил слева, часы справа, между ними заголовок и завязка; ниже — четыре пункта в ряд. Телефон — всё одной колонкой
+function introHTML(){
+  const d=k=>dateOf(OPEN[k]).getDate();
+  const how=[
+    ['med1,med2,med3','Три испытания',`«Спроси дорогу», «Лес» и «Ёлка» открываются ${d('quiz')}, ${d('forest')} и ${fmt(OPEN.tree)}. Ведут дети Михаила, за каждое — баллы в <a class="link" href="${href('rating')}">турнирную таблицу</a>.`],
+    ['book','Итоги пути',`С ${fmt(OPEN.final)}, когда пройдены все три испытания, Михаил расскажет историю вашего пути и вручит карточку героя.`],
+    ['ball0','Вместе с коллегами',`Наряжаем общую ёлку банка, голосованием пишем сказку-сериал — за голос ${VOTE_PTS} баллов — и слушаем с детьми аудиосказки.`],
+    ['chest','Призы',`Топ-10 турнирной таблицы получат мерч, а ${fmt(OPEN.chest)} «Сундук чудес» разыграет подарки среди всех помощников.`]
+  ];
+  return `<div class="intro">
+    <div class="in-top">
+      <img class="in-bear" src="${A.bear_moroz}" alt="Дед Мороз Михаил">
+      <div class="in-h"><h1 class="sc-t">Маршрут помощника</h1><p class="sc-sub">Помогите Михаилу успеть во все полуночи</p></div>
+      <p class="in-story">${nb('В новогоднюю ночь Дед Мороз — медведь Михаил — идёт через всю страну с востока на запад: одиннадцать Новых годов за одну ночь, ни минуты лишней. Путь неблизкий: тайга, горы, тундра, и в каждом краю говорят по-своему. Один он не успеет. Нужен помощник — и это вы.').replace('по-своему','<span class="in-nw">по-своему</span>')}</p>
+      <img class="in-clock" src="${A.clock}" alt="">
+    </div>
+    <ul class="in-how">${how.map(([img,t,x])=>{const im=img.split(',');
+      return `<li><span class="in-ic${im.length>1?' trio':''}">${im.map(k=>`<img src="${A[k]}" alt="">`).join('')}</span><div><b>${t}</b><span>${nb(x)}</span></div></li>`;}).join('')}</ul>
+    <p class="in-note">${nb(`Платформа работает до ${fmt(LAST_DAY)} · новое открывается в 00:00 по Москве`)}</p>
+  </div>`;
+}
 function vRoute(){
   bar('Маршрут');
   const ns=nextStep();
-  const path=`${lbl('Путь героя')}<p class="tale small center rt-lead">Испытания открываются по очереди и приносят баллы в <a class="link" href="${href('rating')}">турнирную таблицу</a>. Пройдите все три — откроется финал.</p>
-    <div class="rt-path">${STOPS.map(s=>stopCard(s,ns)).join('')}</div>`;
+  const path=`${lbl('Путь героя')}<div class="rt-path">${STOPS.map(s=>stopCard(s,ns)).join('')}</div>`;
   const tree=`<div id="tree" class="rt-tree">${treePanel()}</div>`, serial=serialPanel(), izba=izbaPanel(), chest=chestStrip(ns);
-  // Сцена: заголовок стоит прямо на поляне (на телефоне — рядом с Михаилом, на компьютере — по центру).
-  // Компьютер: путь героя во всю ширину, под ним ёлка слева и две активности справа, внизу — розыгрыш. Телефон — всё одной колонкой
-  const head=`<h1 class="sc-t">Маршрут помощника</h1><p class="sc-sub">Помогите Михаилу успеть во все полуночи</p>`;
+  // Сцена: над панелями — подводка (introHTML). Компьютер: путь героя во всю ширину, под ним ёлка слева и две активности справа,
+  // внизу — розыгрыш. Телефон — всё одной колонкой
+  const intro=introHTML();
   return {pre:endBanner(),
     top:[path],L:[tree],R:[serial,izba],full:chest,
     M:[path,tree,serial,izba,chest],cls:'home',
-    dstage:`<div class="sc-title">${head}</div>`,
-    stage:`<div class="sc-hero"><img class="sc-ava" src="${A.bear_moroz}" alt=""><div class="sc-hb">${head}</div></div>`,
+    dstage:intro, stage:intro,
     scene:1};
 }
 
