@@ -829,7 +829,9 @@ async function renderHeroCard(u, stats, ballSrc){
   // avatar
   const ay=330;ctx.fillStyle='#13235f';ctx.beginPath();ctx.arc(W/2,ay,120,0,7);ctx.fill();
   ctx.strokeStyle=goldGrad(ctx,W/2-120,ay-120,W/2+120,ay+120);ctx.lineWidth=12;ctx.stroke();
-  ctx.fillStyle=goldGrad(ctx,0,ay-60,0,ay+60);ctx.font='800 110px "Playfair Display", Georgia, serif';ctx.fillText(initials(u.nick),W/2,ay+38);
+  // свой аватар — в золотом круге, иначе инициалы
+  if(u.avatar){const im=await loadImg(u.avatar);ctx.save();ctx.beginPath();ctx.arc(W/2,ay,114,0,7);ctx.clip();ctx.drawImage(im,W/2-114,ay-114,228,228);ctx.restore();}
+  else{ctx.fillStyle=goldGrad(ctx,0,ay-60,0,ay+60);ctx.font='800 110px "Playfair Display", Georgia, serif';ctx.fillText(initials(u.nick),W/2,ay+38);}
   ctx.font='800 64px "Playfair Display", Georgia, serif';ctx.fillStyle='#fde7a8';ctx.fillText(u.nick,W/2,550);
   if(u.city){ctx.font='400 26px "PT Serif", Georgia, serif';ctx.fillStyle='#c9d0ea';ctx.fillText(u.city,W/2,596);}
   const cells=[[stats.words,'слов разгадано'],[stats.gifts,'подарков собрано'],[stats.points,'баллов']];
