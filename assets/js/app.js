@@ -46,12 +46,9 @@ function svg(n,a=''){return `<svg viewBox="0 0 24 24" fill="none" stroke="curren
 const ICON_STAR='<svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7.1L12 17.3 5.8 21l1.6-7.1L2 9.2l7.1-.6z" fill="#f3c96b"/></svg>';
 const STAR_SM=ICON_STAR.replace('width="16" height="16"','width="12" height="12"');
 const ICON_GIFT='<svg viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="12" rx="1.5" fill="#d8423a"/><rect x="2" y="7" width="20" height="4" rx="1" fill="#e5574d"/><rect x="10.5" y="7" width="3" height="14" fill="#f6d27a"/><path d="M12 7C9 2 5 4 7 7M12 7c3-5 7-3 5 0" stroke="#f6d27a" stroke-width="2" fill="none"/></svg>';
-function hearts(n){return [0,1,2].map(i=>`<svg viewBox="0 0 24 24" class="${i<n?'on':''}"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z"/></svg>`).join('');}
 // Логотип ПСБ для тёмного фона — из брендбука банка (Лого_RGB → Без дескриптора → dark theme). Не перекрашивать
 const LOGO='<svg class="psb-logo" xmlns="http://www.w3.org/2000/svg" viewBox="719.99 477.87 479.43 125" role="img" aria-label="ПСБ"><path fill="#ff6200" d="M803.15,477.87l-41.49,41.78h41.49v83.22l41.84-41.43v-83.57h-41.84Z"/><path fill="#8d87ff" d="M761.83,602.87l41.49-41.78h-41.49v-83.22l-41.84,41.43v83.57h41.84Z"/><path fill="#fff" d="M1160.4,573.06h-24.01v-24.69h24.01c9.14,0,13.39,3.92,13.39,12.26s-4.24,12.42-13.39,12.42ZM1110.43,483.31v114.44h51.27c24.33,0,37.72-13.41,37.72-37.11s-13.39-36.95-37.72-36.95h-25.31v-15.2h55.69v-25.18h-81.65ZM1019.31,540.37c0-20.11,11.1-33.84,26.94-33.84,11.92,0,21.23,7.68,23.35,20.27h27.11c-2.78-27.47-23.35-45.77-50.46-45.77-31.68,0-54.05,24.85-54.05,59.34s22.37,59.34,54.05,59.34c27.44,0,48.17-18.96,50.62-46.76h-27.27c-1.63,13.24-11.11,21.25-23.35,21.25-15.84,0-26.94-13.73-26.94-33.84ZM887.37,483.31v114.44h26.62v-88.77h38.21v88.77h26.45v-114.44h-91.28Z"/></svg>';
 const PSB=`<span class="psb">${LOGO}</span><i class="vr" aria-hidden="true"></i>`;
-const ICON_HEART='<svg viewBox="0 0 24 24"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z" fill="#e8473f"/></svg>';
-const ICON_CLOCK='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="#18306f" stroke="#f3c96b" stroke-width="2"/><path d="M12 6.8V12l3.6 2.2" stroke="#fde7a8" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>';
 
 /* ===== Состояние ===== */
 const KEY='psb-ny-proto-v6';
@@ -74,7 +71,7 @@ function normCode(v){let x=String(v||'').toUpperCase().replace(/[АВЕКМНО�
   if(x.length===8)x='PSB'+x;
   return x.length===11&&x.startsWith('PSB')?`PSB-${x.slice(3,7)}-${x.slice(7)}`:x;}
 const ui={auth:AUTH0(),nick:null,pending:null,city:'',cityQ:null,cityErr:false,treeSide:0,quiz:null,quizRound:null,turn:false,
-  tree:{step:1,src:null,style:0,ball:null},chapter:null,izba:{cur:null,playing:false,pos:0},svOk:false,svTail:'',rulesOk:false,pubOk:true,demo:false,
+  tree:{step:1,src:null,style:0,ball:null},chapter:null,izba:{cur:null,playing:false,pos:0},svOk:false,rulesOk:false,pubOk:true,demo:false,
   sheet:null,seg:{ft:0},fmode:false,bar:null,login:{code:'',err:''},logout:false,pmail:false,pmailVal:'',ball:null};
 /* ===== Страницы ===== */
 // Каждый экран — отдельная HTML-страница. Общее состояние живёт в localStorage, переходы — обычные ссылки.
@@ -253,7 +250,7 @@ function scenePanel(inner,cls){return `<section class="sp ${cls||''}"><div class
 function scenePanels(x,cls){return (Array.isArray(x)?x:[x]).filter(Boolean).map(p=>scenePanel(p,cls)).join('');}
 function sceneStage(st){return st?`<div class="sc-stage">${st}</div>`:'';}
 function sceneBook(L,R,o={}){return `${sceneStage(o.stage)}${o.top?`<div class="scn wide ${o.cls||''}">${scenePanels(o.top,'spw')}</div>`:''}<div class="scn two ${o.cls||''}"><div class="sc-col">${scenePanels(L,'spl')}</div><div class="sc-col">${scenePanels(R,'spr')}</div></div>`;}
-function sceneLeaf(C,o={}){return `${sceneStage(o.stage)}<div class="scn one ${o.cls||''}">${scenePanels(C)}</div>`;}
+function sceneLeaf(C,o={}){return `${sceneStage(o.stage)}${o.top?`<div class="scn wide ${o.cls||''}">${scenePanels(o.top,'spw')}</div>`:''}<div class="scn one ${o.cls||''}">${scenePanels(C)}</div>`;}
 const addTail=(x,t)=>t?(Array.isArray(x)?[...x.slice(0,-1),x[x.length-1]+t]:x+t):x;   // «Что дальше» — в последнюю панель
 // Сборка экрана под текущий режим
 function compose(v){
@@ -266,7 +263,7 @@ function compose(v){
   }
   const acts=((v.dacts!==undefined?v.dacts:v.acts)||[]).filter(Boolean);
   const nbH=acts.length?nextBar(acts,v.dnote!==undefined?v.dnote:v.note,v.nbt):'';
-  if(v.L==null&&v.one!=null)return pre+(v.scene?sceneLeaf(addTail(v.one,nbH),{cls:v.cls,stage:v.dstage}):leaf(v.one+nbH,{cls:v.cls}))+post;
+  if(v.L==null&&v.one!=null)return pre+(v.scene?sceneLeaf(addTail(v.one,nbH),{cls:v.cls,stage:v.dstage,top:v.top}):leaf(v.one+nbH,{cls:v.cls}))+post;
   // мир сказки одной широкой колонкой: над панелями — то, что стоит на поляне (подводка, шапка испытания)
   if(v.scene&&v.wide!=null)return pre+sceneStage(v.dstage)+`<div class="scn wide ${v.cls||''}">${scenePanels(addTail(v.wide,nbH),'spw')}</div>`+post;
   return pre+(v.scene?sceneBook(v.L||'',addTail(v.R||'',nbH),{cls:v.cls,stage:v.dstage,top:v.top})+(v.full?`<div class="scn wide ${v.cls||''}">${scenePanel(v.full,'spw')}</div>`:'')
@@ -381,21 +378,18 @@ function supportHTML(){
     <p class="tale small">Что-то не работает или потерялся код — напишите нам: <b>${SUPPORT_MAIL}</b>. Отвечаем в рабочие дни.</p>
     <p class="note">Если при создании героя вы присылали код на почту, он есть в письме. Без кода вернуть героя нельзя — поэтому мы просим его сохранить.</p></div>`;
 }
-// «Как играть» у испытаний — коротко, окном: само испытание начинается с сюжета, а не с правил
-function howList(k){
-  if(k==='quiz')return ['Местные называют слово на своём языке или диалекте — выберите, что оно значит. Есть и вопросы про узоры: чей это край?',
+// Спроси дорогу: перед набором — окно «Готовы?» с правилами (как у Леса). Начатый набор продолжается сразу, без окна
+function qRulesHTML(){
+  const r=ui.quizRound||0, R=D.QUIZ[r], res=st.quiz[r], n=R.qs.length, again=!!(res&&res.done);
+  const rows=['Местные называют слово на своём языке или диалекте — выберите, что оно значит. Есть и вопросы про узоры: чей это край?',
     'После ответа Младший сын расскажет, откуда слово и что оно значит. Ошибаться не страшно.',
-    `Четыре набора по 10 вопросов, новый — раз в неделю: ${D.QUIZ.map(r=>dateOf(r.open).getDate()).join(', ')} декабря.`,
-    '20 баллов за каждый верный ответ с первой попытки. Набор можно пройти ещё раз — для себя, без баллов.',
+    again?'Повтор — для себя, без баллов: в зачёте остаётся первая попытка.':`${n} вопросов, за каждый верный ответ с первой попытки — 20 баллов.`,
     'Бросили набор на середине — продолжите с того же вопроса.'];
-  if(k==='tree')return ['Выберите игрушку: шар, звезду, колокольчик, сосульку, сердце или фонарик.',
-    'Загрузите любую картинку — фото, рисунок, открытку, зимний пейзаж.',
-    'ИИ перерисует её в стиле ёлочной игрушки. Игрушка у каждого одна, её можно скачать.',
-    'Повесьте игрушку на общую ёлку банка — сразу +100 баллов. Всем её покажем после проверки модератором.'];
-  return [];
+  return `<div class="info qrules"><h3 class="info-t">Готовы?</h3><p class="qr-set">Набор ${ROMAN[r]} · ${R.title}</p>
+    <ul class="info-l">${rows.map(x=>`<li>${nb(x)}</li>`).join('')}</ul>
+    ${again?`<div class="ov-rec"><div class="ov-pill">${ICON_STAR}<div><span>В зачёте</span><b>${qFirst(res)} из ${n}</b></div></div></div>`:''}
+    <div class="qr-a">${btn({t:again?'Пройти ещё раз':'Расспросить местных',act:'qGo',gold:1})}</div></div>`;
 }
-const HOW_T={quiz:'Как играть: Спроси дорогу',tree:'Как украсить ёлку'};
-function howHTML(k){const l=howList(k);return l.length?`<div class="info"><h3 class="info-t">${HOW_T[k]}</h3><ul class="info-l">${l.map(x=>`<li>${nb(x)}</li>`).join('')}</ul></div>`:'';}
 // шар с общей ёлки — поближе: картинка и кто его повесил
 function ballHTML(){
   const b=ui.ball||{};
@@ -406,7 +400,7 @@ function ballHTML(){
 // окно поверх любого экрана: правила, поддержка, «Как играть» у испытаний, шар с ёлки
 function infoSheet(){
   const k=ui.sheet;if(!k)return '';
-  const x=k==='rules'?rulesHTML():k==='support'?supportHTML():k==='ball'?ballHTML():k==='tale'?taleHTML():k.startsWith('how-')?howHTML(k.slice(4)):'';
+  const x=k==='rules'?rulesHTML():k==='support'?supportHTML():k==='ball'?ballHTML():k==='tale'?taleHTML():k==='qrules'?qRulesHTML():'';
   return x?(DESK?modal(x,{cls:'infom'+(k==='tale'?' talem':'')}):sheet(x,{cls:'infos'+(k==='tale'?' tales-s':'')})):'';
 }
 
@@ -486,9 +480,8 @@ function workMail(v){const d=(String(v).toLowerCase().split('@')[1]||'').trim();
 function mailErr(v){if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))return 'Похоже, в адресе ошибка — проверьте, пожалуйста';if(workMail(v))return 'Это рабочая почта ПСБ — укажите, пожалуйста, личную';return '';}
 // Розыгрыш — среди тех, кто ввёл код на внутренней платформе ПСБ: напоминаем сразу, как только код выдан
 function portalHTML(){return `<div class="portal"><img src="${A.chest}" alt=""><div><b>Введите код на внутренней платформе ПСБ</b><span>${nb(`До ${fmt(CODE_DEADLINE)}, 23:59 мск — тогда вы участвуете в розыгрыше подарков ${fmt(OPEN.chest)}`)}</span><button class="link" data-act="portal">Открыть внутреннюю платформу</button></div></div>`;}
-// «Сохраните код»: кроме галочки — последние 4 символа кода, чтобы окно не пролистывали не глядя
-const tail4=v=>String(v||'').toUpperCase().replace(/[АВЕКМНОРСТХУ]/g,c=>CYR[c]).replace(/[^A-Z0-9]/g,'');
-function svReady(){return ui.svOk&&tail4(ui.svTail)===ui.auth.code.slice(-4);}
+// «Сохраните код»: «В путь» — после галочки «Да, код точно сохранён»
+function svReady(){return ui.svOk;}
 function vAuth(){
   const a=ui.auth;
   if(!a.code)a.code=genCode('PSB');
@@ -511,8 +504,6 @@ function vAuth(){
       <div class="codebox"><div class="code">${a.code}</div><button class="btn btn-ghost btn-sm" data-act="copy" data-t="${a.code}">${svg('copy','width="15" height="15"')} Скопировать</button></div>
       <p class="sv-w"><b>Это ваш единственный ключ к герою.</b> Без него не получится войти с другого устройства или после выхода.</p>
       <p class="note">Скопируйте код, сделайте скриншот или запишите. Надёжнее всего — прислать его себе на почту.</p>
-      <label class="field sv-f"><span>Чтобы продолжить, введите последние 4 символа кода</span>
-        <input class="input code-in" id="svTail" maxlength="4" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="____" value="${esc(ui.svTail)}"></label>
       <label class="chk"><input type="checkbox" id="svOk"${ui.svOk?' checked':''}><span>Да, код точно сохранён</span></label>
       <div class="sv-acts">${btn({t:'В путь',act:'codeGo',gold:1,disabled:!svReady()})}${btn({t:'Прислать на почту',act:'toMail',noarrow:1})}</div></div>`:'';
   if(DESK)return {one:`${pt('Персональный код','Шаг 2 из 2','h1')}${hero}${code}${portalHTML()}${lbl('Почта — по желанию','s')}${mail}${agree}`,
@@ -663,13 +654,22 @@ function vRoute(){
   return {pre:endBanner()+heroHTML(),wide:[map],M:[map],cls:'home',dstage:head,stage:head,scene:1};
 }
 
-/* ===== Испытания: единая шапка =====
-   Наверху каждого испытания — одна шапка: название, сюжетная подводка от героя-проводника (одним голосом и одним шрифтом)
-   и «Как играть» — правила открываются окном. На телефоне название — в верхней панели */
-function actHead(k,title,img,who,line,extra){
-  const how=`<button class="link how-l" data-act="sheetOpen" data-v="how-${k}">${svg('flake','width="15" height="15"')} Как играть</button>`;
-  const body=`${extra||''}${say(img,who,line,'compact')}${how}`;
-  return {d:`<div class="act-head"><h1 class="sc-t">${title}</h1>${body}</div>`,m:`<div class="act-head">${body}</div>`};
+/* ===== Испытания: шапка — снежная панель на всю ширину (как у Леса) =====
+   Слева — название и подводка: что здесь происходит. Справа — картинка: герой-проводник что-то говорит, реплика — в облачке.
+   «Как играть» в шапке нет: в Спроси дорогу и Лесе правила — в окне перед стартом, в Ёлке их рассказывают шаги.
+   На телефоне картинка — сверху, подводка — под ней, название раздела — в верхней панели */
+const QUIZ_LEAD='Чтобы понять, куда идти и где сейчас Михаил, нужно расспросить местных. Но в каждом краю говорят <span class="nw">по-своему</span>: одна просит принести шаньги, другой упоминает камусы, третий зовёт к айрану. Помогите младшему сыну разобраться в словах — не поймёшь слова, не найдёшь тропу.';
+const FOREST_LEAD='В тайге мешок Деда Мороза зацепился за еловый сук и порвался — подарки рассыпались по всему лесу. Михаилу нельзя задерживаться: впереди ещё десять полуночей. Помогите его старшему сыну собрать подарки, пока их не замело снегом.';
+const TREE_LEAD='Подарки собраны, и Михаил помчался их развозить. Дома осталось последнее дело — нарядить ёлку. В этом году она общая, на весь банк: игрушки на неё вешают сотрудники со всей страны. Дочь Михаила ждёт и вашу.';
+const HERO={
+  quiz:{t:'Спроси дорогу',img:'quiz_head',alt:'Младший сын Михаила расспрашивает местных у указателя',lead:QUIZ_LEAD,say:'Спросим дорогу!'},
+  forest:{t:'Лес',img:'forest_head',alt:'Старший сын Михаила зовёт собирать подарки из порванного мешка',lead:FOREST_LEAD,say:'Бежим собирать!'},
+  tree:{t:'Ёлка',img:'tree_head',alt:'Дочь Михаила наряжает ёлку',lead:TREE_LEAD,say:'Нарядим вместе!'}
+};
+function actHero(k,say){
+  const h=HERO[k];
+  return `<div class="act-hero ah-${k}"><div class="ah-txt">${DESK?`<h1 class="sc-t">${h.t}</h1>`:''}<p class="ah-lead">${nb(h.lead)}</p></div>
+    <div class="ah-pic"><img src="${A[h.img]}" alt="${h.alt}"><span class="ah-say">${nb(say||h.say)}</span></div></div>`;
 }
 
 /* ===== Спроси дорогу — квиз =====
@@ -678,7 +678,6 @@ function actHead(k,title,img,who,line,extra){
 function roundsList(R){
   return `<div class="rounds">${D.QUIZ.map((r,i)=>{const lk=st.day<r.open;const res=st.quiz[i];return `<button class="rnd ${R===i?'on':''}" data-act="qRound" data-i="${i}" ${lk?'disabled':''}><span class="rn">${ROMAN[i]}</span><span class="rt"><b>${r.title}</b><small>${lk?'Откроется '+fmt(r.open):res&&res.done?`В зачёте: ${qFirst(res)} из ${r.qs.length} · повтор без баллов`:qPend(i)?`Начат: вопрос ${qPend(i).i+1} из ${r.qs.length}`:r.qs.length+' вопросов'}</small></span>${res&&res.done?`<span class="rs">${qFirst(res)}/${r.qs.length}</span>`:''}</button>`;}).join('')}</div>`;
 }
-const QUIZ_HELLO='чтобы понять, куда идти и где сейчас папа, нужно расспросить местных. Но говорят они на своём: одна просит принести шаньги, другой упоминает камусы, третий зовёт к айрану. Не понял слова — не нашёл тропу!';
 function vQuiz(){
   bar('Спроси дорогу',null,'route');
   if(st.day<OPEN.quiz)return lockView('Спроси дорогу откроется 1 декабря');
@@ -686,11 +685,11 @@ function vQuiz(){
   if(!q){
     if(ui.quizRound==null){const f=D.QUIZ.findIndex((r,i)=>st.day>=r.open&&!(st.quiz[i]&&st.quiz[i].done));ui.quizRound=f>=0?f:0;}
     const R=ui.quizRound, part=st.qpart&&st.qpart[R], res=st.quiz[R], n=D.QUIZ[R].qs.length;
-    const H=actHead('quiz','Спроси дорогу','m_mlad','Младший сын',QUIZ_HELLO);
+    const head=actHero('quiz');
     const start={t:part?'Продолжить набор':res&&res.done?'Пройти набор ещё раз':'Расспросить местных',act:'qStart',gold:1};
     const note=part?`Вы остановились на вопросе ${part.i+1} из ${n} — ответы сохранены`:res&&res.done?`Повтор — без баллов. В зачёте первая попытка: ${qFirst(res)} из ${n}`:'';
     const body=`${lbl('Наборы вопросов')}${roundsList(R)}${note?`<p class="note">${note}</p>`:''}`;
-    return {one:body,M:body,dstage:H.d,stage:H.m,acts:[start],nbt:false,cls:'quiz'};
+    return {top:head,one:body,M:[head,body],acts:[start],nbt:false,cls:'quiz'};
   }
   const R=D.QUIZ[q.r], n=R.qs.length;
   if(q.finished){
@@ -725,13 +724,8 @@ function vQuiz(){
 
 /* ===== Лес ===== */
 const LITE_NOTE='<p class="note">Игра тормозит или не запускается? <a class="link" href="#" data-act="fLite">Альтернативный способ заработать баллы</a> — для старых браузеров и слабых компьютеров</p>';
-// Шапка Леса — на всю ширину: слева название и подводка (что случилось), справа картинка — Старший сын зовёт собирать подарки.
-// Правила, баллы и прошлый результат — в окне перед стартом, прямо на поле
-const FOREST_LEAD='В тайге мешок Деда Мороза зацепился за еловый сук и порвался — подарки рассыпались по всему лесу. Михаилу нельзя задерживаться: впереди ещё десять полуночей. Помогите его старшему сыну собрать подарки, пока их не замело снегом.';
-function forestHero(){
-  return `<div class="act-hero"><div class="ah-txt">${DESK?'<h1 class="sc-t">Лес</h1>':''}<p class="ah-lead">${nb(FOREST_LEAD)}</p></div>
-    <div class="ah-pic"><img src="${A.forest_head}" alt="Старший сын Михаила зовёт собирать подарки из порванного мешка"><span class="ah-say">${nb('Бежим собирать!')}</span></div></div>`;
-}
+// Шапка Леса — общая шапка испытаний (actHero): Старший сын зовёт собирать подарки.
+// Правила, баллы и рекорд — в окне перед стартом, прямо на поле
 // Перед стартом — на самом поле: коротко правила плитками с картинками из игры и кнопка старта.
 // Компьютер — пять плиток с пояснениями; телефон (поле невысокое) — четыре компактные
 const FIMG=n=>`<img src="assets/img/forest/${n}.png" alt="" onerror="this.style.visibility='hidden'">`;
@@ -753,12 +747,11 @@ function forestRules(desk){
   const lead=desk?'Бегите как можно дальше и собирайте подарки — за каждый 10 баллов. В зачёт идёт лучший забег: рекорд сохраняется, а за новый рекорд добавляются баллы за разницу'
     :'Собирайте как можно больше подарков: в зачёт идёт лучший забег, рекорд сохраняется';
   const last=st.forest.last, gp=n=>`${n} ${plural(n,'подарок','подарка','подарков')}`;
-  const prev=runs?(desk?`<b>Ваш рекорд — ${gp(best)}</b> · +${num(best*10)} баллов${last?` · прошлый забег — ${gp(last.g)} за ${mmss(last.t)}`:''}`
-    :`<b>Рекорд — ${gp(best)}</b>${last?` · прошлый — ${last.g} за ${mmss(last.t)}`:''}`):'';
+  const prev=runs?`<div class="ov-rec"><div class="ov-pill">${ICON_GIFT}<div><span>Рекорд</span><b>${best}</b></div></div>${last?`<span class="ov-cap">Прошлый забег — ${gp(last.g)} за ${mmss(last.t)}</span>`:''}</div>`:'';
   return `<div class="inner wide"><div class="ov-t">Готовы?</div>
     <p class="ov-lead">${nb(lead)}</p>
     <div class="rules">${tiles.map(([i,b,t])=>`<div>${i}<b>${b}</b><span>${t}</span></div>`).join('')}</div>
-    ${prev?`<p class="ov-prev">${prev}</p>`:''}
+    ${prev}
     <button class="btn btn-gold btn-lg" data-act="fStart">${desk?'Бежать!':'Старт'}</button></div>`;
 }
 // Выключатель звука и музыки «Леса» (выбор запоминается на устройстве)
@@ -766,20 +759,19 @@ function sndBtn(){const on=ForestSound.on;return `<button class="snd" data-act="
 function vForest(){
   bar('Лес',null,'route');
   if(st.day<OPEN.forest)return lockView('Лес откроется 8 декабря','В тайге у Деда Мороза рвётся мешок — подарки рассыпаются по всему лесу. Собирать их герой будет вместе со Старшим сыном.','m_star');
-  const best=st.forest.bestGifts, head=forestHero();
+  const head=actHero('forest');
   if(DESK){
-    // Компьютер: шапка испытания на поляне, ниже — одна широкая панель: жизни, подарки и рекорд, игровое поле, кнопки
-    const field=`<div class="hud"><div>${ICON_HEART}<div><span>Жизни</span><b id="hLives" class="hearts">${hearts(3)}</b></div></div><div>${ICON_GIFT}<div><span>Подарки</span><b id="hGifts">0</b></div></div><div>${ICON_CLOCK}<div><span>Время</span><b id="hTime">0:00</b></div></div><div>${ICON_STAR}<div><span>Рекорд</span><b>${best}</b></div></div></div>
-      <div class="stage" id="stage"><canvas id="cv" data-ratio=".5625" data-lw="840" data-lh="440"></canvas>
+    // Компьютер: шапка испытания на поляне, ниже — одна широкая панель: игровое поле и кнопки.
+    // Жизни, подарки и время — на самом поле, рекорд — в окне перед стартом
+    const field=`<div class="stage" id="stage"><canvas id="cv" data-ratio=".5625" data-lw="840" data-lh="440"></canvas>
         <div class="overlay" id="ov">${forestRules(true)}</div>${sndBtn()}</div>
       <div class="ctrl" id="ctrl"><button class="btn btn-ghost" id="bJump">${svg('jump','width="18" height="18"')} Прыжок</button><button class="btn btn-ghost" id="bFwd">Ускорение ${svg('boost','width="18" height="18"')}</button></div>
       <p class="note hidden" id="fin"><a class="link" href="#" data-act="fExit">Закончить забег</a> — собранные подарки засчитаются</p>${LITE_NOTE}`;
     return {wide:[head,field],cls:'forest',scene:1};
   }
   if(ui.fmode)return {raw:gameMode()};
-  const rec=st.forest.runs?`<div class="rcs"><div><b>${best}</b><span>рекорд, подарков</span></div><div><b>${num(best*10)}</b><span>баллов в таблице</span></div><div><b>${st.forest.runs}</b><span>${plural(st.forest.runs,'забег','забега','забегов')}</span></div></div>`:'';
   return {scene:1,cls:'forest',
-    M:[head,`${rec}<p class="rot-hint">${svg('rotate')}<span>Играем горизонтально — поверните телефон</span></p>${LITE_NOTE}`],
+    M:[head,`<p class="rot-hint">${svg('rotate')}<span>Играем горизонтально — поверните телефон</span></p>${LITE_NOTE}`],
     acts:[{t:'Бежать!',act:'fPlay',gold:1}]};
 }
 // Телефон: игра во весь экран и только горизонтально. В центре поле (жизни и подарки — на нём), по бокам круглые кнопки без подписей под большие пальцы:
@@ -827,8 +819,6 @@ function mountForest(){
   // Компьютер: поле 16:9, но целиком влезает в окно вместе с кнопками под ним (шапка сверху закреплена)
   if(DESK){const hd=$('header.top');cv.dataset.vfit=String((hd?hd.offsetHeight:64)+112);}
   game=ForestGame(cv,{
-    hud(S){const a=$('#hLives'),b=$('#hGifts');if(a)a.innerHTML=hearts(S.lives);if(b)b.textContent=S.gifts;},
-    tick(S){const t=$('#hTime');if(t){const v=mmss(S.rt);if(t.textContent!==v)t.textContent=v;}},
     end(S){finishForest(S.gifts,S.score,S.out,S.rt);},
     sfx:(n,o)=>ForestSound.play(n,o),
     best:()=>st.forest.bestGifts||0   // рекорд — для полоски «до рекорда» на поле
@@ -887,7 +877,7 @@ function startLite(){
   const gm=$('#gm');if(gm)gm.classList.add('gm-lite');   // кнопки игры не нужны, и играть можно в любом положении телефона
   let n=0,got=0,cur=-1;
   ov.innerHTML=`<div class="inner"><div class="lbl-s">Альтернативный способ заработать баллы</div><p class="small">Нажимайте на подарки, пока они не исчезли</p><div class="lite" id="lite">${[...Array(9)].map((_,i)=>`<button data-li="${i}"></button>`).join('')}</div><div class="small" id="liteC">Собрано: 0</div></div>`;
-  $('#lite').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-li]');if(b&&+b.dataset.li===cur){got++;cur=-1;ForestSound.play('gift');b.classList.remove('has');b.textContent='';$('#liteC').textContent='Собрано: '+got;const g=$('#hGifts');if(g)g.textContent=got;}});
+  $('#lite').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-li]');if(b&&+b.dataset.li===cur){got++;cur=-1;ForestSound.play('gift');b.classList.remove('has');b.textContent='';$('#liteC').textContent='Собрано: '+got;}});
   const t=setInterval(()=>{
     $$('#lite button').forEach(b=>{b.classList.remove('has');b.textContent='';});
     if(n>=18){clearInterval(t);finishForest(got,got*10,false,n*.85);return;}
@@ -933,9 +923,7 @@ function vTree(){
   bar('Ёлка',null,'route');
   if(st.day<OPEN.tree)return lockView('Ёлка откроется 15 декабря','Когда подарки собраны и Дед Мороз отправился их развозить, Дочь зовёт всех вместе нарядить ёлку к празднику.','m_doch');
   const T=ui.tree, has=!!st.tree.ball, step=T.step||1;
-  const line=!has?'подарки собраны, папа уехал их развозить. Осталось нарядить ёлку! Сделаем твою игрушку?'
-    :st.tree.on?'красота! Твоя игрушка висит на нашей общей ёлке — у самой верхушки.':'игрушка готова! Повесим её на общую ёлку?';
-  const H=actHead('tree','Ёлка','m_doch','Дочь',line);
+  const head=actHero('tree',!has?'Нарядим вместе!':st.tree.on?'Красота!':'Повесим на ёлку?');
   const tc=treeCount();
   const big=`${lbl('Общая ёлка банка')}<p class="tale small center">${nb(`${num(tc)} ${plural(tc,'игрушка','игрушки','игрушек')} от сотрудников со всей страны. Свежие — на передней стороне, остальные — если повернуть ёлку`)}</p>
     <div class="treebox" id="treebox">${treeBox()}</div>${treeSides()>1?treeRotHTML():''}
@@ -949,7 +937,7 @@ function vTree(){
         <label class="sw"><input type="checkbox" id="hangSw"${st.tree.on?' checked':''}><span class="sw-t" aria-hidden="true"></span><span>Висит на общей ёлке</span></label>
         <span class="rt-p">${STAR_SM}${st.tree.pts?'100 баллов начислено':'Повесьте — и сразу +100 баллов'}</span>
         <div class="mc-a">${st.tree.on?'':btn({t:'Повесить на ёлку',act:'tHang',gold:1,noarrow:1,cls:'btn-sm'})}${btn({t:`${svg('down','width="16" height="16"')} Скачать`,act:'tDownloadMine',noarrow:1,cls:'btn-sm'})}</div></div></div>`;
-    return {wide:[mine,big],M:[mine,big],dstage:H.d,stage:H.m,cls:'tree'};
+    return {wide:[head,mine,big],M:[head,mine,big],cls:'tree'};
   }
   // шаги слева, справа — окно текущего шага
   const steps=`<ol class="tsteps">${TREE_STEPS.map(([t,d],i)=>`<li class="${i+1===step?'on':''} ${i+1<step?'done':''}"><i>${i+1<step?'✓':i+1}</i><span><b>${t}</b><small>${d}</small></span></li>`).join('')}</ol>`;
@@ -961,16 +949,16 @@ function vTree(){
     win=`<label class="dropzone" id="drop">${T.src?`<img class="pv" src="${T.src}" alt="">`:`<span class="dz">${svg('photo','width="40" height="40"')}</span>`}
         <b>${T.src?'Картинка загружена':DESK?'Нажмите или перетащите файл сюда':'Выбрать картинку'}</b><span class="small">${T.src?'Нажмите, чтобы заменить':'JPG или PNG — с телефона или компьютера'}</span>
         <input type="file" accept="image/*" id="file" class="sr"></label>
-      ${lbl('или попробуйте на примере','s')}
-      <div class="samples">${[['sample_girl','Портрет'],['sample_team','Компания'],['sample_draw','Рисунок']].map(([k,l])=>`<button data-act="tSample" data-k="${k}"><img src="${A[k]}" alt=""><span>${l}</span></button>`).join('')}</div>
+      <p class="tw-test"><a class="link" href="#" data-act="tSample">Тестовая картинка</a></p>
       <p class="note">Картинка нужна только для игрушки и удаляется сразу после её создания. Игрушка у каждого одна</p>
       <div class="tw-a">${btn({t:'Создать игрушку',act:'tMake',gold:1,disabled:!T.src})}${btn({t:'Назад',act:'tStep',s:1})}</div>`;
   } else {
     win=`<div class="making"><div class="orb"><img src="${T.src}" alt=""></div><div class="mk" id="mk">Перерисовываем картинку в ёлочную игрушку…</div></div>`;
   }
   const mk=`${lbl('Ваша игрушка')}<div class="tmk">${steps}<div class="twin">${win}</div></div>`;
-  return {wide:[mk,big],M:[mk,big],dstage:H.d,stage:H.m,cls:'tree'};
+  return {wide:[head,mk,big],M:[head,mk,big],cls:'tree'};
 }
+const TEST_PICS=['sample_girl','sample_team','sample_draw'];
 function setTreeSrc(src){ui.tree.src=src;render();}
 async function makeBall(){
   ui.tree.step=3;render();
@@ -1385,7 +1373,7 @@ const ACT={
   saveNick:()=>{const q=cityQ();ui.city=cityFind(q);if(cityNorm(q)&&!ui.city){ui.cityErr=true;patchCity();const f=$('#city');if(f){f.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'});f.focus({preventScroll:true});}return;}
     ui.cityQ=ui.city;const city=ui.city;const n=nickOf(ui.nick);ui.pending={nick:n.nick,g:n.g,city};saveDraft();go('auth');},
   citySel:d=>{ui.city=d.v;ui.cityQ=d.v;ui.cityErr=false;saveDraft();const f=$('#city');if(f){f.value=d.v;f.blur();}patchCity();},
-  codeNext:()=>{if(!ui.rulesOk){toast('Отметьте, что принимаете правила');const c=$('.chk.agree');if(c){c.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'});c.classList.remove('nudge');void c.offsetWidth;c.classList.add('nudge');}return;}if(!ui.auth.sentTo){ui.svOk=false;ui.svTail='';ui.sheet='savecode';render();const f=$('#svTail');if(f&&DESK)f.focus();return;}ACT.codeGo(null,null,null,true);},
+  codeNext:()=>{if(!ui.rulesOk){toast('Отметьте, что принимаете правила');const c=$('.chk.agree');if(c){c.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'});c.classList.remove('nudge');void c.offsetWidth;c.classList.add('nudge');}return;}if(!ui.auth.sentTo){ui.svOk=false;ui.sheet='savecode';render();return;}ACT.codeGo(null,null,null,true);},
   portal:(d,e,ev)=>{ev&&ev.preventDefault&&ev.preventDefault();toast('Ссылку на внутреннюю платформу даст банк');},
   toMail:()=>{ui.sheet=null;render();const e=$('#email');if(e){e.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'});e.focus({preventScroll:true});}},
   codeGo:(d,e,ev,mailed)=>{if(!mailed&&!svReady())return;ui.sheet=null;const p=ui.pending;
@@ -1411,7 +1399,8 @@ const ACT={
   seg:d=>{ui.seg[d.k]=d.v;render();},
   // квиз
   qRound:d=>{ui.quiz=null;st.qrun=null;save();ui.quizRound=+d.i;render();},
-  qStart:()=>{const r=ui.quizRound||0,part=st.qpart&&st.qpart[r];
+  qStart:()=>{const r=ui.quizRound||0;if(st.qpart&&st.qpart[r]){ACT.qGo();return;}ui.sheet='qrules';render();},
+  qGo:()=>{const r=ui.quizRound||0,part=st.qpart&&st.qpart[r];
     if(part){ui.quiz=Object.assign({},part);delete st.qpart[r];}else ui.quiz={r,i:0,correct:0,answered:false,pick:null,replay:!!(st.quiz[r]&&st.quiz[r].done)};st.qrun=Object.assign({},ui.quiz);save();ui.sheet=null;ui.turn=true;render();window.scrollTo(0,0);},
   qPick:d=>{const q=ui.quiz;if(q.answered)return;q.pick=+d.i;q.answered=true;if(q.pick===D.QUIZ[q.r].qs[q.i].a)q.correct++;st.qrun=Object.assign({},q);save();ui.sheet=null;render();
     // пояснение — в том же окне: подводим к нему, если оно ушло за край экрана
@@ -1438,7 +1427,8 @@ const ACT={
   // ёлка
   tStyle:d=>{ui.tree.style=+d.i;render();},
   tStep:(d,e,ev)=>{ev&&ev.preventDefault();ui.tree.step=+d.s;render();},
-  tSample:d=>setTreeSrc(AI[d.k]||A[d.k]),
+  // «Тестовая картинка» — подставляет готовую, чтобы попробовать без своего файла; каждое нажатие — следующая из трёх
+  tSample:()=>{const k=TEST_PICS[ui.tree.ti=((ui.tree.ti==null?-1:ui.tree.ti)+1)%TEST_PICS.length];setTreeSrc(AI[k]||A[k]);},
   tMake:()=>makeBall(),
   treeRot:d=>rotateTree(+d.d),
   // «Повесить» — сразу +100 баллов; у всех игрушка появится после проверки модератором
@@ -1487,7 +1477,7 @@ document.addEventListener('change',e=>{
   if(e.target.id==='hangSw')hangToy(e.target.checked);
   if(e.target.id==='file'){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>setTreeSrc(r.result);r.readAsDataURL(f);}
 });
-document.addEventListener('input',e=>{if(e.target.id==='svTail'){ui.svTail=e.target.value;$$('[data-act=codeGo]').forEach(b=>b.disabled=!svReady());e.target.classList.toggle('ok',tail4(ui.svTail)===ui.auth.code.slice(-4));}
+document.addEventListener('input',e=>{
   if(e.target.classList.contains('pk-q')){filterPk(e.target);const l=e.target.closest('.pk-box').querySelector('.pk-list');if(l)l.scrollTop=0;}if(e.target.id==='city'){ui.cityQ=e.target.value;ui.city=cityFind(ui.cityQ);if(ui.city)ui.cityQ=ui.city;ui.cityErr=false;saveDraft();patchCity();}});
 // Поле города: стрелка вниз — к подсказкам, Esc — закрыть; при уходе из поля подсказки прячутся
 document.addEventListener('focusout',e=>{if(e.target.id==='city'||e.target.classList.contains('city-o'))setTimeout(()=>{const a=document.activeElement;if(a&&(a.id==='city'||a.classList.contains('city-o')))return;const b=$('#citySug');if(b){b.hidden=true;const i=$('#city');if(i)i.setAttribute('aria-expanded','false');}},150);});

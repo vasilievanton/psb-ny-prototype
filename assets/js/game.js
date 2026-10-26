@@ -186,6 +186,7 @@ const ForestSound=(()=>{
 function ForestGame(canvas, hooks){
   const ctx=canvas.getContext('2d'), F=FOREST_ART; loadForestArt();
   const sfx=(n,o)=>{if(hooks.sfx)hooks.sfx(n,o);};
+  const hud=s=>{if(hooks.hud)hooks.hud(s);};   // жизни и подарки — на самом поле; страница может подписаться, но не обязана
   // подарки подряд (меньше чем через GIFT_RUN секунды) звучат всё выше — по ступеням мажорной пентатоники
   const GIFT_RUN=1.1, GIFT_STEPS=[1,1.122,1.26,1.498,1.682,2];
   let giftT=-9, giftN=0;
@@ -345,7 +346,7 @@ function ForestGame(canvas, hooks){
     if(S.inv>0||!S.run) return; S.stun=.6; S.inv=1.4; S.lives--; S.bk=1; S.hitAt=S.dist+PX;
     sfx(pit?'fall':'hit');
     S.parts.push({k:'txt',x:PX+30,y:S.py-110,t:S.lives>0?'Ой! −1 жизнь':'Жизни кончились',life:1.1,c:'#ffb3a8'});
-    hooks.hud(S);
+    hud(S);
     if(S.lives<=0){S.run=false;S.done=true;S.out=true;setTimeout(()=>hooks.end(S),700);}
   }
   // Опора под точкой x для медведя, у которого лапы на высоте feet: земля, верх платформы (там, где верх выше половины её высоты)
@@ -406,7 +407,7 @@ function ForestGame(canvas, hooks){
         // бревно и пень бьют только в бок: лапы ниже верха и медведь ещё не за серединой. Стоит сверху или спрыгивает с них — не удар
         const side=!o.stand||(S.py>o.top+STEP&&px+PX<r.x+r.w/2);
         if(side&&pr.x<r.x+r.w&&pr.x+pr.w>r.x&&pr.y<r.y+r.h&&pr.y+pr.h>r.y){ if(!o.hit){o.hit=1;hit();} }
-        if(!o.passed&&o.x+o.w<px+PX-26){o.passed=1; if(!o.hit){S.cleared++;S.score+=5;hooks.hud(S);}}
+        if(!o.passed&&o.x+o.w<px+PX-26){o.passed=1; if(!o.hit){S.cleared++;S.score+=5;hud(S);}}
       } else {
         const cx=o.x+13, cy=o.y+12;
         if(cx>pr.x-14&&cx<pr.x+pr.w+14&&cy>pr.y-14&&cy<pr.y+pr.h+10){
@@ -414,7 +415,7 @@ function ForestGame(canvas, hooks){
           if(o.k==='life'){ if(S.lives<3)S.lives++; S.parts.push({k:'txt',x:cx-px-20,y:cy-20,t:'+1 жизнь',life:1.1,c:'#ffb8c8'}); sfx('heart'); }
           else { S.gifts++;S.score+=10; S.parts.push({k:'txt',x:cx-px,y:cy-20,t:'+1',life:.9,c:'#fde7a8'});
             giftN=S.t-giftT<GIFT_RUN?Math.min(giftN+1,GIFT_STEPS.length-1):0; giftT=S.t; sfx('gift',{rate:GIFT_STEPS[giftN]}); }
-          hooks.hud(S);
+          hud(S);
           for(let i=0;i<10;i++)S.parts.push({k:'sp',x:cx-px,y:cy,vx:rnd(-120,120),vy:rnd(-160,40),life:rnd(.4,.8)});
         }
       }
@@ -698,7 +699,7 @@ function ForestGame(canvas, hooks){
   function loop(ts){
     if(!alive) return;
     const dt=Math.min(.033,(ts-(last||ts))/1000); last=ts;
-    update(dt); draw(); hudDraw(); if(hooks.tick)hooks.tick(S); raf=requestAnimationFrame(loop);
+    update(dt); draw(); hudDraw(); raf=requestAnimationFrame(loop);
   }
   raf=requestAnimationFrame(loop);
   const onKey=e=>{
@@ -710,7 +711,7 @@ function ForestGame(canvas, hooks){
   const onTap=e=>{e.preventDefault();jump();};
   canvas.addEventListener('pointerdown',onTap);
   return {
-    start(){giftN=0;giftT=-9;Object.assign(S,{run:true,done:false,dist:0,rt:0,v0:V0,gifts:0,score:0,cleared:0,objs:[],parts:[],next:520,jumpAt:-1e9,lowAt:-1e9,lifeAt:-1e9,hitAt:-1e9,bk:1,best:hooks.best?(+hooks.best()||0):0,stun:0,inv:0,early:false,out:false,lives:3,py:GROUND,vy:0,ground:true,paused:false,ph:0,boost:false,dj:false,flip:0});hooks.hud(S);},
+    start(){giftN=0;giftT=-9;Object.assign(S,{run:true,done:false,dist:0,rt:0,v0:V0,gifts:0,score:0,cleared:0,objs:[],parts:[],next:520,jumpAt:-1e9,lowAt:-1e9,lifeAt:-1e9,hitAt:-1e9,bk:1,best:hooks.best?(+hooks.best()||0):0,stun:0,inv:0,early:false,out:false,lives:3,py:GROUND,vy:0,ground:true,paused:false,ph:0,boost:false,dj:false,flip:0});hud(S);},
     jump, boost:setBoost, state:S,
     // Пауза: телефон повернули вертикально или ушли из вкладки. Мир замирает, ускорение отпускается
     pause(){if(S.run&&!S.paused){S.paused=true;S.boost=false;S.bk=1;}},
