@@ -41,7 +41,6 @@ const A={
 "art_forest": "assets/img/art_forest.webp",
 "art_tree": "assets/img/art_tree.webp",
 "tile_quiz": "assets/img/tile_quiz.webp",
-"tile_forest": "assets/img/tile_forest.webp",
 "tile_tree": "assets/img/tile_tree.webp",
 "forest_head": "assets/img/forest_head.webp",
 "tree_big": "assets/img/tree_big.webp",
