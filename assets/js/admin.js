@@ -12,16 +12,18 @@ const dOf=d=>new Date(2026,11,1+d);
 const fmt=d=>{const t=dOf(d);return t.getDate()+' '+MONTHS[t.getMonth()];};
 const dd=d=>{const t=dOf(d);return String(t.getDate()).padStart(2,'0')+'.'+String(t.getMonth()+1).padStart(2,'0')+'.'+t.getFullYear();};
 const ROMAN=['I','II','III','IV','V','VI'];
-// «Сейчас» в админке — 15 декабря: в 00:00 мск открылись «Ёлка», набор III квиза, глава V и сказки 7–8
+// «Сейчас» в админке — 15 декабря: в 00:00 мск открылись Ёлка, набор III квиза, глава V и сказки 7–8
 const TODAY=14, NOW_T='10:40';
-const OPEN={quiz:0,forest:7,tree:14,final:21,chest:24}, LAST_DAY=47, DRAW_N=10, DRAW_POOL=14580;
+const OPEN={quiz:0,forest:7,tree:14,chest:24}, LAST_DAY=47, DRAW_N=10;
+const CODE_DEADLINE=OPEN.chest-1, PRIZE_DAY=OPEN.chest+5;   // код на внутренней платформе ПСБ — до 24 декабря, 23:59 мск; с победителями свяжутся до 30 декабря
+const BLOCKED_DOMAINS=['psbank.ru'];   // рабочая почта: просим указать личную
 const R=rng(4242), pick=a=>a[Math.floor(R()*a.length)];
 const NOUNS=D.NOUNS.map(([w,g])=>({w,g}));
 const CIT=D.CITIES.slice(0,90).map(c=>c[0]);
 const STYLES=BALL_STYLES.map(s=>s.n);
 function mkNick(){const N=pick(NOUNS);return pick(D.ADJ)[N.g]+' '+N.w;}
 function mkCode(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='PSB-';for(let i=0;i<8;i++){s+=a[Math.floor(R()*32)];if(i===3)s+='-';}return s;}
-function mask(){const n='abcdefghiklmnoprstuvz';return n[Math.floor(R()*n.length)]+'•••@'+pick(['mail.ru','yandex.ru','gmail.com','psbank.ru','bk.ru']);}
+function mask(){const n='abcdefghiklmnoprstuvz';return n[Math.floor(R()*n.length)]+'•••@'+pick(['mail.ru','yandex.ru','gmail.com','bk.ru','list.ru']);}
 
 /* ---------- данные-примеры ---------- */
 const USERS=[];{const seen=new Set();while(USERS.length<160){const nick=mkNick();if(seen.has(nick))continue;seen.add(nick);
@@ -32,8 +34,6 @@ USERS.sort((a,b)=>b.pts-a.pts||a.day-b.day);
 const TOYS=[...Array(12)].map((_,i)=>{const u=pick(USERS);return {id:i+1,nick:u.nick,city:u.city,src:['sample_draw','sample_team','sample_girl'][i%3],style:(i*5)%6,
   time:String(Math.floor(R()*10)).padStart(2,'0')+':'+String(Math.floor(R()*60)).padStart(2,'0'),st:'wait',img:null,why:''};}).sort((a,b)=>a.time<b.time?-1:1);
 let toysReady=false;
-const AVAS=[...Array(8)].map((_,i)=>{const u=pick(USERS);return {id:i+1,nick:u.nick,city:u.city,src:['sample_girl','sample_draw','sample_team'][i%3],
-  time:String(Math.floor(R()*10)).padStart(2,'0')+':'+String(Math.floor(R()*60)).padStart(2,'0'),st:'wait',why:''};}).sort((a,b)=>a.time<b.time?-1:1);
 const SUSP=[
   {nick:USERS[3].nick,run:'15 дек, 09:12',gifts:74,time:'41 с',why:'Подарков больше, чем было на пройденном пути',st:'wait'},
   {nick:USERS[17].nick,run:'14 дек, 22:47',gifts:39,time:'2 мин 10 с',why:'6 забегов за минуту с одного устройства',st:'wait'},
@@ -44,10 +44,11 @@ const CH=D.CHAPTERS.map((c,i)=>({t:c.t,img:A[c.img],text:c.p.join('\n\n'),o:(c.o
 CH.forEach(c=>{if(c.empty){c.t='';c.img='';c.text='';if(!c.final)c.o=['','',''];}});
 const LOG=[
   ['10:32','Анна (модератор)','одобрила 46 игрушек на ёлке'],['09:58','Анна (модератор)','отклонила игрушку: реклама, QR-код'],
-  ['09:15','Илья (редактор)','загрузил аудиосказки 9–10, публикация 22 декабря'],['00:00','Система','опубликованы глава V, набор III квиза, сказки 7–8; открыта «Ёлка»'],
+  ['09:15','Илья (редактор)','загрузил аудиосказки 9–10, публикация 22 декабря'],['00:00','Система','опубликованы глава V, набор III квиза, сказки 7–8; открыта Ёлка'],
   ['14 дек, 23:59','Система','закрыто голосование главы IV — победил вариант «Сказать спасибо тем, кто рядом»']
 ];
-let drawRes=null, drawPub=false, sel={ch:4,set:2,q:0,user:null,toyTab:'wait',avaTab:'wait'}, frozen=false;
+let drawRes=null, drawPub=false, codeList=null, sel={ch:4,set:2,q:0,user:null,toyTab:'wait'}, frozen=false;
+const domains=BLOCKED_DOMAINS.slice();
 
 /* ---------- общие кусочки ---------- */
 const st=(t,k)=>`<span class="st ${k||''}">${t}</span>`;
@@ -59,7 +60,7 @@ function log(who,what){LOG.unshift([NOW_T,who,what]);}
 function csv(name,rows){const s='﻿'+rows.map(r=>r.map(x=>{x=String(x==null?'':x);return /[;"\n]/.test(x)?'"'+x.replace(/"/g,'""')+'"':x;}).join(';')).join('\r\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([s],{type:'text/csv;charset=utf-8'}));a.download=name;document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);toast('Выгружен файл '+name);}
-const waitToys=()=>TOYS.filter(t=>t.st==='wait').length, waitAvas=()=>AVAS.filter(a=>a.st==='wait').length, waitSusp=()=>SUSP.filter(s=>s.st==='wait').length;
+const waitToys=()=>TOYS.filter(t=>t.st==='wait').length, waitSusp=()=>SUSP.filter(s=>s.st==='wait').length;
 function chState(i){const c=CH[i];if(c.empty&&!c.sched)return ['Не загружена','bad'];if(c.day>TODAY)return ['Запланирована на '+fmt(c.day),'acc'];
   if(TODAY<=c.day+1)return ['Голосование до '+fmt(c.day+1)+', 23:59','warn'];return ['Итоги подведены','ok'];}
 function votes(i){const c=D.CHAPTERS[i];if(TODAY<c.day)return null;const fr=TODAY>c.day+1?1:TODAY===c.day?.42:.86;const tot=Math.round(c.votes*fr);return {tot,cnt:c.pct.map(p=>Math.round(tot*p/100)),lead:c.pct.indexOf(Math.max(...c.pct)),done:TODAY>c.day+1};}
@@ -67,7 +68,7 @@ function votes(i){const c=D.CHAPTERS[i];if(TODAY<c.day)return null;const fr=TODA
 /* ---------- разделы ---------- */
 const SECTIONS=[
   ['dash','Обзор',null],
-  ['g1','Модерация'],['tree','Ёлка',waitToys],['ava','Аватары',waitAvas],
+  ['g1','Модерация'],['tree','Ёлка',waitToys],
   ['g2','Контент'],['serial','Сказка-сериал',null],['quiz','Квиз',null],['tales','Аудиосказки',null],
   ['g3','Итоги и участники'],['draw','Розыгрыш',null],['rating','Турнирная таблица',waitSusp],['users','Участники и коды',null],
   ['g4','Настройки'],['schedule','Расписание',null],['dict','Справочники',null],['access','Доступы и журнал',null]
@@ -75,20 +76,19 @@ const SECTIONS=[
 let cur=(location.hash||'#dash').slice(1);
 
 function vDash(){
-  const nx=[[OPEN.final,'Финал маршрута, набор IV квиза, сказки 9–10'],[17,'Глава VI (финальная) — нужно загрузить до 17 декабря'],[24,'Розыгрыш «Сундука чудес», цельная сказка (PDF)']];
+  const nx=[[17,'Глава VI (финальная) — нужно загрузить до 17 декабря'],[21,'Набор IV квиза, сказки 9–10'],[CODE_DEADLINE,'Последний день ввести код на внутренней платформе ПСБ — до 23:59'],[OPEN.chest,'Розыгрыш Сундука чудес по списку кодов от банка, цельная сказка (PDF)']];
   return head('Обзор',`Сегодня ${fmt(TODAY)}, ${NOW_T} мск. Разделы и главы открываются в 00:00 мск. Платформа работает до 17 января, после — архив.`)+
-  `<div class="grid g4">${kpi(num(2100+TODAY*520),'участников · +520 за сутки')}${kpi('63','города')}${kpi(num(waitToys()),plural(waitToys(),'игрушка ждёт','игрушки ждут','игрушек ждут')+' проверки',waitToys()>0)}${kpi(num(waitSusp()),plural(waitSusp(),'подозрительный забег','подозрительных забега','подозрительных забегов')+' в «Лесе»',waitSusp()>0)}</div>
+  `<div class="grid g4">${kpi(num(2100+TODAY*520),'участников · +520 за сутки')}${kpi('63','города')}${kpi(num(waitToys()),plural(waitToys(),'игрушка ждёт','игрушки ждут','игрушек ждут')+' проверки',waitToys()>0)}${kpi(num(waitSusp()),plural(waitSusp(),'подозрительный забег','подозрительных забега','подозрительных забегов')+' в Лесу',waitSusp()>0)}</div>
   <div class="grid g2" style="margin-top:12px">
     <div class="panel"><h2>Требует внимания</h2><table class="tbl">
       <tr class="click" data-go="tree"><td>Игрушки на модерации</td><td class="num">${st(waitToys(),waitToys()?'warn':'ok')}</td></tr>
-      <tr class="click" data-go="ava"><td>Аватары на модерации</td><td class="num">${st(waitAvas(),waitAvas()?'warn':'ok')}</td></tr>
-      <tr class="click" data-go="rating"><td>Подозрительные результаты «Леса»</td><td class="num">${st(waitSusp(),waitSusp()?'warn':'ok')}</td></tr>
+      <tr class="click" data-go="rating"><td>Подозрительные результаты Леса</td><td class="num">${st(waitSusp(),waitSusp()?'warn':'ok')}</td></tr>
       <tr class="click" data-go="serial"><td>Глава VI не загружена · выход ${fmt(17)}</td><td class="num">${CH[5].empty&&!CH[5].sched?st('нужно сделать','bad'):st('готово','ok')}</td></tr></table></div>
     <div class="panel"><h2>Сейчас на платформе</h2><table class="tbl">
       <tr><td>Голосование главы V</td><td class="num">${num(votes(4).tot)} голосов · до ${fmt(15)}, 23:59</td></tr>
       <tr><td>Квиз · набор III «${esc(D.QUIZ[2].title)}»</td><td class="num">открыт сегодня</td></tr>
-      <tr><td>«Ёлка»</td><td class="num">открыта сегодня</td></tr>
-      <tr><td>Розыгрыш</td><td class="num">${fmt(OPEN.chest)} · через ${OPEN.chest-TODAY} ${plural(OPEN.chest-TODAY,'день','дня','дней')}</td></tr></table></div>
+      <tr><td>Ёлка</td><td class="num">открыта сегодня</td></tr>
+      <tr><td>Розыгрыш</td><td class="num">${fmt(OPEN.chest)} · через ${OPEN.chest-TODAY} ${plural(OPEN.chest-TODAY,'день','дня','дней')} · код — до ${fmt(CODE_DEADLINE)}, 23:59</td></tr></table></div>
   </div>
   <div class="panel"><h2>Ближайшие публикации</h2><table class="tbl">${nx.map(([d,t])=>`<tr><td style="width:150px">${fmt(d)}, 00:00</td><td>${t}</td></tr>`).join('')}</table>
     <p class="small muted" style="margin:10px 0 0">Полный календарь — в разделе <a href="#schedule">«Расписание»</a>.</p></div>`;
@@ -98,28 +98,15 @@ function vTree(){
   if(!toysReady){toysReady=true;TOYS.forEach(async t=>{t.img=await renderBall(AI[t.src],t.style);if(cur==='tree')render();});}
   const tab=sel.toyTab, list=TOYS.filter(t=>t.st===tab);
   const card=t=>`<div class="mod ${t.st!=='wait'?'done':''}"><div class="img">${t.img?`<img src="${t.img}" alt="">`:'<span class="small muted" style="color:#9aa">генерация…</span>'}</div>
-    <b>${esc(t.nick)}</b><span class="small muted">${esc(t.city||'город не указан')} · ${t.time} · стиль «${STYLES[t.style]}»</span>
+    <b>${esc(t.nick)}</b><span class="small muted">${esc(t.city||'город не указан')} · ${t.time} · ${STYLES[t.style]}</span>
     ${t.st==='wait'?`<select class="in sm" data-why="${t.id}" style="height:30px;font-size:12.5px"><option value="">Причина отказа…</option><option>Оскорбительное или неуместное</option><option>Чужие персональные данные, документы</option><option>Реклама, ссылки, QR-коды</option><option>Не удалось распознать картинку</option></select>
     <div class="acts">${btn('Одобрить','toyOk',{cls:'ok sm',d:{id:t.id}})}${btn('Отклонить','toyNo',{cls:'bad sm',d:{id:t.id}})}</div>`
     :t.st==='ok'?st('Одобрена — висит на ёлке','ok'):st('Отклонена: '+(t.why||'без причины'),'bad')}</div>`;
-  return head('Модерация ёлки','Игрушка появляется на общей ёлке после одобрения. До этого автор видит её у себя с пометкой «на проверке». 100 баллов за первую игрушку начисляются при одобрении. Исходная картинка удаляется сразу после генерации — модератор видит только готовый шар.',
+  return head('Модерация ёлки','100 баллов участник получает сразу, как повесит игрушку на ёлку, а коллеги видят её после одобрения — до этого автор видит её на ёлке сам. ИИ перерисовывает картинку в стиле ёлочной игрушки, это уже не фото — согласие на показ не нужно. Исходная картинка удаляется сразу после генерации: модератор видит только готовую игрушку.',
     btn('Одобрить все на странице','toyAll',{cls:'p',dis:tab!=='wait'||!list.length}))+
   `<div class="tabs">${[['wait','На проверке',waitToys()],['ok','Одобрены',TOYS.filter(t=>t.st==='ok').length],['no','Отклонены',TOYS.filter(t=>t.st==='no').length]].map(([k,l,n])=>`<button class="${tab===k?'on':''}" data-act="toyTab" data-k="${k}">${l} · ${n}</button>`).join('')}</div>
   ${list.length?`<div class="mods">${list.map(card).join('')}</div>`:`<div class="note">Здесь пусто.</div>`}
-  <p class="note" style="margin-top:14px">Отклонённую игрушку автор видит с причиной и может сделать другую. Срок проверки (SLA) и состав модераторов — уточняются.</p>`;
-}
-
-function vAva(){
-  const tab=sel.avaTab, list=AVAS.filter(a=>a.st===tab);
-  const card=a=>`<div class="mod ${a.st!=='wait'?'done':''}"><div class="img ava"><img src="${A[a.src]}" alt=""></div>
-    <b>${esc(a.nick)}</b><span class="small muted">${esc(a.city||'город не указан')} · ${a.time}</span>
-    ${a.st==='wait'?`<select class="in sm" data-awhy="${a.id}" style="height:30px;font-size:12.5px"><option value="">Причина отказа…</option><option>Оскорбительное или неуместное</option><option>Чужие персональные данные, документы</option><option>Реклама, ссылки, QR-коды</option></select>
-    <div class="acts">${btn('Одобрить','avaOk',{cls:'ok sm',d:{id:a.id}})}${btn('Отклонить','avaNo',{cls:'bad sm',d:{id:a.id}})}</div>`
-    :a.st==='ok'?st('Одобрен — виден в рейтинге','ok'):st('Отклонён: '+(a.why||'без причины'),'bad')}</div>`;
-  return head('Модерация аватаров','Свой аватар участник видит сразу, остальные — в турнирной таблице после одобрения; до этого у него в таблице инициалы. Отклонённый аватар заменяется инициалами, автор видит причину и может загрузить другой.',
-    btn('Одобрить все на странице','avaAll',{cls:'p',dis:tab!=='wait'||!list.length}))+
-  `<div class="tabs">${[['wait','На проверке',waitAvas()],['ok','Одобрены',AVAS.filter(a=>a.st==='ok').length],['no','Отклонены',AVAS.filter(a=>a.st==='no').length]].map(([k,l,n])=>`<button class="${tab===k?'on':''}" data-act="avaTab" data-k="${k}">${l} · ${n}</button>`).join('')}</div>
-  ${list.length?`<div class="mods">${list.map(card).join('')}</div>`:`<div class="note">Здесь пусто.</div>`}`;
+  <p class="note" style="margin-top:14px">Отклонённая игрушка снимается с общей ёлки, автор видит причину и может сделать новую — единственный случай второй генерации. Начисленные 100 баллов остаются. Срок проверки (SLA) и состав модераторов — уточняются.</p>`;
 }
 
 function vSerial(){
@@ -159,7 +146,7 @@ function vQuiz(){
       <div class="f"><span>Варианты ответа · отметьте верный</span>${Q.o.map((o,k)=>`<label class="opt"><input type="radio" name="qa" ${k===Q.a?'checked':''}><input class="in" value="${esc(o)}"></label>`).join('')}</div>
       <label class="f"><span>Пояснение после ответа</span><textarea class="in" rows="4" style="min-height:90px">${esc(Q.ex)}</textarea></label></div></div>
     <div class="row">${btn('Сохранить','save',{cls:'p'})}${TODAY>=S.open?'<span class="small muted">Набор уже открыт: правка не меняет начисленные баллы</span>':''}</div></div>`;
-  return head('Квиз «Спроси дорогу»','Новый набор каждую неделю. 20 баллов за верный ответ с первой попытки; повторное прохождение — без баллов. Верный ответ участник узнаёт только после своего ответа.',btn('Добавить вопрос','save'))+
+  return head('Квиз · Спроси дорогу','Новый набор каждую неделю. 20 баллов за верный ответ с первой попытки; повторное прохождение — без баллов. Верный ответ участник узнаёт только после своего ответа.',btn('Добавить вопрос','save'))+
     `<div class="panel scroll"><table class="tbl"><tr><th>Набор</th><th>Название</th><th>Открытие</th><th>Вопросов</th><th>Статус</th><th class="num">Прошли</th></tr>${sets}</table></div>
     <div class="panel scroll"><h2>Набор ${ROMAN[si]} «${esc(S.title)}»</h2><table class="tbl"><tr><th>№</th><th>Тип</th><th>Вопрос</th><th>Верный ответ</th><th>Регион</th><th class="num">Верно с первой попытки</th></tr>${qs}</table></div>${ed}`;
 }
@@ -167,38 +154,42 @@ function vQuiz(){
 function vTales(){
   const rows=D.TALES.map((t,k)=>{const open=TODAY>=t.open;return `<tr><td>${k+1}</td><td><b>${esc(t.t)}</b><div class="small muted">${esc(t.n)}</div></td><td class="num">${t.d}:00</td><td>${st('mp3 · ИИ-озвучка','ok')}</td><td>${fmt(t.open)}</td><td>${open?st('Опубликована','ok'):st('Запланирована','acc')}</td>
     <td><input class="in" style="height:30px;min-width:150px" placeholder="vk.com/music/…" value="${open&&k<4?'vk.com/music/playlist/…':''}"></td><td><input class="in" style="height:30px;min-width:150px" placeholder="music.yandex.ru/album/…" value="${open&&k<4?'music.yandex.ru/album/…':''}"></td></tr>`;}).join('');
-  return head('Аудиосказки · Пряничная избушка','10 сказок народов России, по две в неделю. Озвучка — нейросеть. На платформе — плеер; вне её — плейлисты в VK Музыке и Яндекс Музыке (варианты публикации — в README, раздел 6.10).',btn('Загрузить сказку','save',{cls:'p'}))+
+  return head('Аудиосказки · Пряничная избушка','10 сказок народов России, по две в неделю. Читает Настасья Петровна — жена Михаила Потапыча; озвучка — нейросеть. На платформе сказка открывается окном: обложка, подводка Настасьи Петровны и плеер. Вне платформы — плейлисты в VK Музыке и Яндекс Музыке (варианты публикации — в README, раздел 6.10).',btn('Загрузить сказку','save',{cls:'p'}))+
   `<div class="panel scroll"><table class="tbl"><tr><th>№</th><th>Сказка</th><th class="num">Длит.</th><th>Аудио</th><th>Открытие</th><th>Статус</th><th>VK Музыка</th><th>Яндекс Музыка</th></tr>${rows}</table></div>
   <div class="panel"><h2>Новая сказка</h2><div class="grid g3">
     <label class="f"><span>Название</span><input class="in" placeholder="Например, «Морозко»"></label><label class="f"><span>Источник</span><input class="in" placeholder="русская народная сказка"></label><label class="f"><span>Открытие</span><input class="in" value="${dd(21)} 00:00 мск"></label>
     <label class="f"><span>Аудио (mp3)</span><input class="in" type="file" accept="audio/*" style="padding-top:6px"></label><label class="f"><span>Обложка</span><input class="in" type="file" accept="image/*" style="padding-top:6px"></label><label class="f"><span>Голос нейросети</span><input class="in" placeholder="сервис и голос"></label></div>
+    <label class="f"><span>Подводка Настасьи Петровны — 1–2 предложения в окне сказки</span><input class="in" placeholder="Эту сказку рассказывают…"></label>
     <div class="row" style="margin:0 0 12px"><label class="row"><input type="checkbox" checked> Пометка «озвучено ИИ» в описании</label><label class="row"><input type="checkbox"> Лицензия сервиса озвучки разрешает коммерческое использование</label><label class="row"><input type="checkbox"> Права на текст проверены (народная сказка или договор на обработку)</label></div>
     ${btn('Сохранить','save',{cls:'p'})}</div>`;
 }
 
 function vDraw(){
-  const before=TODAY<OPEN.chest;
-  const res=drawRes?`<div class="panel scroll"><div class="row" style="margin:0 0 10px"><h2 style="margin:0">Победители · ${DRAW_N} из ${num(DRAW_POOL)}</h2><span class="sp"></span>${drawPub?st('Опубликовано на платформе','ok'):st('Не опубликовано','warn')}</div>
-    <table class="tbl"><tr><th>№</th><th>Герой</th><th>Город</th><th>Персональный код</th><th>Подтверждён банком</th></tr>${drawRes.map((u,k)=>`<tr><td>${k+1}</td><td><b>${esc(u.nick)}</b></td><td>${esc(u.city||'—')}</td><td><code>${u.code}</code></td><td><input type="checkbox" data-conf="${k}" ${u.conf?'checked':''}></td></tr>`).join('')}</table>
-    <p class="small muted" style="margin:10px 0">Журнал: розыгрыш проведён ${fmt(TODAY)}, ${NOW_T} мск · участников ${num(DRAW_POOL)} · зерно генератора <code>${drawRes.seed}</code> — по нему результат можно воспроизвести и проверить.</p>
+  const before=TODAY<OPEN.chest, L=codeList;
+  const res=drawRes?`<div class="panel scroll"><div class="row" style="margin:0 0 10px"><h2 style="margin:0">Победители · ${DRAW_N} из ${num(L.ok)}</h2><span class="sp"></span>${drawPub?st('Опубликовано на платформе','ok'):st('Не опубликовано','warn')}</div>
+    <table class="tbl"><tr><th>№</th><th>Герой</th><th>Город</th><th>Персональный код</th><th>Банк связался</th></tr>${drawRes.map((u,k)=>`<tr><td>${k+1}</td><td><b>${esc(u.nick)}</b></td><td>${esc(u.city||'—')}</td><td><code>${u.code}</code></td><td><input type="checkbox" data-conf="${k}" ${u.conf?'checked':''}></td></tr>`).join('')}</table>
+    <p class="small muted" style="margin:10px 0">Журнал: розыгрыш проведён ${fmt(TODAY)}, ${NOW_T} мск · в розыгрыше ${num(L.ok)} кодов из списка банка · зерно генератора <code>${drawRes.seed}</code> — по нему результат можно воспроизвести и проверить.</p>
     <div class="row">${btn('Опубликовать итоги на платформе','drawPub',{cls:'ok',dis:drawPub})}${btn('Выгрузить для банка (CSV)','drawCsv')}${btn('Провести заново','drawRun',{dis:drawPub})}</div></div>`:'';
-  return head('Розыгрыш «Сундука чудес»','Участнику ничего делать не нужно: в назначенный день платформа случайно выбирает победителей. Победитель подтверждает себя персональным кодом; проверка, что это сотрудник банка, и вручение призов — на стороне банка.')+
-  `<div class="panel"><h2>Параметры</h2><div class="grid g3">
-    <label class="f"><span>Дата розыгрыша</span><input class="in" value="${dd(OPEN.chest)} 00:05 мск"><small>Итоги видны на платформе с 00:00 ${fmt(OPEN.chest)}</small></label>
-    <label class="f"><span>Победителей</span><input class="in" type="number" value="${DRAW_N}" min="1"><small>Количество — уточняется с банком</small></label>
-    <div class="f"><span>Кто участвует</span><label class="row"><input type="radio" name="who" checked> Все помощники, созданные до ${fmt(OPEN.chest-1)}, 23:59</label><label class="row"><input type="radio" name="who"> Прошедшие хотя бы одно испытание</label><label class="row"><input type="radio" name="who"> Прошедшие маршрут до финала</label></div></div>
-    <div class="row">${btn(drawRes?'Розыгрыш проведён':'Провести розыгрыш','drawRun',{cls:'p',dis:!!drawRes})}${before?`<span class="small muted">По плану — ${fmt(OPEN.chest)}. В прототипе можно нажать заранее</span>`:''}</div></div>${res}
-  <p class="note">Заблокированные участники в розыгрыше не участвуют. Один человек может создать несколько героев — проверка при вручении приза на стороне банка.</p>`;
+  const list=L?`<table class="tbl"><tr><td>Кодов в списке банка</td><td class="num">${num(L.total)}</td></tr><tr><td>Найдены на платформе</td><td class="num">${num(L.found)}</td></tr><tr><td>Не найдены — опечатка или чужой код</td><td class="num">${num(L.miss)}</td></tr><tr><td>Заблокированы — не участвуют</td><td class="num">${num(L.blocked)}</td></tr><tr><td><b>Участвуют в розыгрыше</b></td><td class="num"><b>${num(L.ok)}</b></td></tr></table>
+      <p class="small muted" style="margin:10px 0">Файл ${esc(L.file)} · загружен ${fmt(TODAY)}, ${NOW_T}</p>`
+    :`<p class="muted">Банк присылает список после ${fmt(CODE_DEADLINE)}, 23:59 мск: CSV, один столбец — персональный код. Платформа сверяет коды со своими.</p>`;
+  return head('Розыгрыш Сундука чудес',`Участвуют только те, кто до ${fmt(CODE_DEADLINE)}, 23:59 мск ввёл свой персональный код на внутренней платформе ПСБ. Список введённых кодов присылает банк: загружаем его, платформа сверяет коды и случайно выбирает победителей. Победителям ничего делать не нужно — их код уже введён, банк свяжется с ними до ${fmt(PRIZE_DAY)}.`)+
+  `<div class="grid g2"><div class="panel"><h2>1. Список кодов от банка</h2>${list}<div class="row">${btn(L?'Загрузить другой список':'Загрузить список (CSV)','codesLoad',{cls:L?'':'p'})}</div></div>
+    <div class="panel"><h2>2. Розыгрыш</h2><div class="grid g2">
+      <label class="f"><span>Дата</span><input class="in" value="${dd(OPEN.chest)}, после загрузки списка" readonly><small>Итоги видны на платформе в Сундуке чудес сразу после публикации</small></label>
+      <label class="f"><span>Победителей</span><input class="in" type="number" value="${DRAW_N}" min="1"><small>Количество — уточняется с банком</small></label></div>
+      <div class="row">${btn(drawRes?'Розыгрыш проведён':'Провести розыгрыш','drawRun',{cls:'p',dis:!!drawRes||!L})}${!L?'<span class="small muted">Сначала загрузите список кодов</span>':before?`<span class="small muted">По плану — ${fmt(OPEN.chest)}. В прототипе можно нажать заранее</span>`:''}</div></div></div>${res}
+  <p class="note">Один человек может создать несколько героев, но в розыгрыше участвует только код, введённый на внутренней платформе банка. Заблокированные участники не участвуют.</p>`;
 }
 
 function vRating(){
   const top=USERS.filter(u=>!u.blocked).slice(0,10);
-  return head('Турнирная таблица','Баллы дают испытания и голоса в сериале: квиз (20 за верный ответ с первой попытки), «Лес» (10 за подарок в лучшем забеге), «Ёлка» (100 за первую одобренную игрушку), сказка-сериал (20 за голос). Топ-10 получают мерч. При равенстве выше тот, кто набрал баллы раньше.',
+  return head('Турнирная таблица','Баллы дают испытания и голоса в сериале: Спроси дорогу — 20 за верный ответ с первой попытки, Лес — 10 за подарок в лучшем забеге, Ёлка — 100, когда игрушку впервые повесили на ёлку, сказка-сериал — 20 за голос. Топ-10 получают мерч. При равенстве выше тот, кто набрал баллы раньше. На платформе участник видит топ-20 и свою строку.',
     btn('Выгрузить таблицу (CSV)','topCsv')+btn(frozen?'Таблица зафиксирована':'Зафиксировать таблицу','freeze',{cls:'p',dis:frozen}))+
   `<div class="panel scroll"><table class="tbl"><tr><th>Место</th><th>Герой</th><th>Город</th><th>Код</th><th class="num">Квиз</th><th class="num">Лес</th><th class="num">Ёлка</th><th class="num">Сериал</th><th class="num">Итого</th></tr>
     ${top.map((u,k)=>`<tr><td>${k+1}</td><td><b>${esc(u.nick)}</b></td><td>${esc(u.city||'—')}</td><td><code>${u.code}</code></td><td class="num">${u.q}</td><td class="num">${u.f}</td><td class="num">${u.t}</td><td class="num">${u.s}</td><td class="num"><b>${u.pts}</b></td></tr>`).join('')}</table>
     <p class="small muted" style="margin:10px 0 0">Дата фиксации и состав мерча — уточняются с банком.</p></div>
-  <div class="panel scroll"><h2>Подозрительные результаты «Леса»</h2><p class="muted">Сервер проверяет забег по зерну уровня: подарков не больше, чем было на пройденном пути, длительность правдоподобна. Сомнительные результаты не начисляются, пока их не проверят.</p>
+  <div class="panel scroll"><h2>Подозрительные результаты Леса</h2><p class="muted">Сервер проверяет забег по зерну уровня: подарков не больше, чем было на пройденном пути, длительность правдоподобна. Сомнительные результаты не начисляются, пока их не проверят.</p>
     <table class="tbl"><tr><th>Герой</th><th>Забег</th><th class="num">Подарков</th><th class="num">Время</th><th>Причина</th><th></th></tr>
     ${SUSP.map((x,k)=>`<tr><td><b>${esc(x.nick)}</b></td><td>${x.run}</td><td class="num">${x.gifts}</td><td class="num">${x.time}</td><td>${x.why}</td><td>${x.st==='wait'?`<div class="row">${btn('Аннулировать','suspNo',{cls:'bad sm',d:{i:k}})}${btn('Засчитать','suspOk',{cls:'sm',d:{i:k}})}</div>`:st(x.st,x.st==='Засчитан'?'ok':'bad')}</td></tr>`).join('')}</table></div>`;
 }
@@ -208,8 +199,8 @@ function vUsers(){
   const list=USERS.filter(u=>!q||u.nick.toLowerCase().includes(q)||u.code.toLowerCase().includes(q)||(u.city||'').toLowerCase().includes(q)).slice(0,40);
   const u=sel.user!=null?USERS.find(x=>x.id===sel.user):null;
   const drawer=u?`<div class="drawer"><button class="btn sm x" data-act="uClose">Закрыть</button><h2>${esc(u.nick)}</h2><p class="muted">${esc(u.city||'город не указан')} · с ${fmt(u.day)}</p>
-    <table class="tbl"><tr><td>Персональный код</td><td><code>${u.code}</code></td></tr><tr><td>Почта</td><td>${u.mail||'не указана'}</td></tr><tr><td>Квиз</td><td class="num">${u.q}</td></tr><tr><td>«Лес»</td><td class="num">${u.f}</td></tr><tr><td>«Ёлка»</td><td class="num">${u.t}</td></tr><tr><td>Сказка-сериал</td><td class="num">${u.s}</td></tr><tr><td><b>Итого</b></td><td class="num"><b>${u.pts}</b></td></tr><tr><td>Статус</td><td>${u.blocked?st('Заблокирован','bad'):st('Активен','ok')}</td></tr></table>
-    <h3 style="margin-top:14px">История</h3><table class="tbl small">${[[u.day,'Создан герой'],[Math.min(TODAY,u.day+1),`Квиз: +${u.q}`],u.f?[Math.min(TODAY,u.day+2),`«Лес»: рекорд ${u.f/10} подарков`]:null,u.t?[TODAY,'«Ёлка»: игрушка одобрена, +100']:null,u.s?[Math.min(TODAY,u.day+1),`Сказка-сериал: ${u.s/20} ${plural(u.s/20,'голос','голоса','голосов')}, +${u.s}`]:null].filter(Boolean).map(([d,t])=>`<tr><td>${fmt(d)}</td><td>${t}</td></tr>`).join('')}</table>
+    <table class="tbl"><tr><td>Персональный код</td><td><code>${u.code}</code></td></tr><tr><td>Почта</td><td>${u.mail||'не указана'}</td></tr><tr><td>Квиз</td><td class="num">${u.q}</td></tr><tr><td>Лес</td><td class="num">${u.f}</td></tr><tr><td>Ёлка</td><td class="num">${u.t}</td></tr><tr><td>Сказка-сериал</td><td class="num">${u.s}</td></tr><tr><td><b>Итого</b></td><td class="num"><b>${u.pts}</b></td></tr><tr><td>Статус</td><td>${u.blocked?st('Заблокирован','bad'):st('Активен','ok')}</td></tr></table>
+    <h3 style="margin-top:14px">История</h3><table class="tbl small">${[[u.day,'Создан герой'],[Math.min(TODAY,u.day+1),`Квиз: +${u.q}`],u.f?[Math.min(TODAY,u.day+2),`Лес: рекорд ${u.f/10} подарков`]:null,u.t?[TODAY,'Ёлка: игрушка на ёлке, +100']:null,u.s?[Math.min(TODAY,u.day+1),`Сказка-сериал: ${u.s/20} ${plural(u.s/20,'голос','голоса','голосов')}, +${u.s}`]:null].filter(Boolean).map(([d,t])=>`<tr><td>${fmt(d)}</td><td>${t}</td></tr>`).join('')}</table>
     <div class="row" style="margin-top:14px">${btn(u.blocked?'Разблокировать':'Заблокировать','uBlock',{cls:u.blocked?'':'bad',d:{id:u.id}})}${btn('Выгрузить данные участника','uCsv',{d:{id:u.id}})}</div>
     <p class="small muted" style="margin-top:12px">Заблокированный участник не виден в таблице и не участвует в розыгрыше; войти по коду может.</p></div>`:'';
   return head('Участники и коды','Регистрации нет: участник — это герой и его персональный код. Коды храним у себя и передаём банку по запросу, например для проверки победителей. Почта необязательна, хранится только у указавших и удаляется после закрытия платформы.',
@@ -221,12 +212,13 @@ function vUsers(){
 
 function vSchedule(){
   const ev=[];const add=(d,t,k)=>ev.push({d,t,k:k||'00:00'});
-  add(0,'Старт платформы: пролог, создание героя, маршрут');
+  add(0,'Старт платформы: обложка, создание героя, маршрут');
   D.QUIZ.forEach((q,k)=>add(q.open,`Квиз: набор ${ROMAN[k]} «${q.title}»`));
-  add(OPEN.forest,'Испытание «Лес»');add(OPEN.tree,'Испытание «Ёлка» — начинается модерация игрушек');add(OPEN.final,'Финал маршрута: история пути и карточка героя');
+  add(OPEN.forest,'Испытание Лес');add(OPEN.tree,'Испытание Ёлка — начинается модерация игрушек');
   D.CHAPTERS.forEach((c,k)=>{add(c.day,`Сериал: глава ${ROMAN[k]}${c.final?' (финальная)':''}`);add(c.day+1,`Сериал: закрывается ${c.final?'голосование для настроения':'голосование'} главы ${ROMAN[k]}`,'23:59');});
   [...new Set(D.TALES.map(t=>t.open))].forEach(o=>{const ks=D.TALES.map((t,k)=>t.open===o?k+1:0).filter(Boolean);add(o,`Пряничная избушка: сказки ${ks[0]}–${ks[ks.length-1]}`);});
-  add(D.FULL_TALE_DAY,'Цельная сказка: чтение и PDF');add(OPEN.chest,'Розыгрыш «Сундука чудес» — итоги на платформе');
+  add(D.FULL_TALE_DAY,'Цельная сказка: чтение и PDF');add(CODE_DEADLINE,'Последний момент ввести код на внутренней платформе ПСБ для розыгрыша','23:59');
+  add(OPEN.chest,'Розыгрыш Сундука чудес: банк присылает список введённых кодов, проводим розыгрыш, итоги — на платформе','днём');
   add(LAST_DAY,'Последний день работы платформы','23:59');add(LAST_DAY+1,'Архив: итоги, книга сказок, аудиосказки. Испытания, голосования и кабинеты закрыты');
   ev.sort((a,b)=>a.d-b.d||(a.k>b.k?1:-1));
   return head('Расписание','Всё открывается автоматически по серверному времени: разделы и главы — в 00:00 мск, голосования закрываются в 23:59 мск. На Камчатке это 09:00, в Калининграде — 23:00 накануне.')+
@@ -242,6 +234,9 @@ function vDict(){
       <div class="grid g3"><input class="in" placeholder="мужской род"><input class="in" placeholder="женский род"><select class="in">${D.ADJ_G.map(g=>`<option>${esc(g)}</option>`).join('')}</select></div><div style="margin-top:8px">${btn('Добавить','save',{cls:'sm'})}</div></div>
     <div class="panel"><h2>Второе слово · ${D.NOUNS.length}</h2>${group(D.NOUN_G,D.NOUNS.map(n=>({w:n[0],g:n[2]})))}
       <div class="grid g3"><input class="in" placeholder="слово"><select class="in"><option>мужской род</option><option>женский род</option></select><select class="in">${D.NOUN_G.map(g=>`<option>${esc(g)}</option>`).join('')}</select></div><div style="margin-top:8px">${btn('Добавить','save',{cls:'sm'})}</div></div></div>
+  <div class="panel"><h2>Запрещённые домены почты · ${domains.length}</h2><p class="muted">Почту для дубля кода указывают по желанию и только личную: адрес на этих доменах не принимаем и просим указать личный.</p>
+    <div class="chips" style="margin:0 0 10px">${domains.map(d=>`<span class="chip">@${esc(d)}</span>`).join('')}</div>
+    <div class="row"><input class="in" id="domIn" placeholder="например, psb-group.ru" style="max-width:260px">${btn('Добавить домен','domAdd',{cls:'sm'})}</div><small class="muted">Полный список рабочих доменов — уточняется с банком</small></div>
   <div class="note i" style="margin:0 0 16px">Сочетаний: ${num(D.ADJ.length*D.NOUNS.length)}, а вместе с городом — в тысячу раз больше. Повторы допускаются: в турнирной таблице имя стоит вместе с городом, а участника однозначно определяет персональный код.</div>
   <div class="panel"><h2>Города · ${num(D.CITIES.length)}</h2><p class="muted">Справочник городов России (hflabs/city, CC BY-SA 4.0) с готовой формой «из …» для турнирной таблицы. Перед запуском сверяем со списком городов, где работают сотрудники банка, и добавляем недостающие.</p>
     <div class="grid g3" style="margin:0 0 10px"><input class="in" placeholder="Город"><input class="in" placeholder="Форма «из …», например «из Барнаула»"><div>${btn('Добавить город','save',{cls:'sm'})}</div></div>
@@ -253,14 +248,14 @@ function vAccess(){
   return head('Доступы и журнал','Кто что может в админке. Все действия пишутся в журнал.')+
   `<div class="panel scroll"><table class="tbl"><tr><th>Роль</th><th>Кто</th><th>Что может</th></tr>
     <tr><td><b>Администратор</b></td><td>Deep</td><td>Всё, включая расписание, доступы и выгрузки</td></tr>
-    <tr><td><b>Модератор</b></td><td>Deep</td><td>Ёлка и аватары: одобрить или отклонить</td></tr>
+    <tr><td><b>Модератор</b></td><td>Deep</td><td>Ёлка: одобрить или отклонить игрушку; подозрительные забеги Леса</td></tr>
     <tr><td><b>Редактор контента</b></td><td>Deep</td><td>Главы сериала, квиз, аудиосказки, справочники</td></tr>
-    <tr><td><b>Наблюдатель</b></td><td>Банк</td><td>Просмотр, статистика, выгрузки, отметка «подтверждён» у победителей</td></tr></table>
+    <tr><td><b>Наблюдатель</b></td><td>Банк</td><td>Просмотр, статистика, выгрузки, загрузка списка введённых кодов, отметка «банк связался» у победителей</td></tr></table>
     <p class="small muted" style="margin:10px 0 0">Вход в админку — по личным учётным записям с двухфакторной аутентификацией; кто со стороны банка — уточняется.</p></div>
   <div class="panel scroll"><h2>Журнал действий</h2><table class="tbl">${LOG.map(([t,w,x])=>`<tr><td style="white-space:nowrap">${t}</td><td style="white-space:nowrap">${esc(w)}</td><td>${esc(x)}</td></tr>`).join('')}</table></div>`;
 }
 
-const VIEWS={dash:vDash,tree:vTree,ava:vAva,serial:vSerial,quiz:vQuiz,tales:vTales,draw:vDraw,rating:vRating,users:vUsers,schedule:vSchedule,dict:vDict,access:vAccess};
+const VIEWS={dash:vDash,tree:vTree,serial:vSerial,quiz:vQuiz,tales:vTales,draw:vDraw,rating:vRating,users:vUsers,schedule:vSchedule,dict:vDict,access:vAccess};
 
 function nav(){
   return SECTIONS.map(([k,l,c])=>l==null||!VIEWS[k]?`<div class="grp">${esc(l||'')}</div>`:`<a href="#${k}" class="${cur===k?'on':''}"><span>${esc(l)}</span>${c&&c()?`<span class="cnt">${c()}</span>`:''}</a>`).join('');
@@ -275,11 +270,7 @@ function render(){
 const ACT={
   save:()=>toast('Сохранено — в прототипе без сервера'),
   toyTab:d=>{sel.toyTab=d.k;render();},
-  avaTab:d=>{sel.avaTab=d.k;render();},
-  avaOk:d=>{const a=AVAS.find(x=>x.id==d.id);a.st='ok';log('Анна (модератор)',`одобрила аватар героя «${a.nick}»`);render();toast('Аватар виден в турнирной таблице');},
-  avaNo:d=>{const a=AVAS.find(x=>x.id==d.id);const s=$(`select[data-awhy="${d.id}"]`);if(!s||!s.value){toast('Выберите причину отказа');if(s)s.focus();return;}a.st='no';a.why=s.value;log('Анна (модератор)',`отклонила аватар героя «${a.nick}»: ${a.why}`);render();toast('Аватар отклонён — у героя снова инициалы');},
-  avaAll:()=>{let n=0;AVAS.forEach(a=>{if(a.st==='wait'){a.st='ok';n++;}});log('Анна (модератор)',`одобрила ${n} ${plural(n,'аватар','аватара','аватаров')}`);render();toast(`Одобрено: ${n}`);},
-  toyOk:d=>{const t=TOYS.find(x=>x.id==d.id);t.st='ok';log('Анна (модератор)',`одобрила игрушку героя «${t.nick}»`);render();toast('Игрушка на ёлке, автору начислено 100 баллов');},
+  toyOk:d=>{const t=TOYS.find(x=>x.id==d.id);t.st='ok';log('Анна (модератор)',`одобрила игрушку героя «${t.nick}»`);render();toast('Игрушка видна всем на общей ёлке');},
   toyNo:d=>{const t=TOYS.find(x=>x.id==d.id);const s=$(`select[data-why="${d.id}"]`);if(!s||!s.value){toast('Выберите причину отказа');if(s)s.focus();return;}t.st='no';t.why=s.value;log('Анна (модератор)',`отклонила игрушку героя «${t.nick}»: ${t.why}`);render();toast('Отклонено — автор увидит причину');},
   toyAll:()=>{let n=0;TOYS.forEach(t=>{if(t.st==='wait'){t.st='ok';n++;}});log('Анна (модератор)',`одобрила ${n} ${plural(n,'игрушку','игрушки','игрушек')}`);render();toast(`Одобрено: ${n}`);},
   chSel:d=>{sel.ch=+d.i;render();},
@@ -290,10 +281,16 @@ const ACT={
   setSel:d=>{sel.set=+d.i;sel.q=0;render();},
   qSel:d=>{sel.q=+d.i;render();},
   pdf:()=>toast('Предпросмотр PDF — в прототипе платформы: «Большая книга сказок» → «Скачать PDF»'),
-  drawRun:()=>{const r=rng(Date.now()%100000),pool=USERS.filter(u=>!u.blocked),out=[];while(out.length<DRAW_N){const u=pool.splice(Math.floor(r()*pool.length),1)[0];out.push(Object.assign({},u,{conf:false}));}
-    out.seed=Math.floor(r()*0xffffffff).toString(16).padStart(8,'0');drawRes=out;drawPub=false;log('Мария (администратор)','провела розыгрыш «Сундука чудес»');render();toast('Победители выбраны — проверьте и опубликуйте');},
-  drawPub:()=>{drawPub=true;log('Мария (администратор)','опубликовала итоги розыгрыша на платформе');render();toast('Итоги опубликованы: участники видят список в «Сундуке чудес»');},
-  drawCsv:()=>csv('pobediteli_rozygrysha.csv',[['№','Герой','Город','Персональный код','Подтверждён банком'],...drawRes.map((u,k)=>[k+1,u.nick,u.city,u.code,u.conf?'да':'нет'])]),
+  // список от банка: в прототипе — пример (в розыгрыш попадают 4 из 5 участников выборки); на платформе — сверка кодов из CSV
+  codesLoad:()=>{const ids=USERS.filter((u,k)=>k%5!==3).map(u=>u.id),blocked=USERS.filter(u=>u.blocked&&ids.includes(u.id)).length;
+    codeList={file:'kody_vvedeny_'+dd(CODE_DEADLINE)+'.csv',total:9077,found:9040,miss:37,blocked,ok:9040-blocked,ids};drawRes=null;drawPub=false;
+    log('Мария (администратор)',`загрузила список кодов от банка: ${num(codeList.total)}`);render();toast('Список загружен — коды сверены с платформой');},
+  drawRun:()=>{if(!codeList){toast('Сначала загрузите список кодов от банка');return;}const r=rng(Date.now()%100000),pool=USERS.filter(u=>!u.blocked&&codeList.ids.includes(u.id)),out=[];
+    while(out.length<DRAW_N&&pool.length){const u=pool.splice(Math.floor(r()*pool.length),1)[0];out.push(Object.assign({},u,{conf:false}));}
+    out.seed=Math.floor(r()*0xffffffff).toString(16).padStart(8,'0');drawRes=out;drawPub=false;log('Мария (администратор)','провела розыгрыш Сундука чудес');render();toast('Победители выбраны — проверьте и опубликуйте');},
+  drawPub:()=>{drawPub=true;log('Мария (администратор)','опубликовала итоги розыгрыша на платформе');render();toast('Итоги опубликованы: участники видят список в Сундуке чудес');},
+  drawCsv:()=>csv('pobediteli_rozygrysha.csv',[['№','Герой','Город','Персональный код','Банк связался'],...drawRes.map((u,k)=>[k+1,u.nick,u.city,u.code,u.conf?'да':'нет'])]),
+  domAdd:()=>{const i=$('#domIn');const v=(i?i.value:'').trim().toLowerCase().replace(/^@/,'');if(!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(v)){toast('Введите домен, например psb-group.ru');return;}if(!domains.includes(v)){domains.push(v);log('Мария (администратор)',`добавила запрещённый домен почты @${v}`);}render();toast('Домен добавлен');},
   topCsv:()=>csv('turnirnaya_tablica_top10.csv',[['Место','Герой','Город','Код','Квиз','Лес','Ёлка','Сериал','Итого'],...USERS.filter(u=>!u.blocked).slice(0,10).map((u,k)=>[k+1,u.nick,u.city,u.code,u.q,u.f,u.t,u.s,u.pts])]),
   freeze:()=>{frozen=true;log('Мария (администратор)','зафиксировала турнирную таблицу');render();toast('Таблица зафиксирована: топ-10 больше не меняется');},
   suspNo:d=>{SUSP[+d.i].st='Аннулирован';log('Анна (модератор)','аннулировала подозрительный забег');render();},
