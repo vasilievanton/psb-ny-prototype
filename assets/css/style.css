@@ -250,9 +250,6 @@ body[data-screen="cover"] main.app,body[data-screen="prologue"] main.app{min-hei
 .seg{display:flex;gap:4px;margin:16px 0 14px;padding:4px;border-radius:999px;background:rgba(6,13,36,.6);box-shadow:inset 0 0 0 1px rgba(233,189,104,.42)}
 .seg button{flex:1;min-height:38px;padding:6px 8px;border-radius:999px;font:500 13.5px/1.15 var(--ui);color:var(--ink2)}
 .seg button.on{color:#22180a;background:linear-gradient(180deg,#fff0c0,#e5b35b);box-shadow:inset 0 0 0 1px #8a5a1f,0 2px 6px rgba(0,0,0,.35)}
-.hs{display:grid;grid-auto-flow:column;grid-auto-columns:88%;gap:10px;margin:0 -8px;padding:2px 8px 6px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain}
-.hs::-webkit-scrollbar{display:none}
-.hs>*{scroll-snap-align:center}
 .more{margin:16px 0 0;border-radius:14px;background:rgba(8,16,44,.45);box-shadow:inset 0 0 0 1px rgba(233,189,104,.35)}
 .more summary{list-style:none;cursor:pointer;padding:13px 40px 13px 14px;position:relative;font:500 14px var(--ui);color:var(--gold-hi)}
 .more summary::-webkit-details-marker{display:none}
@@ -418,73 +415,65 @@ body[data-screen="cover"] main.app,body[data-screen="prologue"] main.app{min-hei
 .sent svg{color:var(--ok);flex:none}
 .sent span{flex:1;min-width:0;overflow-wrap:anywhere}
 
-/* ---------- Маршрут ---------- */
-.nextc{display:grid;grid-template-columns:54px minmax(0,1fr);column-gap:12px;row-gap:10px;align-items:center;margin:16px 0 4px;padding:12px;border-radius:16px;
-  background:linear-gradient(110deg,rgba(233,189,104,.2),rgba(8,16,44,.5) 60%);box-shadow:inset 0 0 0 1.5px rgba(251,228,164,.75),0 0 22px rgba(251,228,164,.12)}
-.nextc .med,.nextc .obj{width:54px;height:54px;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))}
-.nextc .nb{display:flex;flex-direction:column;gap:2px;min-width:0}
-.nextc .nb b{font:800 16.5px/1.25 var(--display);color:var(--gold-hi)}
-.nextc .nb>span:last-child{font-size:13px;line-height:1.4;color:var(--ink2)}
-.nextc>.btn{grid-column:2;justify-self:start}
-.nextc.idle{background:rgba(8,16,44,.45);box-shadow:inset 0 0 0 1px rgba(233,189,104,.4)}
-.weekly{margin:6px 0 0}
+/* ---------- Маршрут: путь героя карточками по порядку и «Ещё в сказке» ---------- */
+.rt-lead{max-width:600px;margin:0 auto 16px}
+.rt-path{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 10px}
+.rt-card{position:relative;display:flex;flex-direction:column;min-width:0;padding:7px 7px 12px;border-radius:18px;
+  background:linear-gradient(180deg,rgba(16,32,84,.82),rgba(6,13,40,.9));box-shadow:inset 0 0 0 1px rgba(233,189,104,.38),0 10px 22px rgba(0,4,20,.35)}
+/* следующий шаг — золотая кайма и свечение */
+.rt-card.now{box-shadow:inset 0 0 0 1.5px rgba(251,228,164,.95),0 0 0 4px rgba(233,189,104,.13),0 0 28px rgba(251,214,140,.22),0 10px 22px rgba(0,4,20,.35)}
+/* окно-арка с героем-проводником, под ним — медальон с номером шага */
+.rt-art{position:relative;margin:0 0 24px}
+.rt-win{--ar:.9;position:relative;aspect-ratio:1/var(--ar);overflow:hidden;border-radius:50% 50% 10px 10px/calc(50% / var(--ar)) calc(50% / var(--ar)) 10px 10px;
+  background:radial-gradient(75% 55% at 50% 100%,var(--glow,rgba(255,206,130,.42)),transparent 72%),
+    radial-gradient(circle at 18% 30%,rgba(255,255,255,.85) 0 1px,transparent 1.6px),radial-gradient(circle at 80% 22%,rgba(255,255,255,.7) 0 1px,transparent 1.5px),
+    radial-gradient(circle at 72% 50%,rgba(255,255,255,.55) 0 .8px,transparent 1.3px),radial-gradient(circle at 28% 60%,rgba(255,255,255,.5) 0 .8px,transparent 1.3px),
+    linear-gradient(180deg,var(--sky1,#0a1a50),var(--sky2,#24479c))}
+.rt-win::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  box-shadow:inset 0 0 0 1.5px #e9bd68,inset 0 0 0 4px rgba(8,16,48,.8),inset 0 0 0 5px rgba(233,189,104,.42)}
+.rt-win img{position:absolute;left:50%;bottom:0;height:86%;width:auto;max-width:none;transform:translateX(-50%)}
+.rt-card[data-k=forest] .rt-win{--sky1:#082a3c;--sky2:#1b5a6e;--glow:rgba(170,240,210,.32)}
+.rt-card[data-k=tree] .rt-win{--sky1:#1c1050;--sky2:#5a3592;--glow:rgba(255,170,200,.36)}
+.rt-card[data-k=final] .rt-win{--sky1:#0d1a4a;--sky2:#2b3f8c;--glow:rgba(255,214,140,.55)}
+.rt-med{position:absolute;left:50%;bottom:-21px;width:44px;height:44px;transform:translateX(-50%);object-fit:contain;filter:drop-shadow(0 4px 7px rgba(0,0,0,.55))}
+.rt-ok{position:absolute;left:calc(50% + 10px);bottom:6px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--ok);color:#0b2a18;box-shadow:0 0 0 2px #0e1b3c}
+.rt-card.locked .rt-win{--glow:rgba(160,180,230,.16)}
+.rt-card.locked .rt-win img{filter:grayscale(.85) brightness(.5)}
+.rt-card.locked .rt-med{filter:grayscale(.85) brightness(.6) drop-shadow(0 4px 7px rgba(0,0,0,.55))}
+.rt-new{position:absolute;z-index:2;top:-9px;right:-4px}
+.rt-b{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0;padding:0 3px;text-align:center}
+.rt-l{font:500 10.5px/1.2 var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--gold)}
+.rt-t{margin:4px 0 0;font:800 17px/1.18 var(--display);color:var(--gold-hi);text-wrap:balance}
+.rt-card.locked .rt-t{color:#c3cae3}
+.rt-d{margin:6px 0 0;font:400 13px/1.42 var(--text);color:var(--ink2);text-wrap:pretty}
+.rt-p,.rt-s{display:block;margin-top:8px;font:500 12px/1.35 var(--ui);color:var(--gold);text-wrap:balance}
+.rt-p svg,.rt-s svg{display:inline-block;width:12px;height:12px;margin-right:4px;vertical-align:-1px}
+.rt-s{color:var(--gold-hi)}
+.rt-card.done .rt-s{color:var(--ok)}
+.rt-a{width:100%;margin-top:auto;padding-top:12px}
+.rt-a .btn{width:100%}
+.rt-soon{display:flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:7px 10px;border-radius:999px;font:500 12.5px/1.2 var(--ui);color:var(--muted);text-align:center;
+  background:rgba(8,16,44,.55);box-shadow:inset 0 0 0 1px rgba(233,189,104,.28)}
+.rt-soon svg{flex:none}
+/* «Ещё в сказке»: разделы рядом с маршрутом — строкой-ссылкой с тем, что там сейчас */
+.rt-more{display:grid;gap:10px}
+.rt-link{display:flex;align-items:center;gap:12px;min-width:0;padding:10px 12px;border-radius:14px;text-decoration:none;color:var(--ink);
+  background:rgba(8,16,44,.5);box-shadow:inset 0 0 0 1px rgba(233,189,104,.42);transition:box-shadow .2s}
+.rt-link.hot{box-shadow:inset 0 0 0 1px rgba(255,103,52,.85),0 0 18px rgba(255,103,52,.14)}
+.rt-li{width:58px;height:54px;flex:none;object-fit:contain;filter:drop-shadow(0 8px 12px rgba(0,0,0,.45))}
+.rt-lb{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.rt-lt{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font:800 16px/1.2 var(--display);color:var(--gold-hi)}
+.rt-ls{font:400 12.5px/1.38 var(--ui);color:var(--ink2)}
+.rt-link>svg{flex:none;color:var(--gold)}
+
+/* ---------- Карточка сказки-сериала: страница сериала и итоги ---------- */
 .wcard{display:flex;gap:12px;align-items:flex-start;height:100%;padding:13px;border-radius:14px;background:rgba(8,16,44,.55);box-shadow:inset 0 0 0 1px rgba(233,189,104,.45)}
 .wcard.hot{box-shadow:inset 0 0 0 1px rgba(255,103,52,.85),0 0 18px rgba(255,103,52,.14)}
 .wcard .wim{width:58px;flex:none;filter:drop-shadow(0 8px 14px rgba(0,0,0,.45))}
-.wcard .wim.face .por{--ps:52px}
 .wcard .wb{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:5px}
 .wcard .wb>b{font:800 16px/1.25 var(--display);color:var(--gold-hi)}
 .wcard .wb>span{font-size:13px;line-height:1.42;color:var(--ink2)}
 .wcard .wb .btn{margin-top:4px}
-.qweeks{display:flex;gap:4px;flex-wrap:wrap}
-.qweeks i{font:500 10.5px var(--ui);font-style:normal;padding:3px 7px;border-radius:6px;background:rgba(255,255,255,.07);color:var(--muted)}
-.qweeks i.past{color:var(--ink2);background:rgba(233,189,104,.12)}
-.qweeks i.now{background:linear-gradient(180deg,#fbe2a0,#e5b35b);color:#22180a}
-.route{position:relative;margin:4px 0}
-.route::before{content:"";position:absolute;left:25px;top:30px;bottom:30px;border-left:2px dotted rgba(233,190,104,.5)}
-.stop{position:relative;display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0}
-.stop .sm{position:relative}
-.stop .med{width:52px;height:52px;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))}
-.stop.locked .med{filter:grayscale(.8) brightness(.55) drop-shadow(0 6px 10px rgba(0,0,0,.5))}
-.stop .done-mark{position:absolute;right:-3px;top:-3px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--ok);color:#0b2a18;box-shadow:0 0 0 2px #0e1b3c}
-.stop .sb{display:flex;flex-direction:column;min-width:0}
-.stop .tt{font:800 16px/1.2 var(--display);color:var(--gold-hi)}
-.stop.locked .tt{color:#b7bfd9}
-.stop .ds{font-size:12.5px;line-height:1.35;color:var(--ink2);margin-top:1px}
-.stop .meta{display:flex;flex-wrap:wrap;align-items:center;gap:3px 9px;margin-top:4px;font-size:11.5px;line-height:1.3;color:var(--muted)}
-.stop .meta .who,.stop .meta em{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
-.stop .meta em{gap:3px}
-.stop .meta em svg{width:11px;height:11px;flex:none}
-.stop .meta img{width:18px;height:18px;flex:none;border-radius:50%;object-fit:cover;object-position:top;background:#253a80;box-shadow:0 0 0 1px #c99a4a}
-.stop .meta img.obj{object-fit:contain;background:none;box-shadow:none}
-.stop .meta em{font-style:normal;color:var(--gold)}
-.stop .st .chip{font-size:11.5px;padding:6px 9px}
-.stop .st .btn-sm{padding:8px 12px}
-.halt{position:relative;z-index:1;display:flex;align-items:center;gap:8px;margin:0 0 6px 62px;padding:6px 8px;border-radius:12px;border:1px dashed rgba(233,190,104,.45);background:rgba(11,21,52,.94)}
-.halt .hl{display:flex;align-items:center;gap:4px;flex:none;font:500 9.5px var(--ui);letter-spacing:0.052em;text-transform:uppercase;color:var(--gold)}
-.halt .hcs{display:flex;gap:5px;flex:1;min-width:0}
-.hc{flex:1;min-width:0;padding:5px 4px;border-radius:9px;text-align:center;background:rgba(18,32,80,.85);box-shadow:inset 0 0 0 1px rgba(233,189,104,.32)}
-.hc b{display:block;font:700 11.5px/1.2 var(--ui);color:var(--ink);white-space:nowrap}
-.hc span{display:block;font-size:10px;line-height:1.2;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hc.vote{box-shadow:inset 0 0 0 1px var(--live)}
-.hc.vote span{color:#ffc7a6}
-.hc[disabled]{opacity:.55;cursor:default}
-.bank{overflow:hidden}
-.bank .row svg{width:22px;height:22px}
-.bank .num{font:700 34px/1 var(--ui);background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent;margin:8px 0 4px;filter:drop-shadow(0 2px 1px rgba(0,0,0,.7))}
-.bank .small{position:relative;max-width:calc(100% - 70px)}
-.bank .deco{position:absolute;right:-4px;bottom:-10px;height:106px;pointer-events:none;filter:drop-shadow(0 10px 18px rgba(0,0,0,.45))}
-.bank .stats{display:flex;gap:18px;margin-top:10px;position:relative;max-width:calc(100% - 84px)}
-.bank .stats div{font-size:12px;color:var(--muted)}
-.bank .stats b{display:block;font:700 17px var(--ui);font-variant-numeric:tabular-nums;color:var(--ink)}
-.kids,.myrank{display:flex;align-items:center;gap:12px;margin:12px 0 0;padding:10px 12px;border-radius:14px;text-decoration:none;color:var(--ink);background:rgba(8,16,44,.5);box-shadow:inset 0 0 0 1px rgba(233,189,104,.45)}
-.kids>svg,.myrank>svg{flex:none;color:var(--gold)}
-.kids img{width:62px;flex:none;margin:-6px 0;filter:drop-shadow(0 8px 14px rgba(0,0,0,.45))}
-.kids .kb,.myrank .mr{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
-.kids .kb b{font:800 16px/1.2 var(--display);color:var(--gold-hi)}
-.kids .kb>span:last-child{font-size:12.5px;color:var(--ink2)}
-.myrank .mr b{font:800 15.5px/1.2 var(--display);color:var(--gold-hi)}
-.myrank .mr span{font-size:12.5px;color:var(--ink2)}
 .lbmini .r{display:flex;align-items:center;gap:10px;padding:8px 6px;border-bottom:1px solid rgba(233,189,104,.14)}
 .lbmini .r.me{background:rgba(233,189,104,.12);border-radius:10px;border-bottom-color:transparent}
 .lbmini .pl{width:22px;text-align:center;font:700 15px var(--ui);font-variant-numeric:tabular-nums;color:var(--gold)}
@@ -1049,59 +1038,31 @@ body[data-screen="izba"] main.app{padding-bottom:calc(var(--tb) + 76px)}
   .code-hero .tale{font-size:17px}
   .sent{padding:12px 14px;font-size:14.5px}
 
-  /* маршрут */
-  .intro{display:flex;gap:10px;align-items:flex-end}
-  .intro img{width:104px;flex:none;margin-bottom:6px;filter:drop-shadow(0 10px 16px rgba(0,0,0,.5))}
-  .intro .tale{margin:0}
-  .nextc{display:flex;gap:14px;padding:14px;margin:18px 0 6px}
-  .nextc .med,.nextc .obj{width:64px;height:64px;flex:none}
-  .nextc .nb{flex:1}
-  .nextc .nb b{font-size:18px}
-  .nextc .nb>span:last-child{font-size:14px}
-  .nextc>.btn{flex:none}
-  .bank .row svg{width:26px;height:26px}
-  .bank .num{font-size:clamp(36px,4vw,46px);margin:10px 0 4px}
-  .bank .small{max-width:none}
-  .bank .deco{right:-6px;bottom:-12px;height:132px}
-  .bank .stats{flex-wrap:wrap;margin-top:12px;max-width:calc(100% - 96px)}
-  .bank .stats div{font-size:12.5px}
-  .bank .stats b{font-size:18px}
-  .weekly{margin:8px 0}
-  .weekly .hs{display:block;margin:0;padding:0;overflow:visible}
-  .weekly .wcard{height:auto;margin:0 0 12px;padding:14px;gap:14px;align-items:center}
+  /* маршрут: четыре карточки пути в ряд, «Ещё в сказке» — тремя колонками */
+  .rt-lead{margin-bottom:22px}
+  .rt-path{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+  .rt-card{padding:9px 9px 16px}
+  .rt-win{--ar:.84}
+  .rt-art{margin-bottom:30px}
+  .rt-med{width:54px;height:54px;bottom:-25px}
+  .rt-ok{width:24px;height:24px;left:calc(50% + 12px)}
+  .rt-b{padding:0 8px}
+  .rt-l{font-size:11px}
+  .rt-t{font-size:21px}
+  .rt-d{font-size:14px;line-height:1.45}
+  .rt-p,.rt-s{font-size:13px}
+  .rt-more{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+  .rt-link{padding:12px 14px}
+  .rt-link:hover{box-shadow:inset 0 0 0 1px var(--gold-hi)}
+  .rt-link.hot:hover{box-shadow:inset 0 0 0 1px #ff8a5c,0 0 18px rgba(255,103,52,.2)}
+  .rt-li{width:70px;height:62px}
+  .rt-lt{font-size:17.5px}
+  .rt-ls{font-size:13px}
+
+  /* карточка сериала */
   .wcard .wim{width:88px}
-  .wcard .wim.face .por{--ps:72px}
   .wcard .wb>b{font-size:18px}
   .wcard .wb>span{font-size:14px;line-height:1.45}
-  .qweeks{gap:5px}
-  .qweeks i{font-size:11px;padding:3px 8px}
-  .route{margin:8px 0 6px}
-  .route::before{left:31px;top:36px;bottom:40px}
-  .stop{grid-template-columns:64px minmax(0,1fr) auto;gap:14px;padding:10px 0}
-  .stop .med{width:64px;height:64px;transition:transform .25s}
-  .stop.open:hover .med{transform:scale(1.05)}
-  .stop .done-mark{width:24px;height:24px}
-  .stop .tt{font-size:19px}
-  .stop .ds{font-size:14px;margin-top:2px}
-  .stop .meta{font-size:13px;gap:4px 12px;margin-top:6px}
-  .stop .meta .who{gap:7px}
-  .stop .meta em svg{width:13px;height:13px}
-  .stop .meta img{width:22px;height:22px}
-  .stop .st .chip{font-size:12.5px;padding:6px 11px}
-  .stop .st .btn-sm{padding:8px 15px}
-  .halt{margin:0 0 8px 78px;padding:8px 10px;gap:10px}
-  .halt .hl{font-size:10.5px;letter-spacing:.1em}
-  .hc{padding:7px 8px;transition:box-shadow .2s}
-  .hc b{font-size:12.5px}
-  .hc span{font-size:11px;margin-top:2px}
-  .hc:hover:not([disabled]){box-shadow:inset 0 0 0 1px var(--gold-hi)}
-  .kids,.myrank{margin-top:16px;padding:10px 14px;transition:box-shadow .2s}
-  .kids:hover,.myrank:hover{box-shadow:inset 0 0 0 1px var(--gold-hi)}
-  .kids img{width:78px}
-  .kids .kb b{font-size:17px}
-  .kids .kb>span:last-child{font-size:13px}
-  .myrank .mr b{font-size:17px}
-  .myrank .mr span{font-size:13px}
 
   /* квиз */
   .rounds{gap:10px;margin:6px 0}
@@ -1328,18 +1289,14 @@ body[data-screen="izba"] main.app{padding-bottom:calc(var(--tb) + 76px)}
   .spread.two>.pg.pl{padding-right:36px}
   .spread.two>.pg.pr{padding-left:36px}
   .opts{grid-template-columns:1fr}
-  .stop{grid-template-columns:52px minmax(0,1fr) auto;gap:10px}
-  .stop .med{width:52px;height:52px}
-  .route::before{left:25px}
-  .halt{margin-left:62px}
 }
 
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 
 /* ---------- Фирменная типографика ПСБ ----------
    Сказка — книжными шрифтами (заголовки Playfair Display, текст PT Serif), интерфейс и цифры — фирменным ПСБ Лавр */
-.note,.err-t,.ab-note,.sent,.stop .meta,.stats3 span,.herostats span,.rcs span,.bank .stats div,.howto span,.prizes span,
-.lb td,.lbmini .n,.mypos>div>span,.hist .d,.opp .ot>span,.kids .kb>span:last-child,.myrank .mr span,.codebox .note{font-family:var(--ui)}
+.note,.err-t,.ab-note,.sent,.stats3 span,.herostats span,.rcs span,.howto span,.prizes span,
+.lb td,.lbmini .n,.mypos>div>span,.hist .d,.opp .ot>span,.codebox .note{font-family:var(--ui)}
 /* Имя в турнирной таблице с городом: «Снежный Лось из Барнаула» */
 .from{font-weight:400;color:var(--ink2)}
 .lbmini .n{white-space:normal}
@@ -1477,6 +1434,9 @@ body.scene #app::after{top:-410px;bottom:0;
 @media (min-width:900px) and (min-height:541px), (min-width:900px) and (hover:hover) and (pointer:fine){
   .scn.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:30px;width:min(100vw - 48px,1160px);margin:58px auto 34px;align-items:start}
   .scn.one{width:min(100vw - 48px,620px);margin:62px auto 34px}
+  .scn.one>.sp+.sp{margin-top:50px}
+  /* главная — две панели во всю ширину сцены */
+  .scn.one.home{width:min(100vw - 48px,1160px);margin-top:58px}
   .sp-in{padding:38px 34px 28px}
   .sp{background:linear-gradient(180deg,rgba(17,34,88,.76),rgba(7,16,48,.88));-webkit-backdrop-filter:blur(8px) saturate(1.15);backdrop-filter:blur(8px) saturate(1.15)}
 }
@@ -1539,8 +1499,6 @@ body.scene #app::after{top:-410px;bottom:0;
 .sp-in>.cart:only-child{margin:0;padding:0;background:none;box-shadow:none}
 .sp-in>.cart:only-child::before{display:none}
 .sp-in>.codebox:only-child{margin:0;padding:2px 0 0;background:none;box-shadow:none}
-.sp-in>.bank:only-child{overflow:visible}
-.sp-in>.bank:only-child .deco{right:-6px;bottom:-14px}
 
 /* ==========================================================================
    Мир сказки — испытания, рейтинг, кабинет, сундук (те же сцена и панели, что у главной и регистрации)
