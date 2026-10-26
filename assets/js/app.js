@@ -440,13 +440,14 @@ function vNick(){
   const preview=`${lbl('Так вас увидят в турнирной таблице','s')}<div class="lbmini prev"><div class="r me" id="nkRow">${nkRow(cur.nick)}</div></div>`;
   const regen=`<button class="btn btn-ghost btn-block" data-act="regen">${svg('dice','width="18" height="18"')} Другое имя</button>`;
   const acts=[{t:'Дальше: персональный код',act:'saveNick',gold:1}];
+  // Компьютер: одна колонка сверху вниз, без деления на левую и правую части — табличка с именем, выбор слов, город, превью в таблице
   if(DESK)return {
-    L:`${pt('Имя героя','Шаг 1 из 2','h1')}
-      <div class="nick-hero"><img class="mascot" src="${A.bear_juggler}" alt=""><div class="nick-prev"><span id="nkAva">${ava(cur.nick,NK_AVA(),true)}</span>${plate}</div></div>${hint}${preview}`,
-    R:`${pt('Соберите имя','Случайное или из двух слов')}${regen}
+    one:`${pt('Имя героя','Шаг 1 из 2','h1')}
+      <div class="nick-hero"><img class="mascot" src="${A.bear_juggler}" alt=""><div class="nick-prev"><span id="nkAva">${ava(cur.nick,NK_AVA(),true)}</span>${plate}</div></div>${hint}
+      ${regen}
       <div class="pk2">${pkBox('a',`<div class="phd"><span>Первое слово</span>${dice('rndA','Случайное первое слово')}</div>`)}${pkBox('n',`<div class="phd"><span>Второе слово</span>${dice('rndN','Случайное второе слово')}</div>`)}</div>
-      ${city}`,
-    acts,nbt:false,dnote:'Уже участвуете? <a class="link" href="#" data-act="toLogin">Войти по коду</a>',pn:3,cls:'onb',scene:1};
+      ${city}${preview}`,
+    acts,nbt:false,dnote:'Уже участвуете? <a class="link" href="#" data-act="toLogin">Войти по коду</a>',cls:'onb nick',scene:1};
   // Телефон: два поля-выбора; список слов с поиском — в шторке
   const picker=(k,l,w)=>`<button class="picker" data-act="pkOpen" data-k="${k}"><span class="pk-tx"><span class="pk-l">${l}</span><b id="pk${k.toUpperCase()}">${esc(w)}</b></span>${svg('chev','width="18" height="18"')}</button>`;
   const N=NOUNS[ui.nick.n];
@@ -543,7 +544,7 @@ function vLogin(){
    у третьего испытания — общая ёлка банка (10–20 шаров, их можно открыть), под ёлкой — Сундук чудес */
 const STOPS=[
   {k:'quiz',n:1,l:'Квиз',t:'Спроси дорогу',d:'Узнайте у местных, куда ушёл Михаил: в каждом краю говорят по-своему',m:'m_mlad',who:'Младший сын',art:'tile_quiz'},
-  {k:'forest',n:2,l:'Игра',t:'Лес',d:'В тайге порвался мешок с подарками — помогите их собрать',m:'m_star',who:'Старший сын',art:'tile_forest'},
+  {k:'forest',n:2,l:'Игра',t:'Лес',d:'В тайге порвался мешок с подарками — помогите их собрать',m:'m_star',who:'Старший сын',art:'art_forest',pos:'50% 14%'},
   {k:'tree',n:3,l:'Творчество',t:'Ёлка',d:'Подарки собраны — осталось нарядить общую ёлку банка',m:'m_doch',who:'Дочь',art:'tile_tree'}
 ];
 // Состояние плитки: cls — locked / done, note — строка о прогрессе, live — оранжевая метка, cta — кнопка
@@ -577,7 +578,7 @@ function stopCard(s,ns){
   const now=s.k===ns, S=stopState(s,now);
   return `<article class="mp-stop ${S.cls||''}${now?' now':''}" data-k="${s.k}">
     <img class="mp-med" src="${A['med'+s.n]}" alt="Испытание ${s.n}">${S.cls==='done'?`<span class="mp-ok">${svg('check','width="11" height="11" stroke-width="3"')}</span>`:''}
-    <div class="mp-art"><img class="mp-pic" src="${A[s.art]}" alt=""><span class="mp-who" title="${s.who}"><img src="${A[s.m]}" alt="${s.who}"></span></div>
+    <div class="mp-art"><img class="mp-pic" src="${A[s.art]}"${s.pos?` style="object-position:${s.pos}"`:''} alt=""><span class="mp-who" title="${s.who}"><img src="${A[s.m]}" alt="${s.who}"></span></div>
     <div class="mp-b">${S.live?`<span class="chip live">${S.live}</span>`:''}<span class="rt-l">${s.l}</span><h3 class="mp-t">${s.t}</h3><p class="mp-d">${nb(s.d)}</p>
       ${S.note?`<span class="rt-s">${S.cls==='done'?svg('check','width="13" height="13" stroke-width="2.6"'):''}<span>${nb(S.note)}</span></span>`:''}<div class="mp-a">${S.cta}</div></div>
   </article>`;
@@ -1226,7 +1227,7 @@ function pointsBlocks(){
     :nx>=0?pbRow(`Глава ${ROMAN[nx]} выйдет ${fmt(nx>=0?ch[nx].day:0)}`,`голосование — 48 часов · ваших голосов ${nv} из ${ch.length}`,pbLock(ch[nx].day),'locked')
     :pbRow('Все голосования прошли',`ваших голосов — ${nv} из ${ch.length}`,'','done');
   return `<section class="pb">${pbHead('Спроси дорогу',P.q,qmax,'tile_quiz')}${qrows}</section>
-    <section class="pb">${pbHead('Лес',P.f,0,'tile_forest')}${frow}</section>
+    <section class="pb">${pbHead('Лес',P.f,0,'art_forest')}${frow}</section>
     <section class="pb">${pbHead('Ёлка',P.t,100,'tile_tree')}${trow}</section>
     <section class="pb">${pbHead('Сказка-сериал',P.s,ch.length*VOTE_PTS,'serial',1)}${chips}${srow}</section>`;
 }

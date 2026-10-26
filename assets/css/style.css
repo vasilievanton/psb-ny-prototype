@@ -1072,7 +1072,8 @@ body[data-screen="izba"] main.app{padding-bottom:calc(var(--tb) + 76px)}
   .lock-img{width:min(60%,200px);margin:4px auto 14px}
 
   /* обложка и пролог */
-  .cover-wrap{align-items:flex-start;padding:clamp(6px,2vh,24px) 0 16px}
+  .cover-wrap{align-items:center;padding:clamp(24px,5vh,56px) 24px 16px}
+  .cvp{width:min(100%,600px)}
   body[data-screen="cover"] main.app.solo{padding:0}
   .cv{padding:4px 0 6px}
   .cv-top{gap:14px;font-size:12px;letter-spacing:.09em}
@@ -1507,6 +1508,7 @@ body.scene #app::after{top:-410px;bottom:0;
 @media (min-width:900px) and (min-height:541px), (min-width:900px) and (hover:hover) and (pointer:fine){
   .scn.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:30px;width:min(100vw - 48px,1160px);margin:58px auto 34px;align-items:start}
   .scn.one{width:min(100vw - 48px,620px);margin:62px auto 34px}
+  .scn.one.nick{width:min(100vw - 48px,720px)}
   .scn.one>.sp+.sp,.scn.wide>.sp+.sp{margin-top:54px}
   .sp-in{padding:38px 34px 28px}
   .sp{background:linear-gradient(180deg,rgba(17,34,88,.76),rgba(7,16,48,.88));-webkit-backdrop-filter:blur(8px) saturate(1.15);backdrop-filter:blur(8px) saturate(1.15)}
