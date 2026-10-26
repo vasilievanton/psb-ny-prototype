@@ -711,62 +711,79 @@ function ForestGame(canvas, hooks){
   };
 }
 
-/* ===== Ёлочный шар ===== */
+/* ===== Ёлочная игрушка из картинки =====
+   Шесть форм: шар, звезда, колокольчик, сосулька, сердце, фонарик. Картинка вписывается в форму, поверх — оттенок, блик стекла,
+   золотой кант, колпачок и петелька. ИИ на платформе перерисовывает картинку в стиле игрушки; в прототипе — этот рисунок на canvas */
 const BALL_STYLES=[
-  {n:'Снежный', glow:'rgba(150,190,255,.6)', tint:'#3a6fe0', deco:'snow'},
-  {n:'С подарками', glow:'rgba(255,170,110,.55)', tint:'#d8423a', deco:'gifts'},
-  {n:'Музыкальный', glow:'rgba(255,214,140,.55)', tint:'#e8a640', deco:'notes'},
-  {n:'Снеговик', glow:'rgba(220,235,255,.65)', tint:'#9fc0ff', deco:'snowman'},
-  {n:'Узорный', glow:'rgba(120,150,255,.6)', tint:'#2846b8', deco:'pattern'},
-  {n:'Пряничный', glow:'rgba(255,190,120,.6)', tint:'#b06a2a', deco:'ginger'}
+  {n:'Шар', shape:'ball', glow:'rgba(150,190,255,.6)', tint:'#3a6fe0', deco:'snow'},
+  {n:'Звезда', shape:'star', glow:'rgba(255,214,140,.6)', tint:'#e8a640', deco:'pattern'},
+  {n:'Колокольчик', shape:'bell', glow:'rgba(255,170,110,.55)', tint:'#d8423a', deco:'gifts'},
+  {n:'Сосулька', shape:'icicle', glow:'rgba(200,230,255,.65)', tint:'#9fc0ff', deco:'snow'},
+  {n:'Сердце', shape:'heart', glow:'rgba(255,150,170,.55)', tint:'#d84a6a', deco:'notes'},
+  {n:'Фонарик', shape:'lantern', glow:'rgba(255,190,120,.6)', tint:'#b06a2a', deco:'ginger'}
 ];
 function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src;});}
 function goldGrad(ctx,x0,y0,x1,y1){const g=ctx.createLinearGradient(x0,y0,x1,y1);g.addColorStop(0,'#fff1c2');g.addColorStop(.35,'#f1c565');g.addColorStop(.7,'#b67f2c');g.addColorStop(1,'#f6d98a');return g;}
 function star4(ctx,x,y,r,c){ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(x,y-r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.quadraticCurveTo(x,y,x,y+r);ctx.quadraticCurveTo(x,y,x-r,y);ctx.quadraticCurveTo(x,y,x,y-r);ctx.fill();}
+// контур формы; возвращает верхнюю точку — туда крепится колпачок
+function toyPath(ctx,shape,cx,cy,r){
+  ctx.beginPath();
+  if(shape==='star'){const R=r*1.08,ri=r*.5;for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?ri:R;ctx.lineTo(cx+Math.cos(a)*rr,cy+12+Math.sin(a)*rr);}ctx.closePath();return cy+12-R;}
+  if(shape==='bell'){ctx.moveTo(cx-58,cy-178);ctx.quadraticCurveTo(cx,cy-214,cx+58,cy-178);ctx.bezierCurveTo(cx+112,cy-132,cx+104,cy+42,cx+186,cy+146);ctx.quadraticCurveTo(cx+200,cy+184,cx+148,cy+184);
+    ctx.lineTo(cx-148,cy+184);ctx.quadraticCurveTo(cx-200,cy+184,cx-186,cy+146);ctx.bezierCurveTo(cx-104,cy+42,cx-112,cy-132,cx-58,cy-178);ctx.closePath();return cy-196;}
+  if(shape==='icicle'){ctx.moveTo(cx,cy+228);ctx.bezierCurveTo(cx+40,cy+120,cx+132,cy-40,cx+122,cy-138);ctx.quadraticCurveTo(cx+112,cy-202,cx,cy-206);
+    ctx.quadraticCurveTo(cx-112,cy-202,cx-122,cy-138);ctx.bezierCurveTo(cx-132,cy-40,cx-40,cy+120,cx,cy+228);ctx.closePath();return cy-206;}
+  if(shape==='heart'){ctx.moveTo(cx,cy+196);ctx.bezierCurveTo(cx-60,cy+128,cx-212,cy+40,cx-206,cy-80);ctx.bezierCurveTo(cx-200,cy-182,cx-70,cy-214,cx,cy-118);
+    ctx.bezierCurveTo(cx+70,cy-214,cx+200,cy-182,cx+206,cy-80);ctx.bezierCurveTo(cx+212,cy+40,cx+60,cy+128,cx,cy+196);ctx.closePath();return cy-126;}
+  if(shape==='lantern'){ctx.moveTo(cx-118,cy-168);ctx.quadraticCurveTo(cx-182,cy,cx-118,cy+168);ctx.lineTo(cx+118,cy+168);ctx.quadraticCurveTo(cx+182,cy,cx+118,cy-168);ctx.closePath();return cy-168;}
+  ctx.arc(cx,cy,r,0,7);return cy-r;
+}
 async function renderBall(src, styleIdx){
-  const s=BALL_STYLES[styleIdx]||BALL_STYLES[0];
+  const s=BALL_STYLES[styleIdx]||BALL_STYLES[0], sh=s.shape;
   const img=src?await loadImg(src):null;
   const W=480,H=560,cx=240,cy=322,r=200;
   const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
   let g=ctx.createRadialGradient(cx,cy,r*.7,cx,cy,r*1.18);g.addColorStop(0,s.glow);g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-  // loop & cap
-  ctx.strokeStyle=goldGrad(ctx,cx-24,40,cx+24,100);ctx.lineWidth=8;ctx.beginPath();ctx.arc(cx,72,22,0,7);ctx.stroke();
-  ctx.fillStyle=goldGrad(ctx,cx-50,96,cx+50,140);
-  ctx.beginPath();ctx.moveTo(cx-44,98);ctx.lineTo(cx+44,98);ctx.lineTo(cx+52,136);ctx.lineTo(cx-52,136);ctx.closePath();ctx.fill();
-  ctx.fillStyle='rgba(120,70,20,.45)';for(let i=-36;i<=36;i+=12)ctx.fillRect(cx+i-1,102,2,30);
-  ctx.fillStyle='#2a4fc0';ctx.beginPath();ctx.moveTo(cx,104);ctx.lineTo(cx+8,116);ctx.lineTo(cx,128);ctx.lineTo(cx-8,116);ctx.fill();
-  // sphere
-  ctx.save();ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.clip();
-  g=ctx.createLinearGradient(0,cy-r,0,cy+r);g.addColorStop(0,'#13235f');g.addColorStop(1,'#2c4a9e');ctx.fillStyle=g;ctx.fillRect(cx-r,cy-r,2*r,2*r);
+  // стекло с картинкой внутри
+  ctx.save();const top=toyPath(ctx,sh,cx,cy,r);ctx.clip();
+  g=ctx.createLinearGradient(0,cy-r,0,cy+r);g.addColorStop(0,'#13235f');g.addColorStop(1,'#2c4a9e');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
   if(img){
-    const k=Math.max(2*r/img.width,2*r/img.height)*1.02; const iw=img.width*k, ih=img.height*k;
+    const k=Math.max(2*r/img.width,2*r/img.height)*1.06; const iw=img.width*k, ih=img.height*k;
     ctx.filter='saturate(1.25) contrast(1.08) brightness(1.04)';
     ctx.drawImage(img,cx-iw/2,cy-ih/2-r*.06,iw,ih);ctx.filter='none';
-    ctx.globalCompositeOperation='soft-light';ctx.globalAlpha=.55;ctx.fillStyle=s.tint;ctx.fillRect(cx-r,cy-r,2*r,2*r);
+    ctx.globalCompositeOperation='soft-light';ctx.globalAlpha=.55;ctx.fillStyle=s.tint;ctx.fillRect(0,0,W,H);
     ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
   }
-  g=ctx.createRadialGradient(cx,cy-20,r*.45,cx,cy,r);g.addColorStop(0,'rgba(10,20,60,0)');g.addColorStop(1,'rgba(10,20,60,.7)');ctx.fillStyle=g;ctx.fillRect(cx-r,cy-r,2*r,2*r);
-  // snow hills
+  g=ctx.createRadialGradient(cx,cy-20,r*.45,cx,cy,r*1.05);g.addColorStop(0,'rgba(10,20,60,0)');g.addColorStop(1,'rgba(10,20,60,.7)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  // снежные холмики внизу
   ctx.fillStyle='rgba(245,249,255,.96)';
   ctx.beginPath();ctx.ellipse(cx-90,cy+r*.92,150,58,0,0,7);ctx.fill();ctx.beginPath();ctx.ellipse(cx+110,cy+r*.95,160,62,0,0,7);ctx.fill();
-  // deco
   const D2=s.deco;
   if(D2==='gifts'){[[cx-120,cy+120,'#d8423a'],[cx+96,cy+126,'#2f56c8'],[cx+136,cy+108,'#e9bd68']].forEach(([x,y,col])=>{ctx.fillStyle=col;ctx.fillRect(x,y,30,26);ctx.fillStyle='#fde7a8';ctx.fillRect(x+13,y,4,26);ctx.fillRect(x,y+10,30,4);});}
-  if(D2==='notes'){ctx.fillStyle='#fde7a8';ctx.font='700 40px Georgia, serif';ctx.fillText('♪',cx-150,cy-60);ctx.fillText('♫',cx+120,cy-90);ctx.fillText('♪',cx+140,cy+40);}
-  if(D2==='snowman'){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx+130,cy+110,26,0,7);ctx.arc(cx+130,cy+72,18,0,7);ctx.fill();ctx.fillStyle='#ee8a4f';ctx.beginPath();ctx.moveTo(cx+130,cy+70);ctx.lineTo(cx+150,cy+74);ctx.lineTo(cx+130,cy+76);ctx.fill();ctx.fillStyle='#1c2452';ctx.fillRect(cx+124,cy+66,3,3);ctx.fillRect(cx+133,cy+66,3,3);}
-  if(D2==='pattern'){ctx.strokeStyle='rgba(253,231,168,.85)';ctx.lineWidth=3;for(let i=0;i<9;i++){const a=Math.PI*(.15+i*.0875);const x=cx+Math.cos(a)*(r-26),y=cy+Math.sin(a)*(r-26)-6;ctx.beginPath();ctx.moveTo(x,y-9);ctx.lineTo(x+9,y);ctx.lineTo(x,y+9);ctx.lineTo(x-9,y);ctx.closePath();ctx.stroke();}}
-  if(D2==='ginger'){[[cx-130,cy+96],[cx+120,cy+100],[cx+150,cy-60]].forEach(([x,y])=>{ctx.fillStyle='#b8743a';ctx.beginPath();for(let i=0;i<10;i++){const rr=i%2?9:20,a=-Math.PI/2+i*Math.PI/5;ctx.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}ctx.closePath();ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();});}
-  // flakes
+  if(D2==='notes'){ctx.fillStyle='#fde7a8';ctx.font='700 40px Georgia, serif';ctx.fillText('♪',cx-150,cy-30);ctx.fillText('♫',cx+110,cy-60);ctx.fillText('♪',cx+130,cy+40);}
+  if(D2==='pattern'){ctx.strokeStyle='rgba(253,231,168,.85)';ctx.lineWidth=3;for(let i=0;i<9;i++){const a=Math.PI*(.15+i*.0875);const x=cx+Math.cos(a)*(r-46),y=cy+Math.sin(a)*(r-46)-6;ctx.beginPath();ctx.moveTo(x,y-9);ctx.lineTo(x+9,y);ctx.lineTo(x,y+9);ctx.lineTo(x-9,y);ctx.closePath();ctx.stroke();}}
+  if(D2==='ginger'){[[cx-110,cy+96],[cx+100,cy+100],[cx+110,cy-60]].forEach(([x,y])=>{ctx.fillStyle='#b8743a';ctx.beginPath();for(let i=0;i<10;i++){const rr=i%2?9:20,a=-Math.PI/2+i*Math.PI/5;ctx.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}ctx.closePath();ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();});}
   for(let i=0;i<34;i++){const a=Math.random()*7,rr=Math.random()*r;const x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;ctx.fillStyle='rgba(255,255,255,'+(.5+Math.random()*.5)+')';ctx.beginPath();ctx.arc(x,y,Math.random()*2.6+.8,0,7);ctx.fill();}
+  // блик стекла
+  g=ctx.createRadialGradient(cx-80,cy-100,10,cx-80,cy-100,140);g.addColorStop(0,'rgba(255,255,255,.55)');g.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='rgba(255,255,255,.75)';ctx.beginPath();ctx.ellipse(cx-92,cy-96,24,11,-.7,0,7);ctx.fill();
+  if(sh==='lantern'){ctx.strokeStyle='rgba(255,255,255,.28)';ctx.lineWidth=3;[-70,0,70].forEach(dx=>{ctx.beginPath();ctx.moveTo(cx+dx,cy-168);ctx.quadraticCurveTo(cx+dx*1.3,cy,cx+dx,cy+168);ctx.stroke();});}
   ctx.restore();
-  // glass highlight
-  g=ctx.createRadialGradient(cx-80,cy-100,10,cx-80,cy-100,140);g.addColorStop(0,'rgba(255,255,255,.55)');g.addColorStop(1,'rgba(255,255,255,0)');
-  ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,.75)';ctx.beginPath();ctx.ellipse(cx-104,cy-110,26,12,-.7,0,7);ctx.fill();
-  // rim
-  ctx.strokeStyle=goldGrad(ctx,cx-r,cy-r,cx+r,cy+r);ctx.lineWidth=11;ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.stroke();
-  ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,r-9,0,7);ctx.stroke();
-  [[cx+r*.9,cy-r*.75,16],[cx-r*.98,cy+r*.2,12],[cx+r*.75,cy+r*.85,10],[cx-r*.6,cy-r*1.02,9]].forEach(([x,y,rr])=>star4(ctx,x,y,rr,'#fff6d6'));
+  // золотой кант по контуру
+  toyPath(ctx,sh,cx,cy,r);ctx.lineJoin='round';ctx.strokeStyle=goldGrad(ctx,cx-r,cy-r,cx+r,cy+r);ctx.lineWidth=11;ctx.stroke();
+  if(sh==='ball'){ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,r-9,0,7);ctx.stroke();}
+  if(sh==='bell'){ctx.fillStyle=goldGrad(ctx,cx-20,cy+180,cx+20,cy+220);ctx.beginPath();ctx.arc(cx,cy+200,20,0,7);ctx.fill();}
+  if(sh==='lantern'){ctx.fillStyle=goldGrad(ctx,cx-130,0,cx+130,0);ctx.fillRect(cx-126,cy+160,252,22);}
+  // колпачок и петелька над верхней точкой формы (у сердца — маленькие, в ложбинке между половинками)
+  const k=sh==='heart'?.55:1;
+  ctx.save();ctx.translate(cx,top-24*k);ctx.scale(k,k);
+  ctx.strokeStyle=goldGrad(ctx,-24,-62,24,-2);ctx.lineWidth=8;ctx.beginPath();ctx.arc(0,-26,22,0,7);ctx.stroke();
+  ctx.fillStyle=goldGrad(ctx,-50,0,50,38);
+  ctx.beginPath();ctx.moveTo(-44,0);ctx.lineTo(44,0);ctx.lineTo(52,38);ctx.lineTo(-52,38);ctx.closePath();ctx.fill();
+  ctx.fillStyle='rgba(120,70,20,.45)';for(let i=-36;i<=36;i+=12)ctx.fillRect(i-1,4,2,30);
+  ctx.fillStyle='#2a4fc0';ctx.beginPath();ctx.moveTo(0,6);ctx.lineTo(8,18);ctx.lineTo(0,30);ctx.lineTo(-8,18);ctx.fill();
+  ctx.restore();
+  [[cx+r*.9,cy-r*.75,16],[cx-r*.98,cy+r*.2,12],[cx+r*.75,cy+r*.85,10]].forEach(([x,y,rr])=>star4(ctx,x,y,rr,'#fff6d6'));
   return c.toDataURL('image/png');
 }
 
@@ -786,63 +803,24 @@ function treeSVG(mineSrc, balls, seed){
   let bs='';const placed=[];
   for(let n=0;n<400&&placed.length<balls.length;n++){
     const y=110+rr()*455; const tier=L.find(l=>y<l[3])||L[3]; const hw=(y-tier[1])/(tier[3]-tier[1])*tier[2]*.82; const x=300+(rr()*2-1)*hw;
-    if(placed.some(p=>Math.hypot(p[0]-x,p[1]-y)<32))continue; if(mineSrc&&Math.hypot(x-300,y-395)<56)continue; placed.push([x,y]);
+    if(placed.some(p=>Math.hypot(p[0]-x,p[1]-y)<32))continue; if(mineSrc&&Math.hypot(x-300,y-262)<60)continue; placed.push([x,y]);
   }
-  placed.forEach(([x,y],i)=>{const o=balls[i];
-    if(o.img>=0) bs+=`<g class="tb" data-tip="${esc(o.nick)} · ${esc(o.city)}"><use href="#tb${o.img}" x="${x-20}" y="${y-24}"/></g>`;
-    else {const c=cols[i%cols.length];bs+=`<g class="tb" data-tip="${esc(o.nick)} · ${esc(o.city)}"><line x1="${x}" y1="${y-16}" x2="${x}" y2="${y-11}" stroke="#d8b26a" stroke-width="2"/><circle cx="${x}" cy="${y}" r="12" fill="${c}"/><circle cx="${x-4}" cy="${y-4}" r="3.5" fill="#fff" opacity=".55"/><text x="${x}" y="${y+4}" text-anchor="middle" font-size="9" font-weight="800" font-family="PT Serif,Georgia,serif" fill="#fff">${esc(initials(o.nick))}</text></g>`;}
+  // каждый шар можно открыть: увидеть его поближе и кто его повесил
+  placed.forEach(([x,y],i)=>{const o=balls[i];const c=cols[i%cols.length];
+    const at=`class="tb" data-tip="${esc(o.nick)} · ${esc(o.city)}" data-act="ballView" data-n="${esc(o.nick)}" data-c="${esc(o.city)}" data-b="${o.img}" data-col="${c}" role="button" aria-label="Игрушка: ${esc(o.nick)}"`;
+    if(o.img>=0) bs+=`<g ${at}><use href="#tb${o.img}" x="${x-20}" y="${y-27}"/></g>`;
+    else bs+=`<g ${at}><line x1="${x}" y1="${y-16}" x2="${x}" y2="${y-11}" stroke="#d8b26a" stroke-width="2"/><circle cx="${x}" cy="${y}" r="12" fill="${c}"/><circle cx="${x-4}" cy="${y-4}" r="3.5" fill="#fff" opacity=".55"/><text x="${x}" y="${y+4}" text-anchor="middle" font-size="9" font-weight="800" font-family="PT Serif,Georgia,serif" fill="#fff">${esc(initials(o.nick))}</text></g>`;
   });
+  // своя игрушка — по центру, ближе к верхушке
   let mine='';
-  if(mineSrc) mine=`<g class="mine" data-tip="Ваша игрушка"><line x1="300" y1="340" x2="300" y2="352" stroke="#f3c96b" stroke-width="2"/><image href="${mineSrc}" x="256" y="340" width="88" height="103"/></g>`;
+  if(mineSrc) mine=`<g class="mine" data-tip="Ваша игрушка" data-act="ballView" data-me="1" role="button" aria-label="Ваша игрушка"><line x1="300" y1="198" x2="300" y2="210" stroke="#f3c96b" stroke-width="2"/><image href="${mineSrc}" x="256" y="208" width="88" height="103"/></g>`;
   return `<svg class="treesvg" viewBox="0 0 600 640" role="img" aria-label="Общая ёлка банка">
     <defs><radialGradient id="tg" cx="50%" cy="55%" r="55%"><stop offset="0" stop-color="#ffdca0" stop-opacity=".22"/><stop offset="1" stop-color="#ffdca0" stop-opacity="0"/></radialGradient>
-    ${[0,1,2,3,4,5].map(i=>`<image id="tb${i}" href="${A['ball'+i]}" width="40" height="40"/>`).join('')}</defs>
+    ${[0,1,2,3,4,5].map(i=>`<image id="tb${i}" href="${A['toy'+i]||A['ball'+i]}" width="40" height="47"/>`).join('')}</defs>
     <ellipse cx="300" cy="360" rx="300" ry="300" fill="url(#tg)"/>
     <g class="tiers">${t}${gl}</g><g class="tballs">${bs}${mine}</g>
     <g transform="translate(300 40)"><path d="M0 -34 L9 -10 L34 -10 L14 5 L22 30 L0 15 L-22 30 L-14 5 L-34 -10 L-9 -10Z" fill="#f6cf6c" stroke="#fff3c9" stroke-width="2"/><circle r="40" fill="#fff3c9" opacity=".15"/></g>
   </svg>`;
 }
 
-/* ===== Карточка героя (PNG) ===== */
-// Логотип ПСБ для тёмного фона (брендбук): контуры знака и шрифтовой части. h — высота, x/y — левый верхний угол
-const PSB_PATHS=[['#ff6200','M803.15,477.87l-41.49,41.78h41.49v83.22l41.84-41.43v-83.57h-41.84Z'],['#8d87ff','M761.83,602.87l41.49-41.78h-41.49v-83.22l-41.84,41.43v83.57h41.84Z'],
-  ['#fff','M1160.4,573.06h-24.01v-24.69h24.01c9.14,0,13.39,3.92,13.39,12.26s-4.24,12.42-13.39,12.42ZM1110.43,483.31v114.44h51.27c24.33,0,37.72-13.41,37.72-37.11s-13.39-36.95-37.72-36.95h-25.31v-15.2h55.69v-25.18h-81.65ZM1019.31,540.37c0-20.11,11.1-33.84,26.94-33.84,11.92,0,21.23,7.68,23.35,20.27h27.11c-2.78-27.47-23.35-45.77-50.46-45.77-31.68,0-54.05,24.85-54.05,59.34s22.37,59.34,54.05,59.34c27.44,0,48.17-18.96,50.62-46.76h-27.27c-1.63,13.24-11.11,21.25-23.35,21.25-15.84,0-26.94-13.73-26.94-33.84ZM887.37,483.31v114.44h26.62v-88.77h38.21v88.77h26.45v-114.44h-91.28Z']];
-const PSB_W=479.43/125;
-function drawPsbLogo(ctx,x,y,h){const k=h/125;ctx.save();ctx.translate(x,y);ctx.scale(k,k);ctx.translate(-719.99,-477.87);PSB_PATHS.forEach(([f,d])=>{ctx.fillStyle=f;ctx.fill(new Path2D(d));});ctx.restore();}
 const UI_FONT='"PSB Lavr", Arial, sans-serif';
-function wrapText(ctx,text,x,y,maxW,lh){const words=text.split(' ');let line='';for(const w of words){const t=line?line+' '+w:w;if(ctx.measureText(t).width>maxW&&line){ctx.fillText(line,x,y);line=w;y+=lh;}else line=t;}if(line)ctx.fillText(line,x,y);return y;}
-async function renderHeroCard(u, stats, ballSrc){
-  const W=900,H=1200;const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
-  // шрифты должны успеть загрузиться, иначе canvas нарисует запасные
-  if(document.fonts&&document.fonts.load)await Promise.all(['700 56px "PSB Lavr"','500 22px "PSB Lavr"','400 22px "PSB Lavr"','800 64px "Playfair Display"','italic 400 26px "PT Serif"','400 26px "PT Serif"'].map(f=>document.fonts.load(f).catch(()=>{})));
-  const bg=await loadImg((typeof AI!=='undefined'&&AI.bg)||A.bg);
-  ctx.drawImage(bg,0,0,bg.width,bg.height,-300,0,H*bg.width/bg.height,H);
-  ctx.fillStyle='rgba(0,22,92,.5)';ctx.fillRect(0,0,W,H);
-  // рассвет у нижнего края — фирменный градиент ПСБ
-  const dawn=ctx.createRadialGradient(W/2,H+140,40,W/2,H+140,720);
-  dawn.addColorStop(0,'rgba(255,103,52,.42)');dawn.addColorStop(.38,'rgba(255,181,161,.16)');dawn.addColorStop(.62,'rgba(159,132,255,.14)');dawn.addColorStop(1,'rgba(0,31,116,0)');
-  ctx.fillStyle=dawn;ctx.fillRect(0,0,W,H);
-  ctx.strokeStyle=goldGrad(ctx,0,0,W,H);ctx.lineWidth=6;ctx.strokeRect(30,30,W-60,H-60);ctx.lineWidth=2;ctx.strokeRect(44,44,W-88,H-88);
-  ctx.textAlign='center';
-  ctx.fillStyle='#e9bd68';ctx.font='500 22px '+UI_FONT;if('letterSpacing' in ctx)ctx.letterSpacing='3px';ctx.fillText('КАРТОЧКА ГЕРОЯ',W/2,120);if('letterSpacing' in ctx)ctx.letterSpacing='0px';
-  ctx.fillStyle='#f3ecdc';ctx.font='italic 400 26px "PT Serif", Georgia, serif';ctx.fillText('Новогодняя ночь длиной в страну',W/2,160);
-  // avatar
-  const ay=330;ctx.fillStyle='#13235f';ctx.beginPath();ctx.arc(W/2,ay,120,0,7);ctx.fill();
-  ctx.strokeStyle=goldGrad(ctx,W/2-120,ay-120,W/2+120,ay+120);ctx.lineWidth=12;ctx.stroke();
-  // свой аватар — в золотом круге, иначе инициалы
-  if(u.avatar){const im=await loadImg(u.avatar);ctx.save();ctx.beginPath();ctx.arc(W/2,ay,114,0,7);ctx.clip();ctx.drawImage(im,W/2-114,ay-114,228,228);ctx.restore();}
-  else{ctx.fillStyle=goldGrad(ctx,0,ay-60,0,ay+60);ctx.font='800 110px "Playfair Display", Georgia, serif';ctx.fillText(initials(u.nick),W/2,ay+38);}
-  ctx.font='800 64px "Playfair Display", Georgia, serif';ctx.fillStyle='#fde7a8';ctx.fillText(u.nick,W/2,550);
-  if(u.city){ctx.font='400 26px "PT Serif", Georgia, serif';ctx.fillStyle='#c9d0ea';ctx.fillText(u.city,W/2,596);}
-  const cells=[[stats.words,'слов разгадано'],[stats.gifts,'подарков собрано'],[stats.points,'баллов']];
-  cells.forEach(([v,l],i)=>{const x=190+i*260;ctx.fillStyle='rgba(8,32,110,.78)';ctx.fillRect(x-110,650,220,150);ctx.strokeStyle='rgba(233,190,104,.6)';ctx.lineWidth=2;ctx.strokeRect(x-110,650,220,150);
-    ctx.fillStyle='#fde7a8';ctx.font='700 56px '+UI_FONT;ctx.fillText(String(v),x,735);ctx.fillStyle='#c9d0ea';ctx.font='400 22px '+UI_FONT;ctx.fillText(l,x,775);});
-  if(ballSrc){const b=await loadImg(ballSrc);ctx.drawImage(b,W/2-110,830,220,257);}
-  // подпись: логотип ПСБ (охранное поле — половина высоты знака) | помощник Деда Мороза Михаила
-  const cap='помощник Деда Мороза Михаила';ctx.font='italic 400 22px "PT Serif", Georgia, serif';
-  const lh=30,lw=lh*PSB_W,gap=lh/2,tw=ctx.measureText(cap).width,x0=W/2-(lw+gap*2+1+tw)/2,yb=H-82;
-  drawPsbLogo(ctx,x0,yb-lh,lh);
-  ctx.fillStyle='rgba(233,189,104,.55)';ctx.fillRect(x0+lw+gap,yb-lh,1,lh);
-  ctx.textAlign='left';ctx.fillStyle='#b9c3e6';ctx.fillText(cap,x0+lw+gap*2+1,yb-6);ctx.textAlign='center';
-  return c.toDataURL('image/png');
-}
