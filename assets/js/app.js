@@ -382,7 +382,7 @@ function supportHTML(){
 function qRulesHTML(){
   const r=ui.quizRound||0, R=D.QUIZ[r], res=st.quiz[r], n=R.qs.length, again=!!(res&&res.done);
   const rows=['Местные называют слово на своём языке или диалекте — выберите, что оно значит. Есть и вопросы про узоры: чей это край?',
-    'После ответа Младший сын расскажет, откуда слово и что оно значит. Ошибаться не страшно.',
+    'После ответа Борис расскажет, откуда слово и что оно значит. Ошибаться не страшно.',
     again?'Повтор — для себя, без баллов: в зачёте остаётся первая попытка.':`${n} вопросов, за каждый верный ответ с первой попытки — 20 баллов.`,
     'Бросили набор на середине — продолжите с того же вопроса.'];
   return `<div class="info qrules"><h3 class="info-t">Готовы?</h3><p class="qr-set">Набор ${ROMAN[r]} · ${R.title}</p>
@@ -534,9 +534,9 @@ function vLogin(){
    состояние и одна кнопка — золотая только у следующего шага). От тропы — ветки к сказке-сериалу и Пряничной избушке,
    у третьего испытания — общая ёлка банка (10–20 шаров, их можно открыть), под ёлкой — Сундук чудес */
 const STOPS=[
-  {k:'quiz',n:1,l:'Квиз',t:'Спроси дорогу',d:'Узнайте у местных, куда ушёл Михаил: в каждом краю говорят по-своему',m:'m_mlad',who:'Младший сын',art:'tile_quiz'},
-  {k:'forest',n:2,l:'Игра',t:'Лес',d:'В тайге порвался мешок с подарками — помогите их собрать',m:'m_star',who:'Старший сын',art:'art_forest',pos:'50% 14%'},
-  {k:'tree',n:3,l:'Творчество',t:'Ёлка',d:'Подарки собраны — осталось нарядить общую ёлку банка',m:'m_doch',who:'Дочь',art:'tile_tree'}
+  {k:'quiz',n:1,l:'Квиз',t:'Спроси дорогу',d:'Узнайте у местных, куда ушёл Михаил: в каждом краю говорят по-своему',m:'m_mlad',who:'Борис, младший сын',art:'tile_quiz'},
+  {k:'forest',n:2,l:'Игра',t:'Лес',d:'В тайге порвался мешок с подарками — помогите их собрать',m:'m_star',who:'Пётр, старший сын',art:'art_forest',pos:'50% 14%'},
+  {k:'tree',n:3,l:'Творчество',t:'Ёлка',d:'Подарки собраны — осталось нарядить общую ёлку банка',m:'m_doch',who:'София, средняя дочь',art:'tile_tree'}
 ];
 // Состояние плитки: cls — locked / done, note — строка о прогрессе, live — оранжевая метка, cta — кнопка
 function stopState(s,now){
@@ -615,7 +615,7 @@ function serialSt(){
 function izbaSt(){
   const T=D.TALES, n=talesOpen(), nx=T.find(t=>st.day<t.open);
   return `<section class="mp-st st-izba"><div class="mp-sth"><img class="mp-si" src="${A.hut}" alt=""><div><span class="rt-l">Аудиосказки на ночь</span><h3 class="mp-t">Пряничная избушка</h3></div></div>
-    <p class="mp-x">${nb(`Сказки народов России читает Настасья Петровна. ${nx?`Открыто ${n} из ${T.length}, следующие — ${fmt(nx.open)}`:`Открыты все ${T.length} сказок`}`)}</p>
+    <p class="mp-x">${nb(`Сказки народов России читает Мария, жена Михаила. ${nx?`Открыто ${n} из ${T.length}, следующие — ${fmt(nx.open)}`:`Открыты все ${T.length} сказок`}`)}</p>
     <div class="mp-a">${btn({t:'Слушать',act:'go',v:'izba',cls:'btn-sm',noarrow:1})}</div></section>`;
 }
 // Общая ёлка банка на главной: 16 шаров коллег и своя игрушка у верхушки; шар можно открыть. Под ёлкой — Сундук чудес
@@ -658,13 +658,13 @@ function vRoute(){
    Слева — название и подводка: что здесь происходит. Справа — картинка: герой-проводник что-то говорит, реплика — в облачке.
    «Как играть» в шапке нет: в Спроси дорогу и Лесе правила — в окне перед стартом, в Ёлке их рассказывают шаги.
    На телефоне картинка — сверху, подводка — под ней, название раздела — в верхней панели */
-const QUIZ_LEAD='Чтобы понять, куда идти и где сейчас Михаил, нужно расспросить местных. Но в каждом краю говорят <span class="nw">по-своему</span>: одна просит принести шаньги, другой упоминает камусы, третий зовёт к айрану. Помогите младшему сыну разобраться в словах — не поймёшь слова, не найдёшь тропу.';
-const FOREST_LEAD='В тайге мешок Деда Мороза зацепился за еловый сук и порвался — подарки рассыпались по всему лесу. Михаилу нельзя задерживаться: впереди ещё десять полуночей. Помогите его старшему сыну собрать подарки, пока их не замело снегом.';
-const TREE_LEAD='Подарки собраны, и Михаил помчался их развозить. Дома осталось последнее дело — нарядить ёлку. В этом году она общая, на весь банк: игрушки на неё вешают сотрудники со всей страны. Дочь Михаила ждёт и вашу.';
+const QUIZ_LEAD='Чтобы понять, куда идти и где сейчас Михаил, нужно расспросить местных. Но в каждом краю говорят <span class="nw">по-своему</span>: одна просит принести шаньги, другой упоминает камусы, третий зовёт к айрану. Помогите Борису, младшему сыну Михаила, разобраться в словах — не поймёшь слова, не найдёшь тропу.';
+const FOREST_LEAD='В тайге мешок Деда Мороза зацепился за еловый сук и порвался — подарки рассыпались по всему лесу. Михаилу нельзя задерживаться: впереди ещё десять полуночей. Помогите его старшему сыну Петру собрать подарки, пока их не замело снегом.';
+const TREE_LEAD='Подарки собраны, и Михаил помчался их развозить. Дома осталось последнее дело — нарядить ёлку. В этом году она общая, на весь банк: игрушки на неё вешают сотрудники со всей страны. София, дочь Михаила, ждёт и вашу.';
 const HERO={
-  quiz:{t:'Спроси дорогу',img:'quiz_head',alt:'Младший сын Михаила расспрашивает местных у указателя',lead:QUIZ_LEAD,say:'Спросим дорогу!'},
-  forest:{t:'Лес',img:'forest_head',alt:'Старший сын Михаила зовёт собирать подарки из порванного мешка',lead:FOREST_LEAD,say:'Бежим собирать!'},
-  tree:{t:'Ёлка',img:'tree_head',alt:'Дочь Михаила наряжает ёлку',lead:TREE_LEAD,say:'Нарядим вместе!'}
+  quiz:{t:'Спроси дорогу',img:'quiz_head',alt:'Борис, младший сын Михаила, расспрашивает местных у указателя',lead:QUIZ_LEAD,say:'Спросим дорогу!'},
+  forest:{t:'Лес',img:'forest_head',alt:'Пётр, старший сын Михаила, зовёт собирать подарки из порванного мешка',lead:FOREST_LEAD,say:'Бежим собирать!'},
+  tree:{t:'Ёлка',img:'tree_head',alt:'София, дочь Михаила, наряжает ёлку',lead:TREE_LEAD,say:'Нарядим вместе!'}
 };
 function actHero(k,say){
   const h=HERO[k];
@@ -697,7 +697,7 @@ function vQuiz(){
     const top=`${pt('Тропа найдена',`Набор ${q.r+1} · ${R.title}`,'h1')}
       <div class="score"><span class="big">${q.correct}</span><span class="of">из ${n}</span></div>
       <p class="gain">${q.replay?`Повтор — без баллов. В зачёте первая попытка: ${qFirst(st.quiz[q.r])} из ${n}`:q.gain>0?`+${q.gain} баллов в таблицу`:'В этот раз без баллов — зато теперь вы знаете эти слова'}</p>
-      ${say('m_mlad','Младший сын','местные показали дорогу! Папа уже в тайге — там его ждёт мой старший брат.','compact')}
+      ${say('m_mlad','Борис','местные показали дорогу! Папа уже в тайге — там его ждёт мой старший брат Пётр.','compact')}
       ${st.day<OPEN.forest?`<p class="note">Лес откроется ${fmt(OPEN.forest)}</p>`:''}`;
     const acts=[st.day>=OPEN.forest?{t:'Дальше: Лес',act:'go',v:'forest',gold:1}:{t:'На маршрут',act:'go',v:'route',gold:1},{t:'Другой набор',act:'qAgain'}];
     const sets=`${lbl('Все наборы','s')}${roundsList(q.r)}`;
@@ -707,7 +707,7 @@ function vQuiz(){
   bar('Спроси дорогу',`Набор ${q.r+1} · вопрос ${q.i+1} из ${n}${q.replay?' · без баллов':''}`,'route');
   const nextT=q.i<n-1?'Следующий вопрос':'Узнать, куда идти';
   const qbar=`<div class="qbar" aria-label="Вопрос ${q.i+1} из ${n}">${R.qs.map((_,i)=>`<i class="${i<q.i?'done':i===q.i?'on':''}"></i>`).join('')}</div>`;
-  const ask=say('m_mlad','Младший сын',Q.t==='w'?`местные сказали «${Q.w.toLowerCase()}». Что бы это значило?`:`смотри, какой узор на ${Q.on}! Из какого он края?`,'compact');
+  const ask=say('m_mlad','Борис',Q.t==='w'?`местные сказали «${Q.w.toLowerCase()}». Что бы это значило?`:`смотри, какой узор на ${Q.on}! Из какого он края?`,'compact');
   // слово — на деревянном указателе (кегль — по длине самого длинного слова), узор — на светлом полотне
   const word=`<div class="qword-wrap ${Q.t==='w'?'is-w':'is-p'}"><div class="plabel">${Q.t==='w'?'Что означает это слово':'Чей это узор?'}</div>
       <div class="qword ${Q.t==='w'?'':'pat'}">${flowers()}${Q.t==='w'?`<div class="w" style="--n:${Math.max(...Q.w.split(' ').map(x=>x.length))}">${Q.w}</div>`:`${patternSVG(Q.p)}<div class="on">Узор на ${Q.on}</div>`}</div></div>`;
@@ -716,7 +716,7 @@ function vQuiz(){
   const pic=`<div class="ex-pic">${Q.t==='w'?`<span class="ex-w">${Q.w}</span>`:`<span class="ex-p">${svg('photo','width="30" height="30"')}</span>`}<small>${Q.t==='w'?'Иллюстрация к слову':`Фото изделия: узор на ${Q.on}`}</small></div>`;
   const expl=ans?`<div class="parch explain-in" id="expl">${flowers()}<div class="explain">${pic}<div class="where">${Q.where}</div><div class="ttl2">${Q.t==='w'?Q.w:'Узор: '+Q.o[Q.a]}</div><p>${Q.ex}</p>
     <div class="verdict ${q.pick===Q.a?'ok':''}">${q.pick===Q.a?(q.replay?'Верно!':'Верно! +20 баллов'):`Правильный ответ — «${Q.o[Q.a]}». Теперь и вы знаете!`}</div></div></div>
-    <button class="btn btn-gold btn-block q-next" data-act="qNext">${nextT} ${svg('arrow','width="18" height="18"')}</button>`:'<p class="note">Выберите вариант — после ответа Младший сын расскажет, что это значит</p>';
+    <button class="btn btn-gold btn-block q-next" data-act="qNext">${nextT} ${svg('arrow','width="18" height="18"')}</button>`:'<p class="note">Выберите вариант — после ответа Борис расскажет, что это значит</p>';
   const win=`${word}${opts}${expl}`;
   const head=`<div class="act-head q">${DESK?`<h1 class="sc-t">Спроси дорогу</h1>${q.replay?'<p class="q-rep">Повтор набора — без баллов</p>':''}`:''}${qbar}${ask}</div>`;
   return {one:win,M:win,dstage:head,stage:head,acts:[],sun:false,cls:'quiz'};
@@ -724,7 +724,7 @@ function vQuiz(){
 
 /* ===== Лес ===== */
 const LITE_NOTE='<p class="note">Игра тормозит или не запускается? <a class="link" href="#" data-act="fLite">Альтернативный способ заработать баллы</a> — для старых браузеров и слабых компьютеров</p>';
-// Шапка Леса — общая шапка испытаний (actHero): Старший сын зовёт собирать подарки.
+// Шапка Леса — общая шапка испытаний (actHero): Пётр, старший сын, зовёт собирать подарки.
 // Правила, баллы и рекорд — в окне перед стартом, прямо на поле
 // Перед стартом — на самом поле: коротко правила плитками с картинками из игры и кнопка старта.
 // Компьютер — пять плиток с пояснениями; телефон (поле невысокое) — четыре компактные
@@ -758,7 +758,7 @@ function forestRules(desk){
 function sndBtn(){const on=ForestSound.on;return `<button class="snd" data-act="fSound" aria-pressed="${on}" aria-label="Звук" title="${on?'Выключить звук':'Включить звук'}">${svg(on?'snd':'sndOff')}</button>`;}
 function vForest(){
   bar('Лес',null,'route');
-  if(st.day<OPEN.forest)return lockView('Лес откроется 8 декабря','В тайге у Деда Мороза рвётся мешок — подарки рассыпаются по всему лесу. Собирать их герой будет вместе со Старшим сыном.','m_star');
+  if(st.day<OPEN.forest)return lockView('Лес откроется 8 декабря','В тайге у Деда Мороза рвётся мешок — подарки рассыпаются по всему лесу. Собирать их герой будет вместе с Петром, старшим сыном Михаила.','m_star');
   const head=actHero('forest');
   if(DESK){
     // Компьютер: шапка испытания на поляне, ниже — одна широкая панель: игровое поле и кнопки.
@@ -844,16 +844,16 @@ function finishForest(gifts,score,out,time){
   st.forest.runs++;st.forest.gifts+=gifts;if(gifts>prevBest){addLog('forest',prevBest?`Новый рекорд: ${gifts} ${plural(gifts,'подарок','подарка','подарков')} (было ${prevBest})`:`Забег: ${gifts} ${plural(gifts,'подарок','подарка','подарков')}`,(gifts-prevBest)*10);st.forest.bestGifts=gifts;}save();
   const head=out?'Жизни закончились':'Забег окончен';
   const nx=st.day>=OPEN.tree?{t:'Дальше: Ёлка',act:'go',v:'tree',gold:1}:{t:'На маршрут',act:'go',v:'route',gold:1};
-  const line=out?'уф, споткнулись! Отдышимся — и ещё забег? Подарки, что успели собрать, уже в мешке.':'собрали! Бегу отдать папе мешок — а сестрёнка уже ждёт у ёлки.';
+  const line=out?'уф, споткнулись! Отдышимся — и ещё забег? Подарки, что успели собрать, уже в мешке.':'собрали! Бегу отдать папе мешок — а София уже ждёт у ёлки.';
   const rec=`<div><b>${gifts>prevBest?'+'+(gifts-prevBest)*10:st.forest.bestGifts}</b><span>${gifts>prevBest?'баллов — новый рекорд':'ваш рекорд, подарков'}</span></div>`;
   const treeNote=st.day<OPEN.tree?`Ёлка откроется ${fmt(OPEN.tree)}`:'';
   if(DESK){
-    // Десктоп: итоги — прямо на поле, крутить страницу не нужно: цифры, реплика Старшего сына, «Ещё забег» и «Дальше».
+    // Десктоп: итоги — прямо на поле, крутить страницу не нужно: цифры, реплика Петра, «Ещё забег» и «Дальше».
     // «Дальше» прокручивает к блоку под полем — там переходы: «Ёлка», ещё забег, маршрут
     const fn=$('#fin');if(fn)fn.classList.add('hidden');
     const ov=$('#ov');if(ov){ov.classList.remove('hidden');ov.innerHTML=`<div class="inner wide res"><div class="lbl-s">${head}</div>
       <div class="rcs"><div><b>${gifts}</b><span>собрано подарков</span></div>${rec}<div><b>${mmss(time)}</b><span>время забега</span></div></div>
-      ${say('m_star','Старший сын',line,'compact')}
+      ${say('m_star','Пётр',line,'compact')}
       <div class="ov-acts"><button class="btn btn-gold btn-lg" data-act="fAgain">Ещё забег</button><button class="btn btn-ghost btn-lg" data-act="fNext">Дальше ${svg('chev','width="18" height="18"')}</button></div></div>`;}
     const ctrl=$('#ctrl');if(!ctrl)return;
     ctrl.outerHTML=`<div class="resultcard" id="ctrl">${nextBar([nx,{t:'Ещё забег',act:'fAgain'},nx.v!=='route'?ROUTE_BTN:null],treeNote)}</div>`;
@@ -863,7 +863,7 @@ function finishForest(gifts,score,out,time){
     const old=gm.querySelector('.sheet');if(old){old.previousElementSibling.remove();old.remove();}
     gm.insertAdjacentHTML('beforeend',sheet(`<div class="lbl-s center">${head}</div>
       <div class="fres"><b>${gifts}</b><span>${plural(gifts,'подарок','подарка','подарков')}</span></div>
-      ${say('m_star','Старший сын',line,'compact')}
+      ${say('m_star','Пётр',line,'compact')}
       <div class="rcs">${rec}<div><b>${mmss(time)}</b><span>время забега</span></div></div>
       <div class="sheet-acts">${btn(nx)}${btn({t:'Ещё забег',act:'fAgain'})}${nx.v!=='route'?btn(ROUTE_BTN):''}</div>
       ${treeNote?`<p class="note">${treeNote}</p>`:''}`,{cls:'darksheet',close:'fAgain'}));
@@ -886,11 +886,11 @@ function startLite(){
 }
 
 /* ===== Ёлка =====
-   Шапка испытания (Дочь: подарки собраны — осталось нарядить ёлку), ниже — один экран: шаги и окно, которое меняется
+   Шапка испытания (София: подарки собраны — осталось нарядить ёлку), ниже — один экран: шаги и окно, которое меняется
    (игрушка → картинка → ИИ → готово). Игрушка у каждого одна — генерация стоит денег: её можно скачать и повесить на общую ёлку —
    сразу +100 баллов; всем она станет видна после проверки модератором. Снять с ёлки и повесить снова можно в любой момент.
    Ниже — общая ёлка банка с поворотом: своя игрушка у верхушки, на других сторонах — игрушки коллег */
-function doch(t,cls){return say('m_doch','Дочь',t,cls);}
+function doch(t,cls){return say('m_doch','София',t,cls);}
 function treeSides(){return Math.max(1,Math.ceil(treeCount()/40));}
 function sideLabel(){const n=treeSides();return `Сторона ${ui.treeSide+1} из ${num(n)}${ui.treeSide===0?' · новые':''}`;}
 function sideBalls(side){
@@ -921,7 +921,7 @@ function hangToy(on){
 const TREE_STEPS=[['Выберите игрушку','шар, звезда, колокольчик, сосулька, сердце или фонарик'],['Загрузите картинку','любую: фото, рисунок, открытку'],['ИИ делает игрушку','перерисует картинку в её стиле'],['Повесьте на ёлку','и сразу получите 100 баллов']];
 function vTree(){
   bar('Ёлка',null,'route');
-  if(st.day<OPEN.tree)return lockView('Ёлка откроется 15 декабря','Когда подарки собраны и Дед Мороз отправился их развозить, Дочь зовёт всех вместе нарядить ёлку к празднику.','m_doch');
+  if(st.day<OPEN.tree)return lockView('Ёлка откроется 15 декабря','Когда подарки собраны и Дед Мороз отправился их развозить, София, дочь Михаила, зовёт всех вместе нарядить ёлку к празднику.','m_doch');
   const T=ui.tree, has=!!st.tree.ball, step=T.step||1;
   const head=actHero('tree',!has?'Нарядим вместе!':st.tree.on?'Красота!':'Повесим на ёлку?');
   const tc=treeCount();
@@ -1105,7 +1105,7 @@ function vFullTale(){
 }
 
 /* ===== Пряничная избушка =====
-   Книга: слева — избушка и Настасья Петровна, справа — сказки. Нажали на сказку — окно: обложка, подводка Настасьи Петровны и плеер,
+   Книга: слева — избушка и Мария, справа — сказки. Нажали на сказку — окно: обложка, подводка Марии и плеер,
    сказка сразу начинает играть. Закрыли окно — сказка продолжает играть в мини-плеере внизу экрана, по нему окно открывается снова */
 function taleCover(t,i){const [a,b]=t.c;return `<svg viewBox="0 0 160 120" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="tc${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="#0b1538"/></linearGradient></defs><rect width="160" height="120" fill="url(#tc${i})"/>
   <circle cx="${30+i*11%100}" cy="28" r="12" fill="${b}" opacity=".9"/>${[...Array(7)].map((_,k)=>`<circle cx="${(k*37+i*13)%160}" cy="${(k*23+i*7)%60+6}" r="1.2" fill="#fff"/>`).join('')}
@@ -1123,7 +1123,7 @@ function taleHTML(){
   const tm=taleTime();
   return `<div class="info tsh"><div class="tsh-cv">${taleCover(t,i)}</div>
     <h3 class="info-t">${t.t}</h3><p class="tsh-n">${t.n} · ${t.d} мин</p>
-    ${say('m_zhena','Настасья Петровна',taleLead(t),'compact')}
+    ${say('m_zhena','Мария',taleLead(t),'compact')}
     <div class="tsh-pl">${ppBtn()}<div class="tsh-m"><div class="bar"><i class="pbar" style="width:${tm.pct}%"></i></div><span class="ptm">${tm.txt}</span></div></div></div>`;
 }
 function vIzba(){
@@ -1132,9 +1132,9 @@ function vIzba(){
   // мини-плеер — когда окно сказки закрыто, а сказка выбрана
   const tm=cur!=null?taleTime():null;
   const player=cur!=null&&ui.sheet!=='tale'?`<div class="player"><span class="face"><img src="${A.m_zhena}" alt=""></span>${ppBtn()}
-    <button class="meta" data-act="taleOpen"><b>${D.TALES[cur].t}</b><span>${D.TALES[cur].n} · читает Настасья Петровна</span><span class="bar"><i class="pbar" style="width:${tm.pct}%"></i></span></button>
+    <button class="meta" data-act="taleOpen"><b>${D.TALES[cur].t}</b><span>${D.TALES[cur].n} · читает Мария</span><span class="bar"><i class="pbar" style="width:${tm.pct}%"></i></span></button>
     <span class="tm-l ptm">${tm.txt}</span></div>`:'';
-  const hello=say('m_zhena','Настасья Петровна','устраивайтесь поудобнее. Каждую неделю я читаю две новые сказки — заходите почаще!','compact');
+  const hello=say('m_zhena','Мария','устраивайтесь поудобнее. Каждую неделю я читаю две новые сказки — заходите почаще!','compact');
   const stats=`<div class="stats3"><div><b>${talesOpen()} из 10</b><span>сказок доступно</span></div><div><b>+2</b><span>каждую неделю</span></div><div><b>5–10</b><span>минут сказка</span></div></div>`;
   const tales=`<div class="tales">${D.TALES.map((t,i)=>{const lk=st.day<t.open;return `<button class="tale-r ${cur===i?'playing':''}" data-act="play" data-i="${i}" ${lk?'disabled':''}><span class="cv">${taleCover(t,i)}</span><span class="tt"><b>${t.t}</b><small>${t.n} · ${lk?'откроется '+fmt(t.open):t.d+' мин'}</small></span><span class="pl">${lk?svg('lock'):cur===i&&ui.izba.playing?svg('pause'):svg('play')}</span></button>`;}).join('')}</div>`;
   const stream=`<div class="stream"><span class="small ink2">Слушайте и вне платформы:</span><div class="row-c"><button class="btn btn-ghost btn-sm" data-act="toast" data-m="Ссылка на плейлист появится после публикации">VK Музыка</button><button class="btn btn-ghost btn-sm" data-act="toast" data-m="Ссылка на плейлист появится после публикации">Яндекс Музыка</button></div><p class="note">Сказки озвучены нейросетью</p></div>`;

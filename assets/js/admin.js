@@ -154,12 +154,12 @@ function vQuiz(){
 function vTales(){
   const rows=D.TALES.map((t,k)=>{const open=TODAY>=t.open;return `<tr><td>${k+1}</td><td><b>${esc(t.t)}</b><div class="small muted">${esc(t.n)}</div></td><td class="num">${t.d}:00</td><td>${st('mp3 · ИИ-озвучка','ok')}</td><td>${fmt(t.open)}</td><td>${open?st('Опубликована','ok'):st('Запланирована','acc')}</td>
     <td><input class="in" style="height:30px;min-width:150px" placeholder="vk.com/music/…" value="${open&&k<4?'vk.com/music/playlist/…':''}"></td><td><input class="in" style="height:30px;min-width:150px" placeholder="music.yandex.ru/album/…" value="${open&&k<4?'music.yandex.ru/album/…':''}"></td></tr>`;}).join('');
-  return head('Аудиосказки · Пряничная избушка','10 сказок народов России, по две в неделю. Читает Настасья Петровна — жена Михаила Потапыча; озвучка — нейросеть. На платформе сказка открывается окном: обложка, подводка Настасьи Петровны и плеер. Вне платформы — плейлисты в VK Музыке и Яндекс Музыке (варианты публикации — в README, раздел 6.10).',btn('Загрузить сказку','save',{cls:'p'}))+
+  return head('Аудиосказки · Пряничная избушка','10 сказок народов России, по две в неделю. Читает Мария — жена Михаила Потапыча; озвучка — нейросеть. На платформе сказка открывается окном: обложка, подводка Марии и плеер. Вне платформы — плейлисты в VK Музыке и Яндекс Музыке (варианты публикации — в README, раздел 6.10).',btn('Загрузить сказку','save',{cls:'p'}))+
   `<div class="panel scroll"><table class="tbl"><tr><th>№</th><th>Сказка</th><th class="num">Длит.</th><th>Аудио</th><th>Открытие</th><th>Статус</th><th>VK Музыка</th><th>Яндекс Музыка</th></tr>${rows}</table></div>
   <div class="panel"><h2>Новая сказка</h2><div class="grid g3">
     <label class="f"><span>Название</span><input class="in" placeholder="Например, «Морозко»"></label><label class="f"><span>Источник</span><input class="in" placeholder="русская народная сказка"></label><label class="f"><span>Открытие</span><input class="in" value="${dd(21)} 00:00 мск"></label>
     <label class="f"><span>Аудио (mp3)</span><input class="in" type="file" accept="audio/*" style="padding-top:6px"></label><label class="f"><span>Обложка</span><input class="in" type="file" accept="image/*" style="padding-top:6px"></label><label class="f"><span>Голос нейросети</span><input class="in" placeholder="сервис и голос"></label></div>
-    <label class="f"><span>Подводка Настасьи Петровны — 1–2 предложения в окне сказки</span><input class="in" placeholder="Эту сказку рассказывают…"></label>
+    <label class="f"><span>Подводка Марии — 1–2 предложения в окне сказки</span><input class="in" placeholder="Эту сказку рассказывают…"></label>
     <div class="row" style="margin:0 0 12px"><label class="row"><input type="checkbox" checked> Пометка «озвучено ИИ» в описании</label><label class="row"><input type="checkbox"> Лицензия сервиса озвучки разрешает коммерческое использование</label><label class="row"><input type="checkbox"> Права на текст проверены (народная сказка или договор на обработку)</label></div>
     ${btn('Сохранить','save',{cls:'p'})}</div>`;
 }
@@ -284,20 +284,20 @@ const ACT={
   // список от банка: в прототипе — пример (в розыгрыш попадают 4 из 5 участников выборки); на платформе — сверка кодов из CSV
   codesLoad:()=>{const ids=USERS.filter((u,k)=>k%5!==3).map(u=>u.id),blocked=USERS.filter(u=>u.blocked&&ids.includes(u.id)).length;
     codeList={file:'kody_vvedeny_'+dd(CODE_DEADLINE)+'.csv',total:9077,found:9040,miss:37,blocked,ok:9040-blocked,ids};drawRes=null;drawPub=false;
-    log('Мария (администратор)',`загрузила список кодов от банка: ${num(codeList.total)}`);render();toast('Список загружен — коды сверены с платформой');},
+    log('Ольга (администратор)',`загрузила список кодов от банка: ${num(codeList.total)}`);render();toast('Список загружен — коды сверены с платформой');},
   drawRun:()=>{if(!codeList){toast('Сначала загрузите список кодов от банка');return;}const r=rng(Date.now()%100000),pool=USERS.filter(u=>!u.blocked&&codeList.ids.includes(u.id)),out=[];
     while(out.length<DRAW_N&&pool.length){const u=pool.splice(Math.floor(r()*pool.length),1)[0];out.push(Object.assign({},u,{conf:false}));}
-    out.seed=Math.floor(r()*0xffffffff).toString(16).padStart(8,'0');drawRes=out;drawPub=false;log('Мария (администратор)','провела розыгрыш Сундука чудес');render();toast('Победители выбраны — проверьте и опубликуйте');},
-  drawPub:()=>{drawPub=true;log('Мария (администратор)','опубликовала итоги розыгрыша на платформе');render();toast('Итоги опубликованы: участники видят список в Сундуке чудес');},
+    out.seed=Math.floor(r()*0xffffffff).toString(16).padStart(8,'0');drawRes=out;drawPub=false;log('Ольга (администратор)','провела розыгрыш Сундука чудес');render();toast('Победители выбраны — проверьте и опубликуйте');},
+  drawPub:()=>{drawPub=true;log('Ольга (администратор)','опубликовала итоги розыгрыша на платформе');render();toast('Итоги опубликованы: участники видят список в Сундуке чудес');},
   drawCsv:()=>csv('pobediteli_rozygrysha.csv',[['№','Герой','Город','Персональный код','Банк связался'],...drawRes.map((u,k)=>[k+1,u.nick,u.city,u.code,u.conf?'да':'нет'])]),
-  domAdd:()=>{const i=$('#domIn');const v=(i?i.value:'').trim().toLowerCase().replace(/^@/,'');if(!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(v)){toast('Введите домен, например psb-group.ru');return;}if(!domains.includes(v)){domains.push(v);log('Мария (администратор)',`добавила запрещённый домен почты @${v}`);}render();toast('Домен добавлен');},
+  domAdd:()=>{const i=$('#domIn');const v=(i?i.value:'').trim().toLowerCase().replace(/^@/,'');if(!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(v)){toast('Введите домен, например psb-group.ru');return;}if(!domains.includes(v)){domains.push(v);log('Ольга (администратор)',`добавила запрещённый домен почты @${v}`);}render();toast('Домен добавлен');},
   topCsv:()=>csv('turnirnaya_tablica_top10.csv',[['Место','Герой','Город','Код','Квиз','Лес','Ёлка','Сериал','Итого'],...USERS.filter(u=>!u.blocked).slice(0,10).map((u,k)=>[k+1,u.nick,u.city,u.code,u.q,u.f,u.t,u.s,u.pts])]),
-  freeze:()=>{frozen=true;log('Мария (администратор)','зафиксировала турнирную таблицу');render();toast('Таблица зафиксирована: топ-10 больше не меняется');},
+  freeze:()=>{frozen=true;log('Ольга (администратор)','зафиксировала турнирную таблицу');render();toast('Таблица зафиксирована: топ-10 больше не меняется');},
   suspNo:d=>{SUSP[+d.i].st='Аннулирован';log('Анна (модератор)','аннулировала подозрительный забег');render();},
   suspOk:d=>{SUSP[+d.i].st='Засчитан';log('Анна (модератор)','засчитала забег после проверки');render();},
   uOpen:d=>{sel.user=+d.id;render();},
   uClose:()=>{sel.user=null;render();},
-  uBlock:d=>{const u=USERS.find(x=>x.id==d.id);u.blocked=!u.blocked;log('Мария (администратор)',`${u.blocked?'заблокировала':'разблокировала'} героя «${u.nick}»`);render();},
+  uBlock:d=>{const u=USERS.find(x=>x.id==d.id);u.blocked=!u.blocked;log('Ольга (администратор)',`${u.blocked?'заблокировала':'разблокировала'} героя «${u.nick}»`);render();},
   uCsv:d=>{const u=USERS.find(x=>x.id==d.id);csv('uchastnik_'+u.code+'.csv',[['Герой','Город','Код','Почта','Квиз','Лес','Ёлка','Сериал','Итого'],[u.nick,u.city,u.code,u.mail,u.q,u.f,u.t,u.s,u.pts]]);},
   usersCsv:()=>csv('kody_uchastnikov.csv',[['Герой','Город','Персональный код','Баллы','Создан','Статус'],...USERS.map(u=>[u.nick,u.city,u.code,u.pts,dd(u.day),u.blocked?'заблокирован':'активен'])])
 };
