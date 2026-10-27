@@ -1653,7 +1653,7 @@ body.scene #app::after{top:-410px;bottom:0;
   /* третье испытание едет рядом с ёлкой, пока её листают */
   .mp-row.r3 .mp-stop{position:sticky;top:96px}
 }
-/* ===== Лес: шапка на всю ширину — слева название и подводка, справа картинка: Старший сын зовёт собирать подарки =====
+/* ===== Лес: шапка на всю ширину — слева название и подводка, справа картинка: Пётр, старший сын, зовёт собирать подарки =====
    Телефон: картинка сверху во всю ширину панели, подводка — под ней */
 .act-hero{display:flex;flex-direction:column;gap:16px}
 .ah-pic{position:relative;order:-1;margin:-30px -18px 0;aspect-ratio:16/9;border-radius:22px 22px 0 0;overflow:hidden}
@@ -1752,7 +1752,7 @@ body.scene #app::after{top:-410px;bottom:0;
 @keyframes nudge{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 .chest .drawres{margin-bottom:0}
 .chest .wlist+.note{margin-top:10px}
-/* ===== Пряничная избушка: окно сказки — обложка, подводка Настасьи Петровны, плеер ===== */
+/* ===== Пряничная избушка: окно сказки — обложка, подводка Марии, плеер ===== */
 .tsh{text-align:center}
 .tsh-cv{width:min(280px,72vw);aspect-ratio:4/3;margin:0 auto 14px;border-radius:14px;overflow:hidden;box-shadow:0 0 0 2px #e2b25e,0 14px 30px rgba(0,0,0,.5)}
 .tsh-cv svg{display:block;width:100%;height:100%}
