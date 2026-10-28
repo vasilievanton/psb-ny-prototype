@@ -46,7 +46,7 @@ function svg(n,a=''){return `<svg viewBox="0 0 24 24" fill="none" stroke="curren
 const ICON_STAR='<svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7.1L12 17.3 5.8 21l1.6-7.1L2 9.2l7.1-.6z" fill="#f3c96b"/></svg>';
 const STAR_SM=ICON_STAR.replace('width="16" height="16"','width="12" height="12"');
 const ICON_GIFT='<svg viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="12" rx="1.5" fill="#d8423a"/><rect x="2" y="7" width="20" height="4" rx="1" fill="#e5574d"/><rect x="10.5" y="7" width="3" height="14" fill="#f6d27a"/><path d="M12 7C9 2 5 4 7 7M12 7c3-5 7-3 5 0" stroke="#f6d27a" stroke-width="2" fill="none"/></svg>';
-// Логотип ПСБ для тёмного фона — из брендбука банка (Лого_RGB → Без дескриптора → dark theme). Не перекрашивать
+// Логотип ПСБ для темного фона — из брендбука банка (Лого_RGB → Без дескриптора → dark theme). Не перекрашивать
 const LOGO='<svg class="psb-logo" xmlns="http://www.w3.org/2000/svg" viewBox="719.99 477.87 479.43 125" role="img" aria-label="ПСБ"><path fill="#ff6200" d="M803.15,477.87l-41.49,41.78h41.49v83.22l41.84-41.43v-83.57h-41.84Z"/><path fill="#8d87ff" d="M761.83,602.87l41.49-41.78h-41.49v-83.22l-41.84,41.43v83.57h41.84Z"/><path fill="#fff" d="M1160.4,573.06h-24.01v-24.69h24.01c9.14,0,13.39,3.92,13.39,12.26s-4.24,12.42-13.39,12.42ZM1110.43,483.31v114.44h51.27c24.33,0,37.72-13.41,37.72-37.11s-13.39-36.95-37.72-36.95h-25.31v-15.2h55.69v-25.18h-81.65ZM1019.31,540.37c0-20.11,11.1-33.84,26.94-33.84,11.92,0,21.23,7.68,23.35,20.27h27.11c-2.78-27.47-23.35-45.77-50.46-45.77-31.68,0-54.05,24.85-54.05,59.34s22.37,59.34,54.05,59.34c27.44,0,48.17-18.96,50.62-46.76h-27.27c-1.63,13.24-11.11,21.25-23.35,21.25-15.84,0-26.94-13.73-26.94-33.84ZM887.37,483.31v114.44h26.62v-88.77h38.21v88.77h26.45v-114.44h-91.28Z"/></svg>';
 const PSB=`<span class="psb">${LOGO}</span><i class="vr" aria-hidden="true"></i>`;
 
@@ -74,26 +74,26 @@ const ui={auth:AUTH0(),nick:null,pending:null,city:'',cityQ:null,cityErr:false,t
   tree:{step:1,src:null,style:0,ball:null},chapter:null,izba:{cur:null,playing:false,pos:0},svOk:false,rulesOk:false,pubOk:true,demo:false,
   sheet:null,seg:{ft:0},fmode:false,bar:null,login:{code:'',err:''},logout:false,pmail:false,pmailVal:'',ball:null};
 /* ===== Страницы ===== */
-// Каждый экран — отдельная HTML-страница. Общее состояние живёт в localStorage, переходы — обычные ссылки.
+// Каждый экран — отдельная HTML-страница. Общее состояние живет в localStorage, переходы — обычные ссылки.
 const PAGE=document.body.dataset.page||'cover';
 const PAGES={cover:'index.html',prologue:'index.html',nick:'hero.html',auth:'code.html',login:'login.html',route:'route.html',quiz:'quiz.html',forest:'forest.html',tree:'tree.html',chest:'chest.html',serial:'serial.html',chapter:'chapter.html',fulltale:'tale.html',izba:'izba.html',rating:'rating.html',profile:'profile.html'};
 const QS=new URLSearchParams(location.search);
-// Режим вёрстки: телефон (основной) или компьютер — от 900 px в ширину. Телефон, повёрнутый горизонтально, остаётся телефоном, даже если экран шире 900 px:
-// компьютер — это ещё и окно выше 540 px или управление мышью. То же условие — в медиазапросах style.css
+// Режим верстки: телефон (основной) или компьютер — от 900 px в ширину. Телефон, повернутый горизонтально, остается телефоном, даже если экран шире 900 px:
+// компьютер — это еще и окно выше 540 px или управление мышью. То же условие — в медиазапросах style.css
 const MQ=window.matchMedia('(min-width:900px) and (min-height:541px), (min-width:900px) and (hover:hover) and (pointer:fine)');
 let DESK=MQ.matches;
 // Сессионные флаги, которые переходят на следующую страницу: анимация перелистывания и всплывающее сообщение
 const SS={get(k){try{return JSON.parse(sessionStorage.getItem('psb-'+k));}catch(e){return null;}},set(k,v){try{sessionStorage.setItem('psb-'+k,JSON.stringify(v));}catch(e){}},del(k){try{sessionStorage.removeItem('psb-'+k);}catch(e){}}};
 function href(view,q){return (PAGES[view]||'route.html')+(q||'');}
 function flash(m){SS.set('toast',m);}
-// Черновик персонажа: живёт между страницами «Имя героя» и «Персональный код», после «В путь» удаляется
+// Черновик персонажа: живет между страницами «Имя героя» и «Персональный код», после «В путь» удаляется
 function saveDraft(){st.draft={nick:ui.nick,city:ui.city,cityQ:ui.cityQ,pending:ui.pending,auth:{code:ui.auth.code,email:ui.auth.email,sentTo:ui.auth.sentTo}};save();}
 if(st.draft){ui.nick=st.draft.nick||null;ui.city=st.draft.city||'';ui.cityQ=st.draft.cityQ!=null?st.draft.cityQ:null;ui.pending=st.draft.pending||null;ui.auth=Object.assign(AUTH0(),st.draft.auth||{});}
 let game=null, timers=[];
 function clearTimers(){timers.forEach(t=>clearInterval(t));timers=[];if(game){game.destroy();game=null;ForestSound.musicPause();}}
 
 /* ===== Производные ===== */
-// Квиз: в таблицу идёт результат первой попытки, повторные прохождения — без баллов
+// Квиз: в таблицу идет результат первой попытки, повторные прохождения — без баллов
 function qFirst(r){return r?(r.first!=null?r.first:(r.best||0)):0;}
 // Незаконченная первая попытка не сбрасывается, если уйти в другой набор: данные ответы засчитаны, набор продолжится с того же места
 function stashRun(){const q=st.qrun;if(q&&!q.replay)(st.qpart=st.qpart||{})[q.r]=Object.assign({},q);st.qrun=null;}
@@ -107,7 +107,7 @@ const VOTE_PTS=20;
 const done={quiz:()=>Object.values(st.quiz).some(r=>r.done),forest:()=>st.forest.runs>0,tree:()=>!!st.tree.pts};
 function allDone(){return done.quiz()&&done.forest()&&done.tree();}
 /* Подпись в турнирной таблице: имя героя и город в родительном падеже — «Снежный Лось из Барнаула».
-   Города из подсказок и названия, которые не склоняются по общим правилам, — словарём; остальные — по правилам */
+   Города из подсказок и названия, которые не склоняются по общим правилам, — словарем; остальные — по правилам */
 const CITY_GEN={'москва':'Москвы','санкт-петербург':'Санкт-Петербурга','петербург':'Петербурга','новосибирск':'Новосибирска','екатеринбург':'Екатеринбурга',
   'казань':'Казани','нижний новгород':'Нижнего Новгорода','челябинск':'Челябинска','красноярск':'Красноярска','самара':'Самары','уфа':'Уфы',
   'ростов-на-дону':'Ростова-на-Дону','омск':'Омска','краснодар':'Краснодара','воронеж':'Воронежа','пермь':'Перми','волгоград':'Волгограда',
@@ -163,9 +163,9 @@ function citySug(v){const k=cityNorm(v);if(!k)return [];const pre=[],inn=[];
   for(const c of CITY_IDX){if(c.k.startsWith(k)){pre.push(c.n);if(pre.length>=8)break;}else if(inn.length<8&&c.k.includes(k))inn.push(c.n);}
   return pre.concat(inn).slice(0,8);}
 function cityQ(){return ui.cityQ!=null?ui.cityQ:ui.city;}
-function cityNote(){const q=cityQ();if(ui.cityErr)return 'Выберите город из списка или оставьте поле пустым';
-  if(!cityNorm(q)||ui.city)return 'Начните вводить и выберите город из списка — он добавится к имени в турнирной таблице';
-  return citySug(q).length?'Выберите город из списка':'Такого города нет в списке. Выберите ближайший или оставьте поле пустым';}
+function cityNote(){const q=cityQ();if(ui.cityErr)return 'Выбери город из списка или оставь поле пустым';
+  if(!cityNorm(q)||ui.city)return 'Начни вводить и выбери город из списка — он добавится к имени в турнирной таблице';
+  return citySug(q).length?'Выбери город из списка':'Такого города нет в списке. Выбери ближайший или оставь поле пустым';}
 function citySugHTML(){const q=cityQ();if(!cityNorm(q)||ui.city===q)return '';const L=citySug(q);
   return L.map(n=>`<button type="button" class="city-o" role="option" data-act="citySel" data-v="${esc(n)}">${esc(n)}</button>`).join('');}
 // Обновить поле города без перерисовки экрана: подсказки, превью строки таблицы, подпись под полем
@@ -191,7 +191,10 @@ function citiesCount(){return Math.min(74,31+st.day*2);}
 function treeCount(){const mine=st.tree.on&&st.tree.ok?1:0;return st.day<OPEN.tree?mine:Math.round(1200+(st.day-OPEN.tree)*610)+mine;}
 function quizWords(){return Object.values(st.quiz).reduce((s,r)=>s+(r.best||0),0);}
 const NOUNS=D.NOUNS.map(([w,g,gr])=>({w,g,gr}));
-const FAKES=(()=>{const r=rng(2026);const out=[];const used=new Set();while(out.length<48){const N=NOUNS[Math.floor(r()*NOUNS.length)];const nick=D.ADJ[Math.floor(r()*D.ADJ.length)][N.g]+' '+N.w;if(used.has(nick))continue;used.add(nick);out.push({nick,city:r()<.28?'Москва':D.CITIES[Math.floor(r()*60)][0],w:.3+r()*.7});}return out;})();
+// Имя — три слова: черта характера (A1), зимнее, сказочное или «цветное» слово (A2) и персонаж
+const A1=D.ADJ.map((x,i)=>x[2]===0?i:-1).filter(i=>i>=0), A2=D.ADJ.map((x,i)=>x[2]>0?i:-1).filter(i=>i>=0);
+const NAME_VARIANTS=A1.length*A2.length*NOUNS.length;
+const FAKES=(()=>{const r=rng(2026);const out=[];const used=new Set();while(out.length<48){const N=NOUNS[Math.floor(r()*NOUNS.length)];const nick=D.ADJ[A1[Math.floor(r()*A1.length)]][N.g]+' '+D.ADJ[A2[Math.floor(r()*A2.length)]][N.g]+' '+N.w;if(used.has(nick))continue;used.add(nick);out.push({nick,city:r()<.28?'Москва':D.CITIES[Math.floor(r()*60)][0],w:.3+r()*.7});}return out;})();
 function board(){
   const prog=Math.min(1,(st.day+1)/24);
   const list=FAKES.map(f=>({nick:f.nick,city:f.city,p:Math.round(f.w*prog*82)*10}));
@@ -200,21 +203,22 @@ function board(){
   list.forEach((x,i)=>x.place=i+1);
   return list;
 }
-function nickOf(n){const N=NOUNS[n.n];return {nick:D.ADJ[n.a][N.g]+' '+N.w,g:N.g};}
-// Повторы имён допускаются: в турнирной таблице имя стоит вместе с городом.
-// Случайное имя не предлагает тавтологий вроде «Морозный Мороз» или «Звёздная Звезда»
+function nickOf(n){const N=NOUNS[n.n];return {nick:D.ADJ[n.a][N.g]+' '+D.ADJ[n.b][N.g]+' '+N.w,g:N.g};}
+// Имена не повторяются: на платформе сервер выдает только свободное сочетание (в прототипе — случайное).
+// Вручную слова не выбираются — только кнопка «Другое имя».
+// Случайное имя не предлагает тавтологий вроде «Морозный Мороз» или «Звездная Звезда»
 const ODD=new Set(['зимний|зима','вьюжный|вьюга','снежный|снеговик','снежный|снегурочка','лесной|леший']);
 function nameOdd(a,n){const x=D.ADJ[a][0].toLowerCase().replace(/ё/g,'е'),y=NOUNS[n].w.toLowerCase().replace(/ё/g,'е');return x.slice(0,4)===y.slice(0,4)||ODD.has(x+'|'+y);}
 const rndI=k=>Math.floor(Math.random()*k);
-function rndNick(){for(let t=0;t<200;t++){const x={a:rndI(D.ADJ.length),n:rndI(NOUNS.length)};if(!nameOdd(x.a,x.n))return x;}return {a:0,n:0};}
+function rndNick(){const taken=new Set(FAKES.map(f=>f.nick));for(let t=0;t<200;t++){const x={a:A1[rndI(A1.length)],b:A2[rndI(A2.length)],n:rndI(NOUNS.length)};if(!nameOdd(x.a,x.n)&&!nameOdd(x.b,x.n)&&!taken.has(nickOf(x).nick))return x;}return {a:A1[0],b:A2[0],n:0};}
 // Аватар — инициалы имени. Своя картинка не загружается: фото — персональные данные
 function ava(nick,size,me){return `<span class="ava${me?' me':''}" style="--s:${size}px"><b>${esc(initials(nick))}</b></span>`;}
 function genCode(prefix){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<8;i++){s+=a[Math.floor(Math.random()*a.length)];if(i===3)s+='-';}return prefix+'-'+s;}
 function v(m,f){return st.user&&st.user.g?f:m;}
 function ensureUser(){if(!st.user){st.user={email:'',nick:'Серый Волк',g:0,city:'Москва',code:genCode('PSB'),confirmed:true};save();}}
 
-/* ===== Вёрстка: телефон и компьютер =====
-   Основная вёрстка — мобильная: экран-страница в компактной рамке, нижнее меню, кнопки действий у нижнего края.
+/* ===== Верстка: телефон и компьютер =====
+   Основная верстка — мобильная: экран-страница в компактной рамке, нижнее меню, кнопки действий у нижнего края.
    От 900 px — десктоп: развороты книги в полной рамке-тереме, меню в шапке, «Что дальше» на правой странице.
    Каждый экран описывается один раз: L — левая страница, R — правая (на телефоне идут подряд), acts — кнопки «что дальше». */
 
@@ -283,7 +287,7 @@ function lbl(t,cls){return `<div class="lbl ${cls||''}"><span>${t}</span></div>`
 function say(img,who,text,cls){return `<div class="say ${cls||''}"><span class="face"><img src="${A[img]}" alt=""></span><div class="bubble"><b>${who}:</b> ${text}</div></div>`;}
 function por(k,size){return `<span class="por ${size||''}"><img src="${A[k]}" alt=""></span>`;}
 // Абзац сказки; cap — первый абзац страницы: в начале значок-снежинка в плашке.
-// Буквиц нет: текст остаётся целым, и вёрстка не зависит от первой буквы
+// Буквиц нет: текст остается целым, и верстка не зависит от первой буквы
 const ICON_FLAKE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7"/><path d="M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5M3.6 10.8l3.4-.9-.9-3.4M20.4 13.2l-3.4.9.9 3.4M3.6 13.2l3.4.9-.9 3.4M20.4 10.8l-3.4-.9.9-3.4"/></svg>';
 function tale(text,cap){
   const s=String(text);
@@ -340,17 +344,17 @@ function modal(inner,o={}){return `<div class="modal-bg" data-act="${o.close||'s
 function seg(key,items,cur){return `<div class="seg" role="tablist">${items.map(([v,t])=>`<button role="tab" class="${cur===v?'on':''}" aria-selected="${cur===v}" data-act="seg" data-k="${key}" data-v="${v}">${t}</button>`).join('')}</div>`;}
 function lockChip(day){return `<span class="chip lock">${svg('lock','width="12" height="12"')} ${DESK?'Откроется '+fmt(day):fmt(day,true)}</span>`;}
 // Последняя неделя работы платформы — напоминание на главных разделах
-function endBanner(){return st.day>LAST_DAY||st.day<LAST_DAY-6?'':`<div class="ribbon">Платформа работает до 17 января — успейте пройти маршрут и послушать сказки</div>`;}
+function endBanner(){return st.day>LAST_DAY||st.day<LAST_DAY-6?'':`<div class="ribbon">Платформа работает до 17 января — успей пройти маршрут и послушать сказки</div>`;}
 const ROUTE_BTN={t:'На маршрут',act:'go',v:'route'};
 
 /* ===== Обложка =====
    Вход на платформу — уже в мире сказки, на ночной поляне: название, иллюстрация, кнопка «Стать помощником».
-   Пролога нет: завязку рассказывает главная, где её прочитают */
+   Пролога нет: завязку рассказывает главная, где ее прочитают */
 function vCover(){
   const cta=st.user?`${btn({t:'Продолжить: '+esc(st.user.nick),act:'enter',gold:1,cls:'btn-lg'})}`
     :`${btn({t:'Стать помощником Деда Мороза',act:'startAuth',gold:1,cls:'btn-lg'})}<button class="link" data-act="toLogin">У меня уже есть код</button>`;
   return {raw:`<div class="cover-wrap"><section class="sp cvp"><div class="sp-in"><div class="cv">
-    <div class="cv-top">${PSB}<span>для сотрудников банка</span></div>
+    <div class="cv-top"><span class="psb">${LOGO}</span></div>
     <h1 class="cv-title"><span>Новогодняя ночь</span><span>длиной в страну</span></h1>
     <div class="cv-rule"></div>
     <div class="cv-win"><img src="${A.hero}" alt="Сотрудники входят в новогоднюю сказку"></div>
@@ -361,43 +365,43 @@ function vCover(){
 
 /* ===== Правила, поддержка, «Как играть» — окном на компьютере, шторкой на телефоне, с любого экрана ===== */
 const SUPPORT_MAIL='[почта поддержки]';   // адрес — после согласования с банком
-const CODE_DEADLINE=OPEN.chest-1;          // ввести код на внутренней платформе ПСБ — до 24 декабря, 23:59 мск (дата — по согласованию с банком)
+const CODE_DEADLINE=OPEN.chest-1;          // ввести код на портале «Ньютон» — до 24 декабря, 23:59 мск (дата — по согласованию с банком)
 function footLinks(){return `<p class="foot-l"><a class="link" href="#" data-act="sheetOpen" data-v="rules">Правила</a><span>·</span><a class="link" href="#" data-act="sheetOpen" data-v="support">Поддержка</a></p>`;}
 function rulesHTML(){
   return `<div class="info"><h3 class="info-t">Правила</h3><ul class="info-l">
-    <li><b>Кто участвует.</b> Сотрудники ПСБ. Участник — герой: имя из двух слов и персональный код. Регистрации нет, личных данных мы не собираем.</li>
+    <li><b>Кто участвует.</b> Сотрудники ПСБ. Участник — герой: имя из трех слов и персональный код. Регистрации нет, личных данных мы не собираем.</li>
     <li><b>Сроки.</b> ${fmt(0)} 2026 — ${fmt(LAST_DAY)} 2027. Всё новое открывается в 00:00 по Москве.</li>
-    <li><b>Баллы.</b> Спроси дорогу — 20 за верный ответ с первой попытки. Лес — 10 за подарок в лучшем забеге. Ёлка — 100, когда вы впервые повесите игрушку на общую ёлку. Сказка-сериал — ${VOTE_PTS} за голос. Баллы нужны только для турнирной таблицы и в баллы магазина мерча не переводятся.</li>
+    <li><b>Баллы.</b> Спроси дорогу — 20 за верный ответ с первой попытки. Лес — 10 за подарок в лучшем забеге. Елка — 100, когда впервые повесишь игрушку на общую елку. Сказка-сериал — ${VOTE_PTS} за голос. Баллы нужны только для турнирной таблицы и в баллы магазина мерча не переводятся.</li>
     <li><b>Турнирная таблица.</b> Десять лучших по итогам получают мерч. При равных баллах выше тот, кто набрал их раньше.</li>
-    <li><b>Розыгрыш ${fmt(OPEN.chest)}.</b> Подарки разыгрываются среди тех, кто до ${fmt(CODE_DEADLINE)}, 23:59 мск ввёл свой код на внутренней платформе ПСБ. Победителей выбирает случай.</li>
-    <li><b>Код.</b> Персональный код — единственный ключ к герою: по нему входят с другого устройства и подтверждают приз. Сохраните его.</li>
+    <li><b>Розыгрыш ${fmt(OPEN.chest)}.</b> Подарки разыгрываются среди тех, кто до ${fmt(CODE_DEADLINE)}, 23:59 мск ввел свой код на корпоративном портале «Ньютон». Победителей выбирает случай.</li>
+    <li><b>Код.</b> Персональный код — единственный ключ к герою: по нему входят с другого устройства и подтверждают приз. Сохрани его и введи на портале «Ньютон» сразу после регистрации: если героев несколько, в рейтинге засчитывается самый первый.</li>
   </ul><p class="note">Полные правила — после согласования с банком</p></div>`;
 }
 function supportHTML(){
   return `<div class="info"><h3 class="info-t">Поддержка</h3>
-    <p class="tale small">Что-то не работает или потерялся код — напишите нам: <b>${SUPPORT_MAIL}</b>. Отвечаем в рабочие дни.</p>
-    <p class="note">Если при создании героя вы присылали код на почту, он есть в письме. Без кода вернуть героя нельзя — поэтому мы просим его сохранить.</p></div>`;
+    <p class="tale small">Что-то не работает или потерялся код — напиши нам: <b>${SUPPORT_MAIL}</b>. Отвечаем в рабочие дни.</p>
+    <p class="note">Если код при создании героя отправляли на почту, он есть в письме. Без кода вернуть героя нельзя — поэтому мы просим его сохранить.</p></div>`;
 }
 // Спроси дорогу: перед набором — окно «Готовы?» с правилами (как у Леса). Начатый набор продолжается сразу, без окна
 function qRulesHTML(){
   const r=ui.quizRound||0, R=D.QUIZ[r], res=st.quiz[r], n=R.qs.length, again=!!(res&&res.done);
-  const rows=['Местные называют слово на своём языке или диалекте — выберите, что оно значит. Есть и вопросы про узоры: чей это край?',
+  const rows=['Местные называют слово на своем языке или диалекте — выбери, что оно значит. Есть и вопросы про узоры: чей это край?',
     'После ответа Борис расскажет, откуда слово и что оно значит. Ошибаться не страшно.',
-    again?'Повтор — для себя, без баллов: в зачёте остаётся первая попытка.':`${n} вопросов, за каждый верный ответ с первой попытки — 20 баллов.`,
-    'Бросили набор на середине — продолжите с того же вопроса.'];
-  return `<div class="info qrules"><h3 class="info-t">Готовы?</h3><p class="qr-set">Набор ${ROMAN[r]} · ${R.title}</p>
+    again?'Повтор — для себя, без баллов: в зачете остается первая попытка.':`${n} вопросов, за каждый верный ответ с первой попытки — 20 баллов.`,
+    'Бросил набор на середине — продолжи с того же вопроса.'];
+  return `<div class="info qrules"><h3 class="info-t">Начнем?</h3><p class="qr-set">Набор ${ROMAN[r]} · ${R.title}</p>
     <ul class="info-l">${rows.map(x=>`<li>${nb(x)}</li>`).join('')}</ul>
-    ${again?`<div class="ov-rec"><div class="ov-pill">${ICON_STAR}<div><span>В зачёте</span><b>${qFirst(res)} из ${n}</b></div></div></div>`:''}
-    <div class="qr-a">${btn({t:again?'Пройти ещё раз':'Расспросить местных',act:'qGo',gold:1})}</div></div>`;
+    ${again?`<div class="ov-rec"><div class="ov-pill">${ICON_STAR}<div><span>В зачете</span><b>${qFirst(res)} из ${n}</b></div></div></div>`:''}
+    <div class="qr-a">${btn({t:again?'Пройти еще раз':'Расспросить местных',act:'qGo',gold:1})}</div></div>`;
 }
-// шар с общей ёлки — поближе: картинка и кто его повесил
+// шар с общей елки — поближе: картинка и кто его повесил
 function ballHTML(){
   const b=ui.ball||{};
-  if(b.me)return `<div class="info ballv"><img class="bv-img" src="${mineBall()}" alt=""><b class="bv-n">Ваша игрушка</b><span class="bv-c">${st.tree.ok?'Висит на общей ёлке — её видят все':'На проверке — у всех появится после модерации'}</span></div>`;
-  const pic=b.b>=0?`<img class="bv-img" src="${A['ball'+b.b]}" alt="">`:`<span class="bv-ball" style="--c:${esc(b.col)}"><b>${esc(initials(b.n))}</b></span>`;
+  if(b.me)return `<div class="info ballv"><img class="bv-img" src="${mineBall()}" alt=""><b class="bv-n">Твоя игрушка</b><span class="bv-c">${st.tree.ok?'Висит на общей елке — ее видят все':'На проверке — у всех появится после модерации'}</span></div>`;
+  const pic=b.b>=0?`<img class="bv-img" src="${A['toy'+b.b]}" alt="">`:`<span class="bv-ball" style="--c:${esc(b.col)}"><b>${esc(initials(b.n))}</b></span>`;
   return `<div class="info ballv">${pic}<b class="bv-n">${esc(b.n)}</b>${b.c?`<span class="bv-c">${esc(b.c)}</span>`:''}</div>`;
 }
-// окно поверх любого экрана: правила, поддержка, «Как играть» у испытаний, шар с ёлки
+// окно поверх любого экрана: правила, поддержка, «Как играть» у испытаний, шар с елки
 function infoSheet(){
   const k=ui.sheet;if(!k)return '';
   const x=k==='rules'?rulesHTML():k==='support'?supportHTML():k==='ball'?ballHTML():k==='tale'?taleHTML():k==='qrules'?qRulesHTML():'';
@@ -405,33 +409,24 @@ function infoSheet(){
 }
 
 /* ===== Формирование персонажа: шаг 1 — имя ===== */
-function nkRow(nick){return `<span class="pl">—</span>${ava(nick,32,true)}<span class="n">${tname(nick,ui.city)} <span class="tag">вы</span></span><span class="p">0</span>`;}
+function nkRow(nick){return `<span class="pl">—</span>${ava(nick,32,true)}<span class="n">${tname(nick,ui.city)} <span class="tag">ты</span></span><span class="p">0</span>`;}
 const NK_AVA=()=>DESK?96:72;
 const lc=w=>String(w).toLowerCase().replace(/ё/g,'е');
 // Длинное имя («Смекалистый Можжевельник») — на табличке кегль меньше, чтобы слова не вылезали
 const nkLong=n=>n.length>=19||n.split(' ').some(w=>w.length>=11);
-function pkItem(k,i,w,on){return `<button class="pk-i${on?' on':''}" data-act="${k==='a'?'pickA':'pickN'}" data-i="${i}" data-w="${lc(w)}"><span>${w}</span></button>`;}
-// Списки слов по темам; у первого слова форма — по роду второго
-function pkItems(k){
-  const g=NOUNS[ui.nick.n].g;
-  if(k==='a')return D.ADJ_G.map((t,gi)=>`<div class="pk-g">${t}</div>`+D.ADJ.map((x,i)=>x[2]===gi?pkItem('a',i,x[g],i===ui.nick.a):'').join('')).join('');
-  return D.NOUN_G.map((t,gi)=>`<div class="pk-g">${t}</div>`+NOUNS.map((x,j)=>x.gr===gi?pkItem('n',j,x.w,j===ui.nick.n):'').join('')).join('');
-}
-function pkBox(k,head){return `<div class="pk-box">${head||''}<input class="input pk-q" type="search" placeholder="Найти слово" autocomplete="off" aria-label="Найти слово"><div class="pk-list" data-k="${k}">${pkItems(k)}</div></div>`;}
 function vNick(){
-  if(!ui.nick||ui.nick.a>=D.ADJ.length||ui.nick.n>=NOUNS.length)ui.nick=rndNick();
+  if(!ui.nick||ui.nick.b==null||ui.nick.a>=D.ADJ.length||ui.nick.b>=D.ADJ.length||ui.nick.n>=NOUNS.length)ui.nick=rndNick();
   const cur=nickOf(ui.nick);
   bar('Имя героя','Шаг 1 из 2','cover');
-  const plate=`<div class="nickplate">${flowers()}<div class="hint">Ваше игровое имя</div><div class="nk${nkLong(cur.nick)?' long':''}" id="nkText">${esc(cur.nick)}</div></div>`;
-  const hint=`<p class="note">Имя видно в турнирной таблице вместе с городом</p>`;
-  const dice=(act,l)=>`<button class="dice" data-act="${act}" aria-label="${l}" title="${l}">${svg('dice')}</button>`;
+  const plate=`<div class="nickplate">${flowers()}<div class="hint">Твое игровое имя</div><div class="nk${nkLong(cur.nick)?' long':''}" id="nkText">${esc(cur.nick)}</div></div>`;
+  const hint=`<p class="note">${nb('Имя только твое — у других участников такого не будет. Его видно в турнирной таблице вместе с городом')}</p>`;
   const sug=citySugHTML();
-  const city=`<div class="field"><span id="cityLbl">Ваш город — по желанию</span>
-      <div class="city-box"><input class="input${ui.cityErr?' err':''}" id="city" placeholder="Начните вводить, например, Казань" value="${esc(cityQ())}" autocomplete="off" autocorrect="off" spellcheck="false"
+  const city=`<div class="field"><span id="cityLbl">Твой город — по желанию</span>
+      <div class="city-box"><input class="input${ui.cityErr?' err':''}" id="city" placeholder="Начни вводить, например, Казань" value="${esc(cityQ())}" autocomplete="off" autocorrect="off" spellcheck="false"
         role="combobox" aria-labelledby="cityLbl" aria-autocomplete="list" aria-controls="citySug" aria-expanded="${sug?'true':'false'}">
         <div class="city-sug" id="citySug" role="listbox" aria-labelledby="cityLbl"${sug?'':' hidden'}>${sug}</div></div></div>
     <p class="${ui.cityErr?'err-t':'note left'}" id="cityNote">${cityNote()}</p>`;
-  const preview=`${lbl('Так вас увидят в турнирной таблице','s')}<div class="lbmini prev"><div class="r me" id="nkRow">${nkRow(cur.nick)}</div></div>`;
+  const preview=`${lbl('Так тебя увидят в турнирной таблице','s')}<div class="lbmini prev"><div class="r me" id="nkRow">${nkRow(cur.nick)}</div></div>`;
   const regen=`<button class="btn btn-ghost btn-block" data-act="regen">${svg('dice','width="18" height="18"')} Другое имя</button>`;
   const acts=[{t:'Дальше: персональный код',act:'saveNick',gold:1}];
   // Компьютер: одна колонка сверху вниз, без деления на левую и правую части — табличка с именем, выбор слов, город, превью в таблице
@@ -439,48 +434,30 @@ function vNick(){
     one:`${pt('Имя героя','Шаг 1 из 2','h1')}
       <div class="nick-hero"><img class="mascot" src="${A.bear_juggler}" alt=""><div class="nick-prev"><span id="nkAva">${ava(cur.nick,NK_AVA(),true)}</span>${plate}</div></div>${hint}
       ${regen}
-      <div class="pk2">${pkBox('a',`<div class="phd"><span>Первое слово</span>${dice('rndA','Случайное первое слово')}</div>`)}${pkBox('n',`<div class="phd"><span>Второе слово</span>${dice('rndN','Случайное второе слово')}</div>`)}</div>
       ${city}${preview}`,
-    acts,nbt:false,dnote:'Уже участвуете? <a class="link" href="#" data-act="toLogin">Войти по коду</a>',cls:'onb nick',scene:1};
-  // Телефон: два поля-выбора; список слов с поиском — в шторке
-  const picker=(k,l,w)=>`<button class="picker" data-act="pkOpen" data-k="${k}"><span class="pk-tx"><span class="pk-l">${l}</span><b id="pk${k.toUpperCase()}">${esc(w)}</b></span>${svg('chev','width="18" height="18"')}</button>`;
-  const N=NOUNS[ui.nick.n];
-  const sh=ui.sheet==='pkA'||ui.sheet==='pkN'?sheet(`<h3 class="pk-t">${ui.sheet==='pkA'?'Первое слово':'Второе слово'}</h3>${pkBox(ui.sheet==='pkA'?'a':'n')}`,{cls:'pksheet'}):'';
+    acts,nbt:false,dnote:'Уже участвуешь? <a class="link" href="#" data-act="toLogin">Войти по коду</a>',cls:'onb nick',scene:1};
   // табличка с именем стоит прямо на поляне, выбор слов — на снежной панели под ней
   return {stage:`<div class="nk-prev"><span id="nkAva">${ava(cur.nick,NK_AVA(),true)}</span>${plate}</div>`,
-    M:`${hint}${regen}<div class="pickers">${picker('a','Первое слово',D.ADJ[ui.nick.a][N.g])}${picker('n','Второе слово',N.w)}</div>
-    ${city}${preview}<p class="note">Уже участвуете? <a class="link" href="#" data-act="toLogin">Войти по коду</a></p>`,acts,sheet:sh,scene:1};
+    M:`${hint}${regen}
+    ${city}${preview}<p class="note">Уже участвуешь? <a class="link" href="#" data-act="toLogin">Войти по коду</a></p>`,acts,scene:1};
 }
-// Выбор слова без перерисовки экрана: обновляем табличку, превью, статус и списки (прокрутка и поиск сохраняются)
-function patchNick(scroll){
-  const cur=nickOf(ui.nick), g=cur.g;
+// Другое имя без перерисовки экрана: обновляем табличку, аватар и превью в таблице
+function patchNick(){
+  const cur=nickOf(ui.nick);
   saveDraft();
   const set=(sel,f)=>{const el=$(sel);if(el)f(el);};
   set('#nkRow',el=>el.innerHTML=nkRow(cur.nick));
-  set('#nkText',el=>{el.textContent=cur.nick;el.classList.toggle('long',nkLong(cur.nick));});set('#nkAva',el=>el.innerHTML=ava(cur.nick,NK_AVA(),true));set('#nkHint',el=>el.textContent=`«${initials(cur.nick)}»`);
-  set('#pkA',el=>el.textContent=D.ADJ[ui.nick.a][g]);set('#pkN',el=>el.textContent=NOUNS[ui.nick.n].w);
-  $$('.pk-list[data-k=a] .pk-i').forEach(b=>{const i=+b.dataset.i,w=D.ADJ[i][g];b.classList.toggle('on',i===ui.nick.a);b.dataset.w=lc(w);b.innerHTML=`<span>${w}</span>`;});
-  $$('.pk-list[data-k=n] .pk-i').forEach(b=>b.classList.toggle('on',+b.dataset.i===ui.nick.n));
-  $$('.pk-q').forEach(filterPk);
-  if(scroll)$$('.pk-list').forEach(l=>{const on=l.querySelector('.pk-i.on');if(on)l.scrollTop=on.offsetTop-l.offsetTop-l.clientHeight/2+on.offsetHeight/2;});
-}
-// Поиск по списку слов: прячем несовпавшие слова и пустые темы
-function filterPk(inp){
-  const box=inp.closest('.pk-box');if(!box)return;const q=lc(inp.value.trim());let head=null,any=false;
-  [...box.querySelector('.pk-list').children].forEach(el=>{
-    if(el.classList.contains('pk-g')){if(head)head.classList.toggle('hidden',!any);head=el;any=false;return;}
-    const ok=!q||el.dataset.w.includes(q);el.classList.toggle('hidden',!ok);if(ok)any=true;});
-  if(head)head.classList.toggle('hidden',!any);
+  set('#nkText',el=>{el.textContent=cur.nick;el.classList.toggle('long',nkLong(cur.nick));});set('#nkAva',el=>el.innerHTML=ava(cur.nick,NK_AVA(),true));
 }
 
 /* ===== Формирование персонажа: шаг 2 — персональный код (регистрации нет) ===== */
 // Почта — по желанию и только личная: рабочую почту ПСБ указать нельзя (список доменов — в настройках админки)
 const WORK_DOMAINS=['psbank.ru'];
 function workMail(v){const d=(String(v).toLowerCase().split('@')[1]||'').trim();return WORK_DOMAINS.some(w=>d===w||d.endsWith('.'+w));}
-function mailErr(v){if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))return 'Похоже, в адресе ошибка — проверьте, пожалуйста';if(workMail(v))return 'Это рабочая почта ПСБ — укажите, пожалуйста, личную';return '';}
-// Розыгрыш — среди тех, кто ввёл код на внутренней платформе ПСБ: напоминаем сразу, как только код выдан
-function portalHTML(){return `<div class="portal"><img src="${A.chest}" alt=""><div><b>Введите код на внутренней платформе ПСБ</b><span>${nb(`До ${fmt(CODE_DEADLINE)}, 23:59 мск — тогда вы участвуете в розыгрыше подарков ${fmt(OPEN.chest)}`)}</span><button class="link" data-act="portal">Открыть внутреннюю платформу</button></div></div>`;}
-// «Сохраните код»: «В путь» — после галочки «Да, код точно сохранён»
+function mailErr(v){if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))return 'Похоже, в адресе ошибка — проверь, пожалуйста';if(workMail(v))return 'Это рабочая почта ПСБ — укажи, пожалуйста, личную';return '';}
+// Розыгрыш — среди тех, кто ввел код на портале «Ньютон»: напоминаем сразу, как только код выдан
+function portalHTML(){return `<div class="portal"><img src="${A.chest}" alt=""><div><b>Введи код на корпоративном портале «Ньютон» — лучше сразу</b><span>${nb(`Так герой закрепится за тобой: в рейтинге засчитывается самый первый. А до ${fmt(CODE_DEADLINE)}, 23:59 мск код открывает участие в розыгрыше подарков ${fmt(OPEN.chest)}`)}</span></div></div>`;}
+// «Сохраните код»: «В путь» — после галочки «Да, код точно сохранен»
 function svReady(){return ui.svOk;}
 function vAuth(){
   const a=ui.auth;
@@ -488,7 +465,7 @@ function vAuth(){
   if(!ui.pending){const n=nickOf(ui.nick||rndNick());ui.pending={nick:n.nick,g:n.g,city:''};}
   const sent=a.sentTo;
   bar('Персональный код','Шаг 2 из 2','nick');
-  const hero=`<div class="code-hero"><img class="mascot" src="${A.bear_archer}" alt="">${tale(`${ui.pending.nick}, это ваш персональный код. По нему можно войти с другого устройства — например, с рабочего компьютера.`)}</div>`;
+  const hero=`<div class="code-hero"><img class="mascot" src="${A.bear_archer}" alt="">${tale(`${ui.pending.nick}, это твой персональный код. По нему можно зайти с другого устройства — например, с телефона.`)}</div>`;
   const code=`<div class="codebox"><div class="lbl-s">Персональный код</div><div class="code">${a.code}</div>
       <button class="btn btn-ghost btn-sm" data-act="copy" data-t="${a.code}">${svg('copy','width="15" height="15"')} Скопировать</button></div>`;
   const mail=`<p class="tale small">Можно прислать код себе на личную почту — больше она ни для чего не используется.</p>
@@ -500,22 +477,22 @@ function vAuth(){
   const agree=`<label class="chk agree"><input type="checkbox" id="rulesOk"${ui.rulesOk?' checked':''}><span>Принимаю <a class="link" href="#" data-act="sheetOpen" data-v="rules">правила</a></span></label>`;
   const acts=[{t:'В путь',act:'codeNext',gold:1,cls:ui.rulesOk?'':'is-off'}];   // без галочки кнопка выглядит неактивной, а по нажатию показывает, чего не хватает
   // Почту не указали — перед стартом просим сохранить код: он единственный ключ к прогрессу
-  const save=ui.sheet==='savecode'?`<div class="savecode"><h3 class="sv-t">Сохраните код</h3>
+  const save=ui.sheet==='savecode'?`<div class="savecode"><h3 class="sv-t">Сохрани код</h3>
       <div class="codebox"><div class="code">${a.code}</div><button class="btn btn-ghost btn-sm" data-act="copy" data-t="${a.code}">${svg('copy','width="15" height="15"')} Скопировать</button></div>
-      <p class="sv-w"><b>Это ваш единственный ключ к герою.</b> Без него не получится войти с другого устройства или после выхода.</p>
-      <p class="note">Скопируйте код, сделайте скриншот или запишите. Надёжнее всего — прислать его себе на почту.</p>
-      <label class="chk"><input type="checkbox" id="svOk"${ui.svOk?' checked':''}><span>Да, код точно сохранён</span></label>
+      <p class="sv-w"><b>Это твой единственный ключ к герою.</b> Без него не получится войти с другого устройства или после выхода.</p>
+      <p class="note">Скопируй код, сделай скриншот или запиши. Надежнее всего — прислать его себе на почту.</p>
+      <label class="chk"><input type="checkbox" id="svOk"${ui.svOk?' checked':''}><span>Да, код точно сохранен</span></label>
       <div class="sv-acts">${btn({t:'В путь',act:'codeGo',gold:1,disabled:!svReady()})}${btn({t:'Прислать на почту',act:'toMail',noarrow:1})}</div></div>`:'';
   if(DESK)return {one:`${pt('Персональный код','Шаг 2 из 2','h1')}${hero}${code}${portalHTML()}${lbl('Почта — по желанию','s')}${mail}${agree}`,
-    acts,nbt:false,dnote:'<a class="link" href="#" data-act="toNick">Изменить имя</a>',cls:'onb',post:save?modal(save):'',scene:1};
-  return {stage:hero,M:[`${code}${portalHTML()}`,`${lbl('Почта — по желанию','s')}${mail}${agree}<p class="note"><a class="link" href="#" data-act="toNick">Изменить имя</a></p>`],acts,sheet:save?sheet(save):'',scene:1};
+    acts,nbt:false,dnote:'<a class="link" href="#" data-act="toNick">Изменить имя</a>',cls:'onb codepg',post:save?modal(save):'',scene:1};
+  return {stage:hero,M:[`${code}${portalHTML()}`,`${lbl('Почта — по желанию','s')}${mail}${agree}<p class="note"><a class="link" href="#" data-act="toNick">Изменить имя</a></p>`],acts,sheet:save?sheet(save):'',cls:'codepg',scene:1};
 }
 
 /* ===== Вход по коду — для тех, кто уже создал героя: другое устройство или после выхода ===== */
 function vLogin(){
   bar('Вход по коду','Для тех, кто уже в сказке','cover');
   const L=ui.login;
-  const lhero=`<div class="code-hero"><img class="mascot" src="${A.bear_archer}" alt="">${tale('Введите персональный код — его выдали, когда вы создавали героя. Если указывали почту, код есть в письме.')}</div>`;
+  const lhero=`<div class="code-hero"><img class="mascot" src="${A.bear_archer}" alt="">${tale('Введи персональный код — его выдают при создании героя. Если код отправляли на почту, он есть в письме.')}</div>`;
   const form=`${DESK?lhero:''}
     <label class="field"><span>Персональный код</span>
       <input class="input code-in ${L.err?'err':''}" id="logincode" placeholder="PSB-XXXX-XXXX" value="${esc(L.code)}" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="20"></label>
@@ -532,11 +509,11 @@ function vLogin(){
    Сверху — подводка: название проекта, завязка сценой-комиксом и три пункта о том, что здесь происходит.
    Ниже — карта: тропа через три испытания-плитки (картинка с сутью активности, персонаж выглядывает из угла, сюжетная подпись,
    состояние и одна кнопка — золотая только у следующего шага). От тропы — ветки к сказке-сериалу и Пряничной избушке,
-   у третьего испытания — общая ёлка банка (10–20 шаров, их можно открыть), под ёлкой — Сундук чудес */
+   у третьего испытания — общая елка банка (10–20 шаров, их можно открыть), под елкой — Сундук чудес */
 const STOPS=[
-  {k:'quiz',n:1,l:'Квиз',t:'Спроси дорогу',d:'Узнайте у местных, куда ушёл Михаил: в каждом краю говорят по-своему',m:'m_mlad',who:'Борис, младший сын',art:'tile_quiz'},
-  {k:'forest',n:2,l:'Игра',t:'Лес',d:'В тайге порвался мешок с подарками — помогите их собрать',m:'m_star',who:'Пётр, старший сын',art:'art_forest',pos:'50% 14%'},
-  {k:'tree',n:3,l:'Творчество',t:'Ёлка',d:'Подарки собраны — осталось нарядить общую ёлку банка',m:'m_doch',who:'София, средняя дочь',art:'tile_tree'}
+  {k:'quiz',n:1,l:'Квиз',t:'Спроси дорогу',d:'Узнай у местных, куда ушел Михаил: в каждом краю свои слова и узоры',m:'m_mlad',who:'Борис, младший сын',art:'tile_quiz'},
+  {k:'forest',n:2,l:'Игра',t:'Лес',d:'В тайге порвался мешок с подарками — помоги их собрать',m:'m_star',who:'Петр, старший сын',art:'art_forest',pos:'50% 14%'},
+  {k:'tree',n:3,l:'Творчество',t:'Елка',d:'Подарки собраны — осталось нарядить общую елку банка',m:'m_doch',who:'София, средняя дочь',art:'tile_tree'}
 ];
 // Состояние плитки: cls — locked / done, note — строка о прогрессе, live — оранжевая метка, cta — кнопка
 function stopState(s,now){
@@ -551,17 +528,17 @@ function stopState(s,now){
     const got=`Пройдено ${nd} из ${R.length} · +${num(P.q)} баллов`;
     if(f>=0)return {cls:'done',live:'новый набор',note:got,cta:b(`Пройти набор ${f+1}`,{act:'goQuiz',i:f})};
     const nx=R.find(r=>st.day<r.open);
-    return {cls:'done',note:got+(nx?` · следующий набор ${fmt(nx.open,true)}`:''),cta:b('Ещё раз')};
+    return {cls:'done',note:got+(nx?` · следующий набор ${fmt(nx.open,true)}`:''),cta:b('Еще раз')};
   }
   if(s.k==='forest'){
     if(!done.forest())return {cta:b('Начать')};
     const g=st.forest.bestGifts;
-    return {cls:'done',note:`Рекорд ${g} ${plural(g,'подарок','подарка','подарков')} · +${num(P.f)} баллов`,cta:b('Ещё раз')};
+    return {cls:'done',note:`Рекорд ${g} ${plural(g,'подарок','подарка','подарков')} · +${num(P.f)} баллов`,cta:b('Еще раз')};
   }
-  // ёлка: одна игрушка на участника; баллы — когда её впервые повесили на общую ёлку
+  // елка: одна игрушка на участника; баллы — когда ее впервые повесили на общую елку
   if(!st.tree.ball)return {cta:b('Украсить')};
-  if(!st.tree.pts)return {note:'Игрушка готова — повесьте её на ёлку',cta:b('Повесить')};
-  return {cls:'done',note:`Ваша игрушка на ёлке · +${num(P.t)} баллов`,cta:b('Смотреть')};
+  if(!st.tree.pts)return {note:'Игрушка готова — повесь ее на елку',cta:b('Повесить')};
+  return {cls:'done',note:`Твоя игрушка на елке · +${num(P.t)} баллов`,cta:b('Смотреть')};
 }
 // Закрыто до даты — плашка вместо кнопки
 function soonChip(day){return `<span class="rt-soon">${svg('lock','width="13" height="13"')}<span>Откроется ${fmt(day,!DESK)}</span></span>`;}
@@ -574,7 +551,7 @@ function stopCard(s,ns){
       ${S.note?`<span class="rt-s">${S.cls==='done'?svg('check','width="13" height="13" stroke-width="2.6"'):''}<span>${nb(S.note)}</span></span>`:''}<div class="mp-a">${S.cta}</div></div>
   </article>`;
 }
-// Главное действие на сегодня — ключ раздела или null, если ждём открытия
+// Главное действие на сегодня — ключ раздела или null, если ждем открытия
 function nextStep(){
   if(anyPend()||!done.quiz())return 'quiz';
   if(st.day>=OPEN.forest&&!done.forest())return 'forest';
@@ -584,7 +561,7 @@ function nextStep(){
   return null;
 }
 // Кнопка «дальше по маршруту» для экранов вне маршрута (сериал, глава)
-const STEP_NAME={quiz:'Спроси дорогу',forest:'Лес',tree:'Ёлка',chest:'Сундук чудес'};
+const STEP_NAME={quiz:'Спроси дорогу',forest:'Лес',tree:'Елка',chest:'Сундук чудес'};
 function routeNext(gold){const k=nextStep();return k?{t:`Дальше: ${STEP_NAME[k]}`,act:'go',v:k,gold:gold?1:0}:{t:'На маршрут',act:'go',v:'route',gold:gold?1:0};}
 // Сказка-сериал: что происходит сейчас
 function serialState(){
@@ -601,8 +578,8 @@ function serialSt(){
   const S=serialState(), ch=D.CHAPTERS, cur=S.cur, c=S.c;
   let txt, b=null, live='';
   if(S.kind==='none')txt=`Первая глава выйдет ${fmt(ch[0].day)}`;
-  else if(S.kind==='vote'){txt=`Глава ${ROMAN[cur]} вышла — выберите, куда повернёт сюжет. Голосование до ${fmt(c.day+1)}, 23:59 мск`;b={t:'Читать и голосовать',act:'openCh',i:cur,gold:1};live='голосование';}
-  else if(S.kind==='voted'){txt=`Ваш голос за главу ${ROMAN[cur]} учтён. Итоги — ${fmt(c.day+2)}`;b={t:'Ход голосования',act:'openCh',i:cur};}
+  else if(S.kind==='vote'){txt=`Глава ${ROMAN[cur]} вышла — выбери, куда повернет сюжет. Голосование до ${fmt(c.day+1)}, 23:59 мск`;b={t:'Читать и голосовать',act:'openCh',i:cur,gold:1};live='голосование';}
+  else if(S.kind==='voted'){txt=`Твой голос за главу ${ROMAN[cur]} учтен. Итоги — ${fmt(c.day+2)}`;b={t:'Ход голосования',act:'openCh',i:cur};}
   else if(S.kind==='full'){txt='Все шесть глав собраны в Большую книгу сказок';b={t:'Читать сказку',act:'go',v:'fulltale'};}
   else {txt=S.nx?`Глава ${ROMAN[cur]} вышла. Глава ${ROMAN[cur+1]} — ${fmt(S.nx.day)}`:`Финальная глава вышла. Вся сказка — ${fmt(D.FULL_TALE_DAY)}`;b={t:`Читать главу ${ROMAN[cur]}`,act:'openCh',i:cur};}
   const prog=`<div class="sr-prog" aria-label="Главы сериала">${ch.map((x,i)=>`<span class="${chState(i)}${i===cur&&!S.full?' cur':''}">${ROMAN[i]}</span>`).join('')}<span class="${S.full?'out':'soon'}">✦</span></div>`;
@@ -615,34 +592,34 @@ function serialSt(){
 function izbaSt(){
   const T=D.TALES, n=talesOpen(), nx=T.find(t=>st.day<t.open);
   return `<section class="mp-st st-izba"><div class="mp-sth"><img class="mp-si" src="${A.hut}" alt=""><div><span class="rt-l">Аудиосказки на ночь</span><h3 class="mp-t">Пряничная избушка</h3></div></div>
-    <p class="mp-x">${nb(`Сказки народов России читает Мария, жена Михаила. ${nx?`Открыто ${n} из ${T.length}, следующие — ${fmt(nx.open)}`:`Открыты все ${T.length} сказок`}`)}</p>
+    <p class="mp-x">${nb(`Сказки народов России из коллекции Марии, жены Михаила. ${nx?`Открыто ${n} из ${T.length}, следующие — ${fmt(nx.open)}`:`Открыты все ${T.length} сказок`}`)}</p>
     <div class="mp-a">${btn({t:'Слушать',act:'go',v:'izba',cls:'btn-sm',noarrow:1})}</div></section>`;
 }
-// Общая ёлка банка на главной: 16 шаров коллег и своя игрушка у верхушки; шар можно открыть. Под ёлкой — Сундук чудес
+// Общая елка банка на главной: 16 шаров коллег и своя игрушка у верхушки; шар можно открыть. Под елкой — Сундук чудес
 function treeSt(ns){
   const open=st.day>=OPEN.tree, tc=treeCount(), mine=st.tree.on?mineBall():null;
   const tree=open?treeSVG(mine,sideBalls(0).slice(0,16),901):treeSVG(null,[],901);
   const lead=open?`${num(tc)} ${plural(tc,'игрушка','игрушки','игрушек')} от сотрудников со всей страны`:`Наряжаем вместе с ${fmt(OPEN.tree)}`;
-  const cta=!open?soonChip(OPEN.tree):btn({t:st.tree.pts?'Смотреть всю ёлку':'Повесить свою игрушку',act:'go',v:'tree',cls:'btn-sm',noarrow:1});
+  const cta=!open?soonChip(OPEN.tree):btn({t:st.tree.pts?'Смотреть всю елку':'Повесить свою игрушку',act:'go',v:'tree',cls:'btn-sm',noarrow:1});
   const out=st.day>=OPEN.chest, fresh=out&&!st.chest.seen;
   const chest=`<div class="mp-chest"><img class="mp-ci" src="${A.chest}" alt="">
-    <div class="mp-cb"><span class="rt-l">Под ёлкой</span><b class="mp-ct">Сундук чудес${fresh?' <span class="chip live">итоги</span>':''}</b>
-      <span class="mp-cs">${nb(out?'Розыгрыш прошёл — посмотрите, кому достались подарки':`Розыгрыш подарков — ${fmt(OPEN.chest)}`)}</span>
-      ${btn({t:out?'Итоги розыгрыша':'Как пройдёт розыгрыш',act:'go',v:'chest',cls:'btn-sm',noarrow:1,gold:ns==='chest'?1:0})}</div></div>`;
-  return `<section class="mp-st st-tree"><div class="mp-sth"><div><span class="rt-l">Наряжаем вместе</span><h3 class="mp-t">Общая ёлка банка</h3></div></div>
+    <div class="mp-cb"><span class="rt-l">Под елкой</span><b class="mp-ct">Сундук чудес${fresh?' <span class="chip live">итоги</span>':''}</b>
+      <span class="mp-cs">${nb(out?'Розыгрыш прошел — посмотри, кому достались подарки':`Розыгрыш подарков — ${fmt(OPEN.chest)}`)}</span>
+      ${btn({t:out?'Итоги розыгрыша':'Как пройдет розыгрыш',act:'go',v:'chest',cls:'btn-sm',noarrow:1,gold:ns==='chest'?1:0})}</div></div>`;
+  return `<section class="mp-st st-tree"><div class="mp-sth"><div><span class="rt-l">Наряжаем вместе</span><h3 class="mp-t">Общая елка банка</h3></div></div>
     <p class="mp-x">${nb(lead)}</p><div class="mp-tree" id="mtree">${tree}</div>
-    ${open?`<p class="note">${DESK?'Нажмите на шар — увидите его поближе и кто его повесил':'Нажмите на шар — увидите его поближе'}</p>`:''}
+    ${open?`<p class="note">${DESK?'Нажми на шар — увидишь его поближе и кто его повесил':'Нажми на шар — увидишь его поближе'}</p>`:''}
     <div class="mp-a">${cta}</div>${chest}</section>`;
 }
 // Первый экран главной: картинка на фоне, сбоку — название проекта и короткое описание (завязка)
-const HERO_LEAD='В новогоднюю ночь Дед Мороз — медведь Михаил Потапыч — идёт через всю страну с востока на запад. Одиннадцать полуночей за одну ночь, и в каждом краю говорят <span class="nw">по-своему</span>. Одному не успеть — нужен помощник, и это вы.';
+const HERO_LEAD='В новогоднюю ночь Дед Мороз — медведь Михаил — идет через всю страну с востока на запад. Одиннадцать полуночей за одну ночь, и в каждом краю свой Новый год: свои традиции, угощения, песни и сказки. Одному не успеть — нужен помощник, и это ты.';
 function heroHTML(){
-  return `<section class="hero"><img class="hero-pic" src="${A.story}" alt="Дед Мороз Михаил Потапыч спешит через всю страну, за ним — одиннадцать часов с полуночью">
+  return `<section class="hero"><img class="hero-pic" src="${A.story}" alt="Дед Мороз Михаил спешит через всю страну, за ним — одиннадцать часов: в каждом краю свое время">
     <div class="hero-in"><h1 class="sc-t">Новогодняя ночь длиной в${'\u00a0'}страну</h1><p class="hero-lead">${nb(HERO_LEAD)}</p></div></section>`;
 }
 // Второй экран — карта: заголовок на поляне, ниже панель с тропой
 function mapHead(){
-  return `<div class="map-h"><h2 class="sc-t">Маршрут помощника</h2><p class="map-sub">${nb('Три испытания открываются по датам — проходите в любом порядке. За каждое — баллы в турнирную таблицу')}</p></div>`;
+  return `<div class="map-h"><h2 class="sc-t">Маршрут помощника</h2><p class="map-sub">${nb('Три испытания открываются по датам — проходи в любом порядке. За каждое — баллы в турнирную таблицу')}</p></div>`;
 }
 function vRoute(){
   bar('Маршрут');
@@ -656,15 +633,15 @@ function vRoute(){
 
 /* ===== Испытания: шапка — снежная панель на всю ширину (как у Леса) =====
    Слева — название и подводка: что здесь происходит. Справа — картинка: герой-проводник что-то говорит, реплика — в облачке.
-   «Как играть» в шапке нет: в Спроси дорогу и Лесе правила — в окне перед стартом, в Ёлке их рассказывают шаги.
+   «Как играть» в шапке нет: в Спроси дорогу и Лесе правила — в окне перед стартом, в Елке их рассказывают шаги.
    На телефоне картинка — сверху, подводка — под ней, название раздела — в верхней панели */
-const QUIZ_LEAD='Чтобы понять, куда идти и где сейчас Михаил, нужно расспросить местных. Но в каждом краю говорят <span class="nw">по-своему</span>: одна просит принести шаньги, другой упоминает камусы, третий зовёт к айрану. Помогите Борису, младшему сыну Михаила, разобраться в словах — не поймёшь слова, не найдёшь тропу.';
-const FOREST_LEAD='В тайге мешок Деда Мороза зацепился за еловый сук и порвался — подарки рассыпались по всему лесу. Михаилу нельзя задерживаться: впереди ещё десять полуночей. Помогите его старшему сыну Петру собрать подарки, пока их не замело снегом.';
-const TREE_LEAD='Подарки собраны, и Михаил помчался их развозить. Дома осталось последнее дело — нарядить ёлку. В этом году она общая, на весь банк: игрушки на неё вешают сотрудники со всей страны. София, дочь Михаила, ждёт и вашу.';
+const QUIZ_LEAD='Чтобы понять, куда идти и где сейчас Михаил, нужно расспросить местных. Но в каждом краю говорят <span class="nw">по-своему</span>: одна просит принести шаньги, другой упоминает камусы, третий зовет к айрану. Помоги Борису, младшему сыну Михаила, разобраться в словах — не поймешь слова, не найдешь тропу.';
+const FOREST_LEAD='В тайге мешок Деда Мороза зацепился за еловый сук и порвался — подарки рассыпались по всему лесу. Михаилу нельзя задерживаться: впереди еще десять полуночей. Помоги его старшему сыну Петру собрать подарки, пока их не замело снегом.';
+const TREE_LEAD='Подарки собраны, и Михаил помчался их развозить. Дома осталось последнее дело — нарядить елку. В этом году она общая, на весь банк: игрушки на нее вешают сотрудники со всей страны. София, дочь Михаила, ждет и твою.';
 const HERO={
   quiz:{t:'Спроси дорогу',img:'quiz_head',alt:'Борис, младший сын Михаила, расспрашивает местных у указателя',lead:QUIZ_LEAD,say:'Спросим дорогу!'},
-  forest:{t:'Лес',img:'forest_head',alt:'Пётр, старший сын Михаила, зовёт собирать подарки из порванного мешка',lead:FOREST_LEAD,say:'Бежим собирать!'},
-  tree:{t:'Ёлка',img:'tree_head',alt:'София, дочь Михаила, наряжает ёлку',lead:TREE_LEAD,say:'Нарядим вместе!'}
+  forest:{t:'Лес',img:'forest_head',alt:'Петр, старший сын Михаила, зовет собирать подарки из порванного мешка',lead:FOREST_LEAD,say:'Бежим собирать!'},
+  tree:{t:'Елка',img:'tree_head',alt:'София, дочь Михаила, наряжает елку',lead:TREE_LEAD,say:'Нарядим вместе!'}
 };
 function actHero(k,say){
   const h=HERO[k];
@@ -676,7 +653,7 @@ function actHero(k,say){
    Шапка испытания, ниже — одно окно сверху вниз: слово или узор → варианты → пояснение с картинкой → «Следующий вопрос».
    Кнопка — после пояснения: так его читают */
 function roundsList(R){
-  return `<div class="rounds">${D.QUIZ.map((r,i)=>{const lk=st.day<r.open;const res=st.quiz[i];return `<button class="rnd ${R===i?'on':''}" data-act="qRound" data-i="${i}" ${lk?'disabled':''}><span class="rn">${ROMAN[i]}</span><span class="rt"><b>${r.title}</b><small>${lk?'Откроется '+fmt(r.open):res&&res.done?`В зачёте: ${qFirst(res)} из ${r.qs.length} · повтор без баллов`:qPend(i)?`Начат: вопрос ${qPend(i).i+1} из ${r.qs.length}`:r.qs.length+' вопросов'}</small></span>${res&&res.done?`<span class="rs">${qFirst(res)}/${r.qs.length}</span>`:''}</button>`;}).join('')}</div>`;
+  return `<div class="rounds">${D.QUIZ.map((r,i)=>{const lk=st.day<r.open;const res=st.quiz[i];return `<button class="rnd ${R===i?'on':''}" data-act="qRound" data-i="${i}" ${lk?'disabled':''}><span class="rn">${ROMAN[i]}</span><span class="rt"><b>${r.title}</b><small>${lk?'Откроется '+fmt(r.open):res&&res.done?`В зачете: ${qFirst(res)} из ${r.qs.length} · повтор без баллов`:qPend(i)?`Начат: вопрос ${qPend(i).i+1} из ${r.qs.length}`:r.qs.length+' вопросов'}</small></span>${res&&res.done?`<span class="rs">${qFirst(res)}/${r.qs.length}</span>`:''}</button>`;}).join('')}</div>`;
 }
 function vQuiz(){
   bar('Спроси дорогу',null,'route');
@@ -686,8 +663,8 @@ function vQuiz(){
     if(ui.quizRound==null){const f=D.QUIZ.findIndex((r,i)=>st.day>=r.open&&!(st.quiz[i]&&st.quiz[i].done));ui.quizRound=f>=0?f:0;}
     const R=ui.quizRound, part=st.qpart&&st.qpart[R], res=st.quiz[R], n=D.QUIZ[R].qs.length;
     const head=actHero('quiz');
-    const start={t:part?'Продолжить набор':res&&res.done?'Пройти набор ещё раз':'Расспросить местных',act:'qStart',gold:1};
-    const note=part?`Вы остановились на вопросе ${part.i+1} из ${n} — ответы сохранены`:res&&res.done?`Повтор — без баллов. В зачёте первая попытка: ${qFirst(res)} из ${n}`:'';
+    const start={t:part?'Продолжить набор':res&&res.done?'Пройти набор еще раз':'Расспросить местных',act:'qStart',gold:1};
+    const note=part?`Ты на вопросе ${part.i+1} из ${n} — ответы сохранены`:res&&res.done?`Повтор — без баллов. В зачете первая попытка: ${qFirst(res)} из ${n}`:'';
     const body=`${lbl('Наборы вопросов')}${roundsList(R)}${note?`<p class="note">${note}</p>`:''}`;
     return {top:head,one:body,M:[head,body],acts:[start],nbt:false,cls:'quiz'};
   }
@@ -696,8 +673,8 @@ function vQuiz(){
     bar('Спроси дорогу',`Набор ${q.r+1} · итог`,'route');
     const top=`${pt('Тропа найдена',`Набор ${q.r+1} · ${R.title}`,'h1')}
       <div class="score"><span class="big">${q.correct}</span><span class="of">из ${n}</span></div>
-      <p class="gain">${q.replay?`Повтор — без баллов. В зачёте первая попытка: ${qFirst(st.quiz[q.r])} из ${n}`:q.gain>0?`+${q.gain} баллов в таблицу`:'В этот раз без баллов — зато теперь вы знаете эти слова'}</p>
-      ${say('m_mlad','Борис','местные показали дорогу! Папа уже в тайге — там его ждёт мой старший брат Пётр.','compact')}
+      <p class="gain">${q.replay?`Повтор — без баллов. В зачете первая попытка: ${qFirst(st.quiz[q.r])} из ${n}`:q.gain>0?`+${q.gain} баллов в таблицу`:'В этот раз без баллов — зато теперь ты знаешь эти слова'}</p>
+      ${say('m_mlad','Борис','местные показали дорогу! Папа уже в тайге — там его ждет мой старший брат Петр.','compact')}
       ${st.day<OPEN.forest?`<p class="note">Лес откроется ${fmt(OPEN.forest)}</p>`:''}`;
     const acts=[st.day>=OPEN.forest?{t:'Дальше: Лес',act:'go',v:'forest',gold:1}:{t:'На маршрут',act:'go',v:'route',gold:1},{t:'Другой набор',act:'qAgain'}];
     const sets=`${lbl('Все наборы','s')}${roundsList(q.r)}`;
@@ -715,16 +692,16 @@ function vQuiz(){
   // пояснение — в том же окне, под вариантами, с картинкой (в прототипе — заготовка под иллюстрацию)
   const pic=`<div class="ex-pic">${Q.t==='w'?`<span class="ex-w">${Q.w}</span>`:`<span class="ex-p">${svg('photo','width="30" height="30"')}</span>`}<small>${Q.t==='w'?'Иллюстрация к слову':`Фото изделия: узор на ${Q.on}`}</small></div>`;
   const expl=ans?`<div class="parch explain-in" id="expl">${flowers()}<div class="explain">${pic}<div class="where">${Q.where}</div><div class="ttl2">${Q.t==='w'?Q.w:'Узор: '+Q.o[Q.a]}</div><p>${Q.ex}</p>
-    <div class="verdict ${q.pick===Q.a?'ok':''}">${q.pick===Q.a?(q.replay?'Верно!':'Верно! +20 баллов'):`Правильный ответ — «${Q.o[Q.a]}». Теперь и вы знаете!`}</div></div></div>
-    <button class="btn btn-gold btn-block q-next" data-act="qNext">${nextT} ${svg('arrow','width="18" height="18"')}</button>`:'<p class="note">Выберите вариант — после ответа Борис расскажет, что это значит</p>';
+    <div class="verdict ${q.pick===Q.a?'ok':''}">${q.pick===Q.a?(q.replay?'Верно!':'Верно! +20 баллов'):`Правильный ответ — «${Q.o[Q.a]}». Теперь и ты знаешь!`}</div></div></div>
+    <button class="btn btn-gold btn-block q-next" data-act="qNext">${nextT} ${svg('arrow','width="18" height="18"')}</button>`:'<p class="note">Выбери вариант — после ответа Борис расскажет, что это значит</p>';
   const win=`${word}${opts}${expl}`;
   const head=`<div class="act-head q">${DESK?`<h1 class="sc-t">Спроси дорогу</h1>${q.replay?'<p class="q-rep">Повтор набора — без баллов</p>':''}`:''}${qbar}${ask}</div>`;
   return {one:win,M:win,dstage:head,stage:head,acts:[],sun:false,cls:'quiz'};
 }
 
 /* ===== Лес ===== */
-const LITE_NOTE='<p class="note">Игра тормозит или не запускается? <a class="link" href="#" data-act="fLite">Альтернативный способ заработать баллы</a> — для старых браузеров и слабых компьютеров</p>';
-// Шапка Леса — общая шапка испытаний (actHero): Пётр, старший сын, зовёт собирать подарки.
+const LITE_NOTE='<p class="note">Игра тормозит или не запускается? <a class="link" href="#" data-act="fLite">Альтернативная версия для старых браузеров и слабых компьютеров</a></p>';
+// Шапка Леса — общая шапка испытаний (actHero): Петр, старший сын, зовет собирать подарки.
 // Правила, баллы и рекорд — в окне перед стартом, прямо на поле
 // Перед стартом — на самом поле: коротко правила плитками с картинками из игры и кнопка старта.
 // Компьютер — пять плиток с пояснениями; телефон (поле невысокое) — четыре компактные
@@ -732,23 +709,23 @@ const FIMG=n=>`<img src="assets/img/forest/${n}.png" alt="" onerror="this.style.
 function forestRules(desk){
   const best=st.forest.bestGifts, runs=st.forest.runs;
   const tiles=desk?[
-    [`<span class="ri">${svg('jump')}</span>`,'Прыжок','пробел, ↑ или клик. В воздухе ещё раз — второй прыжок'],
-    [`<span class="ri">${svg('boost')}</span>`,'Ускорение','держите → — бег вдвое быстрее, но и препятствия чаще'],
+    [`<span class="ri">${svg('jump')}</span>`,'Прыжок','пробел, ↑ или клик. В воздухе еще раз — второй прыжок'],
+    [`<span class="ri">${svg('boost')}</span>`,'Ускорение','держи → — бег вдвое быстрее, но и препятствия чаще'],
     [FIMG('gift_1'),'Подарки','за них — баллы в турнирную таблицу'],
-    [FIMG('heart'),'3 жизни','удар или яма — минус жизнь, сердечко вернёт её'],
+    [FIMG('heart'),'3 жизни','удар или яма — минус жизнь, сердечко вернет ее'],
     [FIMG('obstacle_stump'),'Препятствия','на пень и бревно можно запрыгнуть, сугроб — только перепрыгнуть']
   ]:[
-    [`<span class="ri">${svg('jump')}</span>`,'Прыжок','слева или тап; в воздухе — ещё раз'],
-    [`<span class="ri">${svg('boost')}</span>`,'Ускорение','держите кнопку справа'],
+    [`<span class="ri">${svg('jump')}</span>`,'Прыжок','слева или тап; в воздухе — еще раз'],
+    [`<span class="ri">${svg('boost')}</span>`,'Ускорение','держи кнопку справа'],
     [FIMG('gift_1'),'Подарки','за них — баллы'],
-    [FIMG('heart'),'3 жизни','сердечко вернёт']
+    [FIMG('heart'),'3 жизни','сердечко вернет']
   ];
   // что делать и как считается результат; если уже бегали — рекорд и прошлый забег
-  const lead=desk?'Бегите как можно дальше и собирайте подарки — за каждый 10 баллов. В зачёт идёт лучший забег: рекорд сохраняется, а за новый рекорд добавляются баллы за разницу'
-    :'Собирайте как можно больше подарков: в зачёт идёт лучший забег, рекорд сохраняется';
+  const lead=desk?'Беги как можно дальше и собирай подарки — за каждый 10 баллов. В зачет идет лучший забег: рекорд сохраняется, а за новый рекорд добавляются баллы за разницу'
+    :'Собирай как можно больше подарков: в зачет идет лучший забег, рекорд сохраняется';
   const last=st.forest.last, gp=n=>`${n} ${plural(n,'подарок','подарка','подарков')}`;
   const prev=runs?`<div class="ov-rec"><div class="ov-pill">${ICON_GIFT}<div><span>Рекорд</span><b>${best}</b></div></div>${last?`<span class="ov-cap">Прошлый забег — ${gp(last.g)} за ${mmss(last.t)}</span>`:''}</div>`:'';
-  return `<div class="inner wide"><div class="ov-t">Готовы?</div>
+  return `<div class="inner wide"><div class="ov-t">На старт!</div>
     <p class="ov-lead">${nb(lead)}</p>
     <div class="rules">${tiles.map(([i,b,t])=>`<div>${i}<b>${b}</b><span>${t}</span></div>`).join('')}</div>
     ${prev}
@@ -758,7 +735,7 @@ function forestRules(desk){
 function sndBtn(){const on=ForestSound.on;return `<button class="snd" data-act="fSound" aria-pressed="${on}" aria-label="Звук" title="${on?'Выключить звук':'Включить звук'}">${svg(on?'snd':'sndOff')}</button>`;}
 function vForest(){
   bar('Лес',null,'route');
-  if(st.day<OPEN.forest)return lockView('Лес откроется 8 декабря','В тайге у Деда Мороза рвётся мешок — подарки рассыпаются по всему лесу. Собирать их герой будет вместе с Петром, старшим сыном Михаила.','m_star');
+  if(st.day<OPEN.forest)return lockView('Лес откроется 8 декабря','В тайге у Деда Мороза рвется мешок — подарки рассыпаются по всему лесу. Собирать их герой будет вместе с Петром, старшим сыном Михаила.','m_star');
   const head=actHero('forest');
   if(DESK){
     // Компьютер: шапка испытания на поляне, ниже — одна широкая панель: игровое поле и кнопки.
@@ -771,11 +748,11 @@ function vForest(){
   }
   if(ui.fmode)return {raw:gameMode()};
   return {scene:1,cls:'forest',
-    M:[head,`<p class="rot-hint">${svg('rotate')}<span>Играем горизонтально — поверните телефон</span></p>${LITE_NOTE}`],
+    M:[head,`<p class="rot-hint">${svg('rotate')}<span>Играем горизонтально — поверни телефон</span></p>${LITE_NOTE}`],
     acts:[{t:'Бежать!',act:'fPlay',gold:1}]};
 }
-// Телефон: игра во весь экран и только горизонтально. В центре поле (жизни и подарки — на нём), по бокам круглые кнопки без подписей под большие пальцы:
-// слева «Прыжок», справа «Ускорение». Вертикально вместо игры — «Поверните телефон», идущий забег встаёт на паузу
+// Телефон: игра во весь экран и только горизонтально. В центре поле (жизни и подарки — на нем), по бокам круглые кнопки без подписей под большие пальцы:
+// слева «Прыжок», справа «Ускорение». Вертикально вместо игры — «Поверните телефон», идущий забег встает на паузу
 const ROT_PHONE='<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="19" y="5" width="26" height="54" rx="6"/><path d="M28 52h8"/></svg>';
 function gameMode(){
   return `<div class="gm" id="gm">
@@ -785,9 +762,9 @@ function gameMode(){
     <button class="gm-b" id="bJump" aria-label="Прыжок">${svg('jump')}</button>
     <button class="gm-b" id="bFwd" aria-label="Ускорение">${svg('boost')}</button>
     <div class="gm-rot"><div class="rot-ph" aria-hidden="true">${ROT_PHONE}</div>
-      <b class="rot-touch">Поверните телефон</b><b class="rot-mouse">Сделайте окно шире</b>
+      <b class="rot-touch">Поверни телефон</b><b class="rot-mouse">Сделай окно шире</b>
       <span>Играем горизонтально: прыжок — под левым пальцем, ускорение — под правым</span>
-      <small class="rot-touch">Экран не поворачивается? Снимите блокировку поворота в быстрых настройках телефона</small></div>
+      <small class="rot-touch">Экран не поворачивается? Сними блокировку поворота в быстрых настройках телефона</small></div>
   </div>`;
 }
 // Android-телефон: игра во весь экран и сразу горизонтально, даже если автоповорот выключен. iPhone так не умеет — там подсказка «Поверните телефон»
@@ -843,29 +820,29 @@ function finishForest(gifts,score,out,time){
   ForestSound.musicPause(); if(gifts>prevBest)ForestSound.play('record'); else if(out)ForestSound.play('over');
   st.forest.runs++;st.forest.gifts+=gifts;if(gifts>prevBest){addLog('forest',prevBest?`Новый рекорд: ${gifts} ${plural(gifts,'подарок','подарка','подарков')} (было ${prevBest})`:`Забег: ${gifts} ${plural(gifts,'подарок','подарка','подарков')}`,(gifts-prevBest)*10);st.forest.bestGifts=gifts;}save();
   const head=out?'Жизни закончились':'Забег окончен';
-  const nx=st.day>=OPEN.tree?{t:'Дальше: Ёлка',act:'go',v:'tree',gold:1}:{t:'На маршрут',act:'go',v:'route',gold:1};
-  const line=out?'уф, споткнулись! Отдышимся — и ещё забег? Подарки, что успели собрать, уже в мешке.':'собрали! Бегу отдать папе мешок — а София уже ждёт у ёлки.';
-  const rec=`<div><b>${gifts>prevBest?'+'+(gifts-prevBest)*10:st.forest.bestGifts}</b><span>${gifts>prevBest?'баллов — новый рекорд':'ваш рекорд, подарков'}</span></div>`;
-  const treeNote=st.day<OPEN.tree?`Ёлка откроется ${fmt(OPEN.tree)}`:'';
+  const nx=st.day>=OPEN.tree?{t:'Дальше: Елка',act:'go',v:'tree',gold:1}:{t:'На маршрут',act:'go',v:'route',gold:1};
+  const line=out?'уф, споткнулись! Отдышимся — и еще забег? Подарки, что успели собрать, уже в мешке.':'собрали! Бегу отдать папе мешок — а София уже ждет у елки.';
+  const rec=`<div><b>${gifts>prevBest?'+'+(gifts-prevBest)*10:st.forest.bestGifts}</b><span>${gifts>prevBest?'баллов — новый рекорд':'твой рекорд, подарков'}</span></div>`;
+  const treeNote=st.day<OPEN.tree?`Елка откроется ${fmt(OPEN.tree)}`:'';
   if(DESK){
-    // Десктоп: итоги — прямо на поле, крутить страницу не нужно: цифры, реплика Петра, «Ещё забег» и «Дальше».
-    // «Дальше» прокручивает к блоку под полем — там переходы: «Ёлка», ещё забег, маршрут
+    // Десктоп: итоги — прямо на поле, крутить страницу не нужно: цифры, реплика Петра, «Еще забег» и «Дальше».
+    // «Дальше» прокручивает к блоку под полем — там переходы: «Елка», еще забег, маршрут
     const fn=$('#fin');if(fn)fn.classList.add('hidden');
     const ov=$('#ov');if(ov){ov.classList.remove('hidden');ov.innerHTML=`<div class="inner wide res"><div class="lbl-s">${head}</div>
       <div class="rcs"><div><b>${gifts}</b><span>собрано подарков</span></div>${rec}<div><b>${mmss(time)}</b><span>время забега</span></div></div>
-      ${say('m_star','Пётр',line,'compact')}
-      <div class="ov-acts"><button class="btn btn-gold btn-lg" data-act="fAgain">Ещё забег</button><button class="btn btn-ghost btn-lg" data-act="fNext">Дальше ${svg('chev','width="18" height="18"')}</button></div></div>`;}
+      ${say('m_star','Петр',line,'compact')}
+      <div class="ov-acts"><button class="btn btn-gold btn-lg" data-act="fAgain">Еще забег</button><button class="btn btn-ghost btn-lg" data-act="fNext">Дальше ${svg('chev','width="18" height="18"')}</button></div></div>`;}
     const ctrl=$('#ctrl');if(!ctrl)return;
-    ctrl.outerHTML=`<div class="resultcard" id="ctrl">${nextBar([nx,{t:'Ещё забег',act:'fAgain'},nx.v!=='route'?ROUTE_BTN:null],treeNote)}</div>`;
+    ctrl.outerHTML=`<div class="resultcard" id="ctrl">${nextBar([nx,{t:'Еще забег',act:'fAgain'},nx.v!=='route'?ROUTE_BTN:null],treeNote)}</div>`;
   } else {
     // Телефон: итоги — шторкой поверх игры
     const gm=$('#gm');if(!gm)return;
     const old=gm.querySelector('.sheet');if(old){old.previousElementSibling.remove();old.remove();}
     gm.insertAdjacentHTML('beforeend',sheet(`<div class="lbl-s center">${head}</div>
       <div class="fres"><b>${gifts}</b><span>${plural(gifts,'подарок','подарка','подарков')}</span></div>
-      ${say('m_star','Пётр',line,'compact')}
+      ${say('m_star','Петр',line,'compact')}
       <div class="rcs">${rec}<div><b>${mmss(time)}</b><span>время забега</span></div></div>
-      <div class="sheet-acts">${btn(nx)}${btn({t:'Ещё забег',act:'fAgain'})}${nx.v!=='route'?btn(ROUTE_BTN):''}</div>
+      <div class="sheet-acts">${btn(nx)}${btn({t:'Еще забег',act:'fAgain'})}${nx.v!=='route'?btn(ROUTE_BTN):''}</div>
       ${treeNote?`<p class="note">${treeNote}</p>`:''}`,{cls:'darksheet',close:'fAgain'}));
   }
   updateHeader();
@@ -876,7 +853,7 @@ function startLite(){
   const sg=$('#stage');if(sg)sg.classList.add('lite-on');
   const gm=$('#gm');if(gm)gm.classList.add('gm-lite');   // кнопки игры не нужны, и играть можно в любом положении телефона
   let n=0,got=0,cur=-1;
-  ov.innerHTML=`<div class="inner"><div class="lbl-s">Альтернативный способ заработать баллы</div><p class="small">Нажимайте на подарки, пока они не исчезли</p><div class="lite" id="lite">${[...Array(9)].map((_,i)=>`<button data-li="${i}"></button>`).join('')}</div><div class="small" id="liteC">Собрано: 0</div></div>`;
+  ov.innerHTML=`<div class="inner"><div class="lbl-s">Альтернативная версия</div><p class="small">Нажимай на подарки, пока они не исчезли</p><div class="lite" id="lite">${[...Array(9)].map((_,i)=>`<button data-li="${i}"></button>`).join('')}</div><div class="small" id="liteC">Собрано: 0</div></div>`;
   $('#lite').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-li]');if(b&&+b.dataset.li===cur){got++;cur=-1;ForestSound.play('gift');b.classList.remove('has');b.textContent='';$('#liteC').textContent='Собрано: '+got;}});
   const t=setInterval(()=>{
     $$('#lite button').forEach(b=>{b.classList.remove('has');b.textContent='';});
@@ -885,17 +862,17 @@ function startLite(){
   },850); timers.push(t);
 }
 
-/* ===== Ёлка =====
-   Шапка испытания (София: подарки собраны — осталось нарядить ёлку), ниже — один экран: шаги и окно, которое меняется
-   (игрушка → картинка → ИИ → готово). Игрушка у каждого одна — генерация стоит денег: её можно скачать и повесить на общую ёлку —
-   сразу +100 баллов; всем она станет видна после проверки модератором. Снять с ёлки и повесить снова можно в любой момент.
-   Ниже — общая ёлка банка с поворотом: своя игрушка у верхушки, на других сторонах — игрушки коллег */
+/* ===== Елка =====
+   Шапка испытания (София: подарки собраны — осталось нарядить елку), ниже — один экран: шаги и окно, которое меняется
+   (игрушка → картинка → ИИ → готово). Игрушка у каждого одна — генерация стоит денег: ее можно скачать и повесить на общую елку —
+   сразу +100 баллов; всем она станет видна после проверки модератором. Снять с елки и повесить снова можно в любой момент.
+   Ниже — общая елка банка с поворотом: своя игрушка у верхушки, на других сторонах — игрушки коллег */
 function doch(t,cls){return say('m_doch','София',t,cls);}
 function treeSides(){return Math.max(1,Math.ceil(treeCount()/40));}
 function sideLabel(){const n=treeSides();return `Сторона ${ui.treeSide+1} из ${num(n)}${ui.treeSide===0?' · новые':''}`;}
 function sideBalls(side){
   const r=rng(500+side*7);const out=[];const total=treeCount();const cnt=Math.min(40,Math.max(0,total-side*40-(side===0&&st.tree.on&&st.tree.ok?1:0)));
-  for(let i=0;i<cnt;i++){const N=NOUNS[Math.floor(r()*NOUNS.length)];out.push({nick:D.ADJ[Math.floor(r()*D.ADJ.length)][N.g]+' '+N.w,city:r()<.25?'Москва':D.CITIES[Math.floor(r()*60)][0],img:r()<.55?Math.floor(r()*6):-1});}
+  for(let i=0;i<cnt;i++){const N=NOUNS[Math.floor(r()*NOUNS.length)];out.push({nick:D.ADJ[A1[Math.floor(r()*A1.length)]][N.g]+' '+D.ADJ[A2[Math.floor(r()*A2.length)]][N.g]+' '+N.w,city:r()<.25?'Москва':D.CITIES[Math.floor(r()*60)][0],img:r()<.55?Math.floor(r()*6):-1});}
   return out;
 }
 function mineBall(){return st.tree.ball||null;}
@@ -909,34 +886,57 @@ function rotateTree(dir,to){
   setTimeout(()=>box.classList.remove('in-r','in-l'),560);
 }
 function treeRotHTML(){return `<div class="rot"><button class="btn btn-ghost btn-sm" data-act="treeRot" data-d="-1" aria-label="Повернуть влево">‹${DESK?' Повернуть':''}</button><div class="rotlab" id="tside">${sideLabel()}</div><button class="btn btn-ghost btn-sm" data-act="treeRot" data-d="1" aria-label="Повернуть вправо">${DESK?'Повернуть ':''}›</button></div>`;}
+// Найти игрушку: своя всегда на передней стороне у верхушки и подсвечена; чужую — по имени героя (имена не повторяются).
+// На платформе поиск идет по базе игрушек, в прототипе — по сторонам этой елки
+function treeFindHTML(){
+  const n=treeSides(), ex=n>2?sideBalls(2)[5]:null;
+  return `<div class="tfind">${st.tree.on?btn({t:`${svg('flake','width="16" height="16"')} Найти мою игрушку`,act:'treeMine',cls:'btn-sm',noarrow:1}):''}
+    <div class="tf-row"><input class="input" id="tfq" type="search" autocomplete="off" placeholder="Имя героя${ex?', например, '+esc(ex.nick):''}" aria-label="Найти игрушку по имени героя">${btn({t:'Найти',act:'treeFind',cls:'btn-sm',noarrow:1})}</div>
+    <p class="note">Найти игрушку коллеги можно по имени героя</p></div>`;
+}
+const normName=v=>String(v||'').trim().toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ');
+function treeHighlight(sel){
+  const go=()=>{const el=$('#treebox '+sel);if(!el)return;el.classList.remove('hl');void el.getBBox;el.classList.add('hl');
+    const box=$('#treebox');if(box&&!reduced())box.scrollIntoView({block:'center',behavior:'smooth'});setTimeout(()=>el.classList.remove('hl'),4200);};
+  setTimeout(go,ui.treeSide===ui._tfFrom?0:600);
+}
+function treeFind(q){
+  const k=normName(q);if(!k){toast('Впиши имя героя');return;}
+  if(st.user&&st.tree.on&&normName(st.user.nick)===k){ACT.treeMine();return;}
+  const n=treeSides();
+  for(let side=0;side<n;side++){const L=sideBalls(side);const i=L.findIndex(b=>normName(b.nick)===k||normName(b.nick).includes(k));
+    if(i>=0){const b=L[i];ui._tfFrom=ui.treeSide;if(side!==ui.treeSide)rotateTree(side>ui.treeSide?1:-1,side);
+      treeHighlight(`.tb[data-n="${CSS.escape(b.nick)}"]`);toast(`${b.nick}: сторона ${side+1}`);return;}}
+  toast('Такой игрушки на елке нет — проверь имя');
+}
 // Модерация в прототипе: игрушка «проходит проверку» при следующем переходе между страницами. На платформе — очередь в админке
-function approveToy(){if(!st.tree.ball||!st.tree.on||st.tree.ok)return;st.tree.ok=true;save();flash('Ваша игрушка прошла проверку — теперь её видят все на общей ёлке');}
+function approveToy(){if(!st.tree.ball||!st.tree.on||st.tree.ok)return;st.tree.ok=true;save();flash('Твоя игрушка прошла проверку — теперь ее видят все на общей елке');}
 // Повесить или снять игрушку. 100 баллов — один раз, когда игрушку впервые повесили; снять можно, баллы остаются
 function hangToy(on){
   st.tree.on=on;
-  if(on&&!st.tree.pts){st.tree.pts=true;addLog('tree','Игрушка на общей ёлке',100);}
+  if(on&&!st.tree.pts){st.tree.pts=true;addLog('tree','Игрушка на общей елке',100);}
   save();ui.treeSide=0;render();
-  toast(!on?'Игрушку сняли с общей ёлки — баллы остаются':st.tree.ok?'Игрушка снова на общей ёлке':'+100 баллов! Игрушка на ёлке — всем покажем после проверки модератором');
+  toast(!on?'Игрушку сняли с общей елки — баллы остаются':st.tree.ok?'Игрушка снова на общей елке':'+100 баллов! Игрушка на елке — всем покажем после проверки модератором');
 }
-const TREE_STEPS=[['Выберите игрушку','шар, звезда, колокольчик, сосулька, сердце или фонарик'],['Загрузите картинку','любую: фото, рисунок, открытку'],['ИИ делает игрушку','перерисует картинку в её стиле'],['Повесьте на ёлку','и сразу получите 100 баллов']];
+const TREE_STEPS=[['Выбери игрушку','шар, звезда, колокольчик, сосулька, сердце или фонарик'],['Загрузи картинку','любую: фото, рисунок, открытку'],['ИИ делает игрушку','перерисует картинку в ее стиле'],['Повесь на елку','и сразу получи 100 баллов']];
 function vTree(){
-  bar('Ёлка',null,'route');
-  if(st.day<OPEN.tree)return lockView('Ёлка откроется 15 декабря','Когда подарки собраны и Дед Мороз отправился их развозить, София, дочь Михаила, зовёт всех вместе нарядить ёлку к празднику.','m_doch');
+  bar('Елка',null,'route');
+  if(st.day<OPEN.tree)return lockView('Елка откроется 15 декабря','Когда подарки собраны и Дед Мороз отправился их развозить, София, дочь Михаила, зовет всех вместе нарядить елку к празднику.','m_doch');
   const T=ui.tree, has=!!st.tree.ball, step=T.step||1;
-  const head=actHero('tree',!has?'Нарядим вместе!':st.tree.on?'Красота!':'Повесим на ёлку?');
+  const head=actHero('tree',!has?'Нарядим вместе!':st.tree.on?'Красота!':'Повесим на елку?');
   const tc=treeCount();
-  const big=`${lbl('Общая ёлка банка')}<p class="tale small center">${nb(`${num(tc)} ${plural(tc,'игрушка','игрушки','игрушек')} от сотрудников со всей страны. Свежие — на передней стороне, остальные — если повернуть ёлку`)}</p>
+  const big=`${lbl('Общая елка банка')}<p class="tale small center">${nb(`${num(tc)} ${plural(tc,'игрушка','игрушки','игрушек')} от сотрудников со всей страны. Свежие — на передней стороне, остальные — если повернуть елку`)}</p>
     <div class="treebox" id="treebox">${treeBox()}</div>${treeSides()>1?treeRotHTML():''}
-    <p class="note">${DESK?'Крутите ёлку стрелками или свайпом. Нажмите на игрушку — увидите её поближе':'Крутите ёлку свайпом. Нажмите на игрушку — увидите её поближе'}</p>`;
+    <p class="note">${DESK?'Крути елку стрелками или свайпом. Нажми на игрушку — увидишь ее поближе':'Крути елку свайпом. Нажми на игрушку — увидишь ее поближе'}</p>${treeFindHTML()}`;
   if(has){
-    // своя игрушка: одна на участника — скачать, повесить на ёлку или снять
+    // своя игрушка: одна на участника — скачать, повесить на елку или снять
     const S=BALL_STYLES[st.tree.style||0]||BALL_STYLES[0];
-    const status=!st.tree.on?'Пока не на ёлке — её видите только вы':st.tree.ok?'Висит на общей ёлке — её видят все':'На ёлке. Всем покажем после проверки модератором';
-    const mine=`${lbl('Ваша игрушка')}<div class="mine-c"><div class="mc-img"><img src="${mineBall()}" alt="Ваша игрушка"></div>
+    const status=!st.tree.on?'Пока не на елке — ее видишь только ты':st.tree.ok?'Висит на общей елке — ее видят все':'На елке. Всем покажем после проверки модератором';
+    const mine=`${lbl('Твоя игрушка')}<div class="mine-c"><div class="mc-img"><img src="${mineBall()}" alt="Твоя игрушка"></div>
       <div class="mc-b"><b class="mc-t">${S.n}</b><span class="mc-s">${status}</span>
-        <label class="sw"><input type="checkbox" id="hangSw"${st.tree.on?' checked':''}><span class="sw-t" aria-hidden="true"></span><span>Висит на общей ёлке</span></label>
-        <span class="rt-p">${STAR_SM}${st.tree.pts?'100 баллов начислено':'Повесьте — и сразу +100 баллов'}</span>
-        <div class="mc-a">${st.tree.on?'':btn({t:'Повесить на ёлку',act:'tHang',gold:1,noarrow:1,cls:'btn-sm'})}${btn({t:`${svg('down','width="16" height="16"')} Скачать`,act:'tDownloadMine',noarrow:1,cls:'btn-sm'})}</div></div></div>`;
+        <label class="sw"><input type="checkbox" id="hangSw"${st.tree.on?' checked':''}><span class="sw-t" aria-hidden="true"></span><span>Висит на общей елке</span></label>
+        <span class="rt-p">${STAR_SM}${st.tree.pts?'100 баллов начислено':'Повесь — и сразу +100 баллов'}</span>
+        <div class="mc-a">${st.tree.on?'':btn({t:'Повесить на елку',act:'tHang',gold:1,noarrow:1,cls:'btn-sm'})}${btn({t:`${svg('down','width="16" height="16"')} Скачать`,act:'tDownloadMine',noarrow:1,cls:'btn-sm'})}</div></div></div>`;
     return {wide:[head,mine,big],M:[head,mine,big],cls:'tree'};
   }
   // шаги слева, справа — окно текущего шага
@@ -947,18 +947,18 @@ function vTree(){
       <div class="tw-a">${btn({t:'Дальше: картинка',act:'tStep',s:2,gold:1})}</div>`;
   } else if(step===2){
     win=`<label class="dropzone" id="drop">${T.src?`<img class="pv" src="${T.src}" alt="">`:`<span class="dz">${svg('photo','width="40" height="40"')}</span>`}
-        <b>${T.src?'Картинка загружена':DESK?'Нажмите или перетащите файл сюда':'Выбрать картинку'}</b><span class="small">${T.src?'Нажмите, чтобы заменить':'JPG или PNG — с телефона или компьютера'}</span>
+        <b>${T.src?'Картинка загружена':DESK?'Нажми или перетащи файл сюда':'Выбрать картинку'}</b><span class="small">${T.src?'Нажми, чтобы заменить':'JPG или PNG — с телефона или компьютера'}</span>
         <input type="file" accept="image/*" id="file" class="sr"></label>
       <p class="tw-test"><a class="link" href="#" data-act="tSample">Тестовая картинка</a></p>
-      <p class="note">Картинка нужна только для игрушки и удаляется сразу после её создания. Игрушка у каждого одна</p>
+      <p class="note">Картинка нужна только для игрушки и удаляется сразу после ее создания. Игрушка у каждого одна</p>
       <div class="tw-a">${btn({t:'Создать игрушку',act:'tMake',gold:1,disabled:!T.src})}${btn({t:'Назад',act:'tStep',s:1})}</div>`;
   } else {
-    win=`<div class="making"><div class="orb"><img src="${T.src}" alt=""></div><div class="mk" id="mk">Перерисовываем картинку в ёлочную игрушку…</div></div>`;
+    win=`<div class="making"><div class="orb"><img src="${T.src}" alt=""></div><div class="mk" id="mk">Перерисовываем картинку в елочную игрушку…</div></div>`;
   }
-  const mk=`${lbl('Ваша игрушка')}<div class="tmk">${steps}<div class="twin">${win}</div></div>`;
+  const mk=`${lbl('Твоя игрушка')}<div class="tmk">${steps}<div class="twin">${win}</div></div>`;
   return {wide:[head,mk,big],M:[head,mk,big],cls:'tree'};
 }
-const TEST_PICS=['sample_girl','sample_team','sample_draw'];
+const TEST_PICS=['s_cat','s_draw','s_corgi','s_forest'];   // тестовые картинки — в assets/js/toys.js
 function setTreeSrc(src){ui.tree.src=src;render();}
 async function makeBall(){
   ui.tree.step=3;render();
@@ -973,12 +973,12 @@ async function makeBall(){
 function download(dataUrl,name){const a=document.createElement('a');a.href=dataUrl;a.download=name;document.body.appendChild(a);a.click();a.remove();}
 
 /* ===== Сундук чудес: розыгрыш =====
-   Розыгрыш — 25 декабря, среди тех, кто до 24 декабря, 23:59 мск ввёл свой персональный код на внутренней платформе ПСБ.
-   Ввёл ли человек код, платформа узнаёт только перед розыгрышем (список кодов присылает банк), поэтому до розыгрыша у всех одно и то же:
-   как всё устроено и напоминание ввести код. После розыгрыша — победители; победителю ничего делать не нужно: код уже введён, с ним свяжутся */
+   Розыгрыш — 25 декабря, среди тех, кто до 24 декабря, 23:59 мск ввел свой персональный код на портале «Ньютон».
+   Ввел ли человек код, платформа узнаёт только перед розыгрышем (список кодов присылает банк), поэтому до розыгрыша у всех одно и то же:
+   как всё устроено и напоминание ввести код. После розыгрыша — победители; победителю ничего делать не нужно: код уже введен, с ним свяжутся */
 const DRAW_N=10;
 const PRIZE_DAY=OPEN.chest+5;   // с победителями свяжутся до 30 декабря — дата по согласованию с банком
-function drawPool(){return Math.round(Math.min(16800,2100+OPEN.chest*520)*.62);}   // участники розыгрыша — те, кто ввёл код (в прототипе — пример)
+function drawPool(){return Math.round(Math.min(16800,2100+OPEN.chest*520)*.62);}   // участники розыгрыша — те, кто ввел код (в прототипе — пример)
 function drawWinners(){
   const r=rng(1225),pool=FAKES.slice(),out=[];
   while(out.length<DRAW_N&&pool.length)out.push(pool.splice(Math.floor(r()*pool.length),1)[0]);
@@ -995,30 +995,29 @@ function vChest(){
     const d=OPEN.chest-st.day, left=CODE_DEADLINE-st.day;
     const H=pageHead('Сундук чудес','m_mikhail','Дед Мороз Михаил',`в этом сундуке — подарки для ${DRAW_N} помощников. Кому они достанутся, решит случай.`);
     const how=`<ol class="how col">
-      <li><i>1</i><span>${nb(`Введите свой персональный код на внутренней платформе ПСБ — до ${fmt(CODE_DEADLINE)}, 23:59 мск`)}</span></li>
-      <li><i>2</i><span>${nb(`${fmt(OPEN.chest)} случай выберет ${DRAW_N} победителей среди тех, кто ввёл код`)}</span></li>
+      <li><i>1</i><span>${nb(`Введи свой персональный код на портале «Ньютон» — до ${fmt(CODE_DEADLINE)}, 23:59 мск`)}</span></li>
+      <li><i>2</i><span>${nb(`${fmt(OPEN.chest)} случай выберет ${DRAW_N} победителей среди тех, кто ввел код`)}</span></li>
       <li><i>3</i><span>${nb('Победителей покажем здесь, с ними свяжутся')}</span></li></ol>`;
-    // напоминание висит до самого розыгрыша: платформа не знает, ввёл ли человек код
-    const remind=`${lbl('Ваш код для розыгрыша')}<div class="codebox"><div class="code sm">${u.code}</div>
+    // напоминание висит до самого розыгрыша: платформа не знает, ввел ли человек код
+    const remind=`${lbl('Твой код для розыгрыша')}<div class="codebox"><div class="code sm">${u.code}</div>
         <button class="btn btn-ghost btn-sm" data-act="copy" data-t="${u.code}">${svg('copy','width="14" height="14"')} Скопировать</button></div>
-      <p class="rm-t">${nb(left>0?`Введите его на внутренней платформе ПСБ до ${fmt(CODE_DEADLINE)}, 23:59 мск. Осталось ${left} ${plural(left,'день','дня','дней')}`:'Сегодня последний день: введите код на внутренней платформе ПСБ до 23:59 мск')}</p>
-      <div class="rm-a">${btn({t:'Открыть внутреннюю платформу',act:'portal',gold:1,noarrow:1})}</div>`;
+      <p class="rm-t">${nb(left>0?`Введи его на портале «Ньютон» до ${fmt(CODE_DEADLINE)}, 23:59 мск. Осталось ${left} ${plural(left,'день','дня','дней')}`:'Сегодня последний день: введи код на портале «Ньютон» до 23:59 мск')}</p>`;
     const body=`${img}<p class="ch-when">${nb(`Розыгрыш — ${fmt(OPEN.chest)}, через ${d} ${plural(d,'день','дня','дней')}`)}</p>${how}`;
     return {pre:endBanner(),one:[body,remind],M:[body,remind],dstage:H.d,stage:H.m,cls:'chest'};
   }
   if(!st.chest.seen){st.chest.seen=true;save();}
   const W=drawWinners(),won=W.some(x=>x.me);
-  const H=pageHead('Сундук чудес','m_mikhail','Дед Мороз Михаил',won?'поздравляю! Подарок из моего сундука достался вам.':'сундук открыт — подарки нашли своих хозяев. Спасибо всем, кто помогал!');
-  const res=won?`<div class="drawres win">${svg('check','width="20" height="20"')}<div><b>Вы среди победителей!</b><span>${nb(`Ваш код уже введён — ничего делать не нужно. С вами свяжутся до ${fmt(PRIZE_DAY)}.`)}</span></div></div>`
+  const H=pageHead('Сундук чудес','m_mikhail','Дед Мороз Михаил',won?'поздравляю! Подарок из моего сундука достался тебе.':'сундук открыт — подарки нашли своих хозяев. Спасибо всем, кто помогал!');
+  const res=won?`<div class="drawres win">${svg('check','width="20" height="20"')}<div><b>Ты среди победителей!</b><span>${nb(`Твой код уже введен — ничего делать не нужно. С тобой свяжутся до ${fmt(PRIZE_DAY)}.`)}</span></div></div>`
     :`<div class="drawres"><div><b>В этот раз удача улыбнулась другим</b><span>${nb(`Спасибо, что помогали Михаилу! Турнирная таблица, сказка-сериал и аудиосказки работают до ${fmt(LAST_DAY)}.`)}</span></div></div>`;
-  const list=`${lbl('Победители розыгрыша')}<ol class="wlist">${W.map((x,i)=>`<li class="${x.me?'me':''}"><span class="n">${i+1}</span>${ava(x.nick,DESK?34:32,x.me)}<span class="w">${tname(x.nick,x.city)}${x.me?' <span class="tag">вы</span>':''}</span></li>`).join('')}</ol>
-    <p class="note">${nb(`${DRAW_N} из ${num(drawPool())} участников — тех, кто ввёл код на внутренней платформе ПСБ`)}</p>`;
+  const list=`${lbl('Победители розыгрыша')}<ol class="wlist">${W.map((x,i)=>`<li class="${x.me?'me':''}"><span class="n">${i+1}</span>${ava(x.nick,DESK?34:32,x.me)}<span class="w">${tname(x.nick,x.city)}${x.me?' <span class="tag">ты</span>':''}</span></li>`).join('')}</ol>
+    <p class="note">${nb(`${DRAW_N} из ${num(drawPool())} участников — тех, кто ввел код на портале «Ньютон»`)}</p>`;
   return {pre:endBanner(),one:[`${img}${res}`,list],M:[`${img}${res}`,list],dstage:H.d,stage:H.m,cls:'chest'};
 }
 
 /* ===== Сказка-сериал ===== */
 function chState(i){const c=D.CHAPTERS[i];if(st.day<c.day)return 'soon';if(st.day<=c.day+1)return 'vote';return 'out';}
-// Кнопки «что дальше» на странице сериала: сначала то, что ждёт в сериале, потом — маршрут
+// Кнопки «что дальше» на странице сериала: сначала то, что ждет в сериале, потом — маршрут
 function serialActs(){
   const S=serialState();
   if(S.kind==='vote')return [{t:'Читать и голосовать',act:'openCh',i:S.cur,gold:1},{t:'На маршрут',act:'go',v:'route'}];
@@ -1028,9 +1027,9 @@ function serialActs(){
 function vSerial(){
   bar('Сказка-сериал','Пишут все вместе');
   const ch=D.CHAPTERS;
-  const head=`<div class="ser-head"><img class="illo" src="${A.serial}" alt="">${DESK?tale('Выходит глава — после неё герою нужно сделать выбор из трёх вариантов. Вариант, набравший больше всего голосов, ложится в основу следующей главы. И так — до финала.',true):'<p class="tale small">Выходит глава — после неё герою нужно сделать выбор из трёх вариантов. Вариант с большинством голосов ложится в основу следующей главы. И так — до финала.</p>'}</div>`;
+  const head=`<div class="ser-head"><img class="illo" src="${A.serial}" alt="">${DESK?tale('Выходит глава — после нее герою нужно сделать выбор из трех вариантов. Вариант, набравший больше всего голосов, ложится в основу следующей главы. И так — до финала.',true):'<p class="tale small">Выходит глава — после нее герою нужно сделать выбор из трех вариантов. Вариант с большинством голосов ложится в основу следующей главы. И так — до финала.</p>'}</div>`;
   const stats=`<div class="stats3"><div><b>3–4 дня</b><span>новая глава</span></div><div><b>48 часов</b><span>на голосование</span></div><div><b>${VOTE_PTS}</b><span>баллов за голос</span></div></div>`;
-  const toc=`<div class="toc">${ch.map((c,i)=>{const s=chState(i);return `<button class="tocr ${s}" data-act="openCh" data-i="${i}" ${s==='soon'?'disabled':''}><span class="rn">${ROMAN[i]}</span><span class="rt"><b>${s==='soon'?'Скоро':c.t}</b><small>${s==='soon'?'Выйдет '+fmt(c.day):s==='vote'?(st.serial.votes[i]!=null?'Ваш голос учтён':'Идёт голосование'):c.final?'Финальная глава':`Выбор читателей: «${c.o[c.win]}»`}</small></span>${s==='vote'?`<span class="chip live">${st.serial.votes[i]!=null?'учтён':'голосуем'}</span>`:`<span class="dots"></span><span class="pg-n">${fmt(c.day,true)}</span>`}</button>`;}).join('')}
+  const toc=`<div class="toc">${ch.map((c,i)=>{const s=chState(i);return `<button class="tocr ${s}" data-act="openCh" data-i="${i}" ${s==='soon'?'disabled':''}><span class="rn">${ROMAN[i]}</span><span class="rt"><b>${s==='soon'?'Скоро':c.t}</b><small>${s==='soon'?'Выйдет '+fmt(c.day):s==='vote'?(st.serial.votes[i]!=null?'Твой голос учтен':'Идет голосование'):c.final?'Финальная глава':`Выбор читателей: «${c.o[c.win]}»`}</small></span>${s==='vote'?`<span class="chip live">${st.serial.votes[i]!=null?'учтен':'голосуем'}</span>`:`<span class="dots"></span><span class="pg-n">${fmt(c.day,true)}</span>`}</button>`;}).join('')}
       <button class="tocr fin ${st.day<D.FULL_TALE_DAY?'soon':''}" data-act="go" data-v="fulltale" ${st.day<D.FULL_TALE_DAY?'disabled':''}><span class="rn">✦</span><span class="rt"><b>Цельная сказка</b><small>${st.day<D.FULL_TALE_DAY?'Выйдет '+fmt(D.FULL_TALE_DAY):'Читать и скачать PDF'}</small></span><span class="dots"></span><span class="pg-n">${fmt(D.FULL_TALE_DAY,true)}</span></button></div>`;
   return {pre:endBanner(),
     L:`${pt('Сказка-сериал','Пишут все вместе','h1')}${head}${stats}`,
@@ -1046,14 +1045,14 @@ function voteBlock(i,cd){
   const cnt=c.pct.map((p,k)=>Math.round(tot*p/100)+(myv===k?1:0));
   const sum=cnt.reduce((a,b)=>a+b,0), show=myv!=null||!open;
   const lead=open?(myv==null?(c.final?`Голосование для настроения — на сюжет оно уже не влияет. За голос — ${VOTE_PTS} баллов. До ${fmt(c.day+1)}, 23:59\u00a0мск.`
-      :`Выберите вариант — большинство решит, что будет дальше. За голос — ${VOTE_PTS} баллов. Голосование до ${fmt(c.day+1)}, 23:59\u00a0мск.`):`Спасибо! Ваш голос учтён, +${VOTE_PTS} баллов — следите за счётчиком.`)
-    :c.final?`Голосование завершено: «${c.o[c.win]}» — ${c.pct[c.win]}%.`:`Голосование завершено. Вариант «${c.o[c.win]}» лёг в основу главы ${ROMAN[i+1]}.`;
-  const vt=c.final?'Как вам финал?':'Как продолжится сказка?';
-  return `<section class="vote ${open&&myv==null?'todo':''}" id="vote">${DESK?pt(vt,open?(myv==null?'Выбор за вами':'Ваш голос учтён'):'Голосование завершено'):lbl(vt)}
+      :`Выбери вариант — большинство решит, что будет дальше. За голос — ${VOTE_PTS} баллов. Голосование до ${fmt(c.day+1)}, 23:59\u00a0мск.`):`Спасибо! Твой голос учтен, +${VOTE_PTS} баллов — следи за счетчиком.`)
+    :c.final?`Голосование завершено: «${c.o[c.win]}» — ${c.pct[c.win]}%.`:`Голосование завершено. Вариант «${c.o[c.win]}» лег в основу главы ${ROMAN[i+1]}.`;
+  const vt=c.final?'Как тебе финал?':'Как продолжится сказка?';
+  return `<section class="vote ${open&&myv==null?'todo':''}" id="vote">${DESK?pt(vt,open?(myv==null?'Выбор за тобой':'Твой голос учтен'):'Голосование завершено'):lbl(vt)}
     ${cd||''}<p class="tale small center">${lead}</p>
-    <div class="vopts">${c.o.map((o,k)=>{const pc=Math.round(cnt[k]/sum*100);const win=!open&&k===c.win;return `<button class="vopt ${myv===k?'mine':''} ${win?'win':''}" data-act="vote" data-k="${k}" ${show?'disabled':''}>${show?`<span class="bar" style="width:${pc}%"></span>`:''}<span class="k">${'АБВ'[k]}</span><span class="vt">${o}${myv===k?'<span class="tag">ваш выбор</span>':''}${win?'<span class="tag">победил</span>':''}</span>${show?`<span class="pc">${pc}%</span>`:''}</button>`;}).join('')}</div>
-    ${open&&show?`<p class="note">Голосов: <b id="vtot">${num(sum)}</b> · счётчик обновляется вживую</p>`:''}
-    ${open&&myv!=null?`<p class="note">Голосование идёт до ${fmt(c.day+1)}, 23:59\u00a0мск${nx?`. Глава ${ROMAN[i+1]} выйдет ${fmt(nx.day)}`:''}</p>`:''}
+    <div class="vopts">${c.o.map((o,k)=>{const pc=Math.round(cnt[k]/sum*100);const win=!open&&k===c.win;return `<button class="vopt ${myv===k?'mine':''} ${win?'win':''}" data-act="vote" data-k="${k}" ${show?'disabled':''}>${show?`<span class="bar" style="width:${pc}%"></span>`:''}<span class="k">${'АБВ'[k]}</span><span class="vt">${o}${myv===k?'<span class="tag">твой выбор</span>':''}${win?'<span class="tag">победил</span>':''}</span>${show?`<span class="pc">${pc}%</span>`:''}</button>`;}).join('')}</div>
+    ${open&&show?`<p class="note">Голосов: <b id="vtot">${num(sum)}</b> · счетчик обновляется вживую</p>`:''}
+    ${open&&myv!=null?`<p class="note">Голосование идет до ${fmt(c.day+1)}, 23:59\u00a0мск${nx?`. Глава ${ROMAN[i+1]} выйдет ${fmt(nx.day)}`:''}</p>`:''}
   </section>`;
 }
 function vChapter(){
@@ -1067,7 +1066,7 @@ function vChapter(){
   else{acts=[nxOut?{t:`Читать главу ${ROMAN[i+1]}`,act:'openCh',i:i+1,gold:1}:routeNext(true),{t:'Все главы',act:'go',v:'serial'}];if(nx&&!nxOut&&!open)note=`Глава ${ROMAN[i+1]} выйдет ${fmt(nx.day)}`;}
   const text=`<div class="parch story">${flowers()}${c.p.map((x,k)=>tale(x,k===0)).join('')}${c.final?'<div class="fin">Конец</div>':''}</div>`;
   const cd=open?`<div class="vote-h"><span class="chip live" id="vcd2">${countdown(c.day)}</span></div>`:'';
-  const fin=c.final?`<p class="tale small center">${full?'Цельная сказка уже собрана — её можно прочитать целиком и скачать.':`Это последняя глава. Цельная сказка с инфографикой голосований выйдет ${fmt(D.FULL_TALE_DAY)}.`}</p>`:'';
+  const fin=c.final?`<p class="tale small center">${full?'Цельная сказка уже собрана — ее можно прочитать целиком и скачать.':`Это последняя глава. Цельная сказка с инфографикой голосований выйдет ${fmt(D.FULL_TALE_DAY)}.`}</p>`:'';
   return {
     L:`${pt(c.t,`Глава ${ROMAN[i]} · ${fmt(c.day)}`,'h1')}<div class="illu"><img src="${A[c.img]}" alt=""></div>${text}`,
     R:`${voteBlock(i,cd)}${fin}`,
@@ -1089,7 +1088,7 @@ function fullTaleHTML(forPrint){
 // Цельная сказка: читается по главам, переключатель глав
 function vFullTale(){
   bar('Большая книга сказок','Сказка-сериал · финал',ARCH()?null:'serial');
-  if(st.day<D.FULL_TALE_DAY)return lockView('Цельная сказка выйдет 25 декабря','Все главы соберутся в одну сказку — её можно будет прочитать и скачать в PDF.','book');
+  if(st.day<D.FULL_TALE_DAY)return lockView('Цельная сказка выйдет 25 декабря','Все главы соберутся в одну сказку — ее можно будет прочитать и скачать в PDF.','book');
   const ch=D.CHAPTERS, k=Math.min(ui.seg.ft||0,ch.length-1);
   const info=`<div class="infog"><div class="bign">${num(D.SERIAL_AUTHORS)}</div><div><b>человек написали эту сказку</b><span>5 голосований, ${num(ch.filter(c=>!c.final).reduce((s,c)=>s+c.votes,0))} голосов. Каждый поворот сюжета выбрали сотрудники ПСБ.</span></div></div>`;
   const winners=`<div class="winners">${ch.filter(c=>!c.final).map((c,i)=>`<div class="wr"><span class="rn">${ROMAN[i]}</span><span class="wt">${c.o[c.win]}</span><b>${c.pct[c.win]}%</b></div>`).join('')}</div>`;
@@ -1107,14 +1106,12 @@ function vFullTale(){
 /* ===== Пряничная избушка =====
    Книга: слева — избушка и Мария, справа — сказки. Нажали на сказку — окно: обложка, подводка Марии и плеер,
    сказка сразу начинает играть. Закрыли окно — сказка продолжает играть в мини-плеере внизу экрана, по нему окно открывается снова */
-function taleCover(t,i){const [a,b]=t.c;return `<svg viewBox="0 0 160 120" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="tc${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="#0b1538"/></linearGradient></defs><rect width="160" height="120" fill="url(#tc${i})"/>
-  <circle cx="${30+i*11%100}" cy="28" r="12" fill="${b}" opacity=".9"/>${[...Array(7)].map((_,k)=>`<circle cx="${(k*37+i*13)%160}" cy="${(k*23+i*7)%60+6}" r="1.2" fill="#fff"/>`).join('')}
-  <path d="M0 96 Q40 76 80 92 T160 86 V120 H0Z" fill="#eef4ff" opacity=".9"/><path d="M14 96 l12-30 12 30z M120 92 l10-26 10 26z" fill="#173a5c"/>
-  <g fill="none" stroke="${b}" stroke-width="1.4" opacity=".7"><path d="M70 112 l6-6 6 6 6-6 6 6"/></g></svg>`;}
+function taleCover(t,i){return `<img src="${A['tale'+(i+1)]}" alt="" loading="lazy">`;}   // обложки — ChatGPT, 28.10
 // Подводка к сказке — заготовка: откуда сказка. Финальные подводки пишутся вместе с текстами озвучки
-const TALE_WHERE={'русская народная':'по всей России','нанайская':'нанайцы на Амуре','ненецкая':'ненцы в тундре','чукотская':'на Чукотке','татарская':'в Татарстане',
-  'мордовская':'в Мордовии','бурятская':'в Бурятии','коми-пермяцкая':'коми-пермяки в Прикамье','мансийская':'манси в Югре'};
-function taleLead(t){const w=TALE_WHERE[t.n.replace(/ сказка$/,'')];return `${w?`эту сказку рассказывают ${w}. `:''}Устраивайтесь поудобнее — начинаю.`;}
+const TALE_WHERE={'чувашская':'чуваши на Волге','бурятская':'буряты у Байкала','мордовская':'в Мордовии','чукотская':'чукчи на Чукотке',
+  'мансийская':'манси в северной тайге, за Уральскими горами','ненецкая':'ненцы на Крайнем Севере','алтайская':'алтайцы в горах Алтая',
+  'татарская':'татары на Волге и Каме','якутская':'якуты','карельская':'карелы на берегах северных озер и Белого моря'};
+function taleLead(t){const w=TALE_WHERE[t.n.replace(/ сказка$/,'')];return `${w?`эту сказку рассказывают ${w}. `:''}Устраивайся поудобнее и слушай.`;}
 function taleTime(){const T=D.TALES[ui.izba.cur];return {pct:ui.izba.pos/(T.d*60)*100,txt:`${mmss(ui.izba.pos)} / ${T.d}:00`};}
 function ppBtn(){const pl=ui.izba.playing;return `<button class="pp" data-act="pp" aria-label="${pl?'Пауза':'Слушать'}">${pl?svg('pause'):svg('play')}</button>`;}
 // Окно сказки: обложка, подводка, плеер
@@ -1132,12 +1129,12 @@ function vIzba(){
   // мини-плеер — когда окно сказки закрыто, а сказка выбрана
   const tm=cur!=null?taleTime():null;
   const player=cur!=null&&ui.sheet!=='tale'?`<div class="player"><span class="face"><img src="${A.m_zhena}" alt=""></span>${ppBtn()}
-    <button class="meta" data-act="taleOpen"><b>${D.TALES[cur].t}</b><span>${D.TALES[cur].n} · читает Мария</span><span class="bar"><i class="pbar" style="width:${tm.pct}%"></i></span></button>
+    <button class="meta" data-act="taleOpen"><b>${D.TALES[cur].t}</b><span>${D.TALES[cur].n}</span><span class="bar"><i class="pbar" style="width:${tm.pct}%"></i></span></button>
     <span class="tm-l ptm">${tm.txt}</span></div>`:'';
-  const hello=say('m_zhena','Мария','устраивайтесь поудобнее. Каждую неделю я читаю две новые сказки — заходите почаще!','compact');
-  const stats=`<div class="stats3"><div><b>${talesOpen()} из 10</b><span>сказок доступно</span></div><div><b>+2</b><span>каждую неделю</span></div><div><b>5–10</b><span>минут сказка</span></div></div>`;
+  const hello=say('m_zhena','Мария','устраивайся поудобнее. Это сказки из моей коллекции: каждую неделю добавляю по две — заходи почаще!','compact');
+  const stats=`<div class="stats3"><div><b>${talesOpen()} из 10</b><span>сказок доступно</span></div><div><b>+2</b><span>каждую неделю</span></div><div><b>7–11</b><span>минут сказка</span></div></div>`;
   const tales=`<div class="tales">${D.TALES.map((t,i)=>{const lk=st.day<t.open;return `<button class="tale-r ${cur===i?'playing':''}" data-act="play" data-i="${i}" ${lk?'disabled':''}><span class="cv">${taleCover(t,i)}</span><span class="tt"><b>${t.t}</b><small>${t.n} · ${lk?'откроется '+fmt(t.open):t.d+' мин'}</small></span><span class="pl">${lk?svg('lock'):cur===i&&ui.izba.playing?svg('pause'):svg('play')}</span></button>`;}).join('')}</div>`;
-  const stream=`<div class="stream"><span class="small ink2">Слушайте и вне платформы:</span><div class="row-c"><button class="btn btn-ghost btn-sm" data-act="toast" data-m="Ссылка на плейлист появится после публикации">VK Музыка</button><button class="btn btn-ghost btn-sm" data-act="toast" data-m="Ссылка на плейлист появится после публикации">Яндекс Музыка</button></div><p class="note">Сказки озвучены нейросетью</p></div>`;
+  const stream=`<div class="stream"><span class="small ink2">Слушай и вне платформы:</span><div class="row-c"><button class="btn btn-ghost btn-sm" data-act="toast" data-m="Ссылка на плейлист появится после публикации">VK Музыка</button><button class="btn btn-ghost btn-sm" data-act="toast" data-m="Ссылка на плейлист появится после публикации">Яндекс Музыка</button></div><p class="note">Сказки озвучены нейросетью</p></div>`;
   return {pre:endBanner(),
     L:`${pt('Пряничная избушка','Для детей · сказка на ночь','h1')}<img class="illo wide" src="${A.izba}" alt="">${hello}${stats}${stream}`,
     R:`${pt('Сказки на ночь',`Доступно ${talesOpen()} из 10`)}${tales}`,
@@ -1160,9 +1157,9 @@ function mountIzba(){
 
 /* ===== Рейтинг =====
    Без пояснений: плашка о себе (имя, место, баллы), ниже — топ-20. Если вы ниже — своя строка под списком, выделена.
-   Мерч получают первые десять: после десятой строки — черта. Медалей у первых трёх нет — победители все десять */
+   Мерч получают первые десять: после десятой строки — черта. Медалей у первых трех нет — победители все десять */
 const LB_TOP=20;
-function lbRow(x){return `<li class="lbr${x.me?' me':''}"><span class="pl">${x.place}</span>${ava(x.nick,DESK?36:32,x.me)}<span class="nm"><b>${tname(x.nick,x.city)}</b>${x.me?' <span class="tag">вы</span>':''}</span><span class="p">${num(x.p)}</span></li>`;}
+function lbRow(x){return `<li class="lbr${x.me?' me':''}"><span class="pl">${x.place}</span>${ava(x.nick,DESK?36:32,x.me)}<span class="nm"><b>${tname(x.nick,x.city)}</b>${x.me?' <span class="tag">ты</span>':''}</span><span class="p">${num(x.p)}</span></li>`;}
 function vRating(){
   bar('Турнирная таблица');
   const lb=board(),me=lb.find(x=>x.me);
@@ -1170,7 +1167,7 @@ function vRating(){
     <div class="mr-k"><div><b>${me.place}</b><span>место</span></div><div><b>${num(me.p)}</b><span>${plural(me.p,'балл','балла','баллов')}</span></div></div></div>`;
   const rows=lb.slice(0,LB_TOP).map((x,i)=>lbRow(x)+(i===9?'<li class="lb-cut" aria-hidden="true"><span>топ-10 получают мерч</span></li>':'')).join('');
   const tail=me.place>LB_TOP?`<li class="lb-gap" aria-hidden="true"><span></span><span></span><span></span></li>${lbRow(me)}`:'';
-  const list=`<ol class="lb2">${rows}${tail}</ol><div class="lb-earn">${btn({t:'Где ещё заработать баллы',href:href('profile','#points'),gold:1})}</div>`;
+  const list=`<ol class="lb2">${rows}${tail}</ol><div class="lb-earn">${btn({t:'Где еще заработать баллы',href:href('profile','#points'),gold:1})}</div>`;
   const head=`<div class="act-head"><h1 class="sc-t">Турнирная таблица</h1><p class="sc-sub">Топ-10 по итогам получат мерч</p></div>`;
   return {pre:endBanner(),one:[mine,list],M:[mine,list],dstage:head,cls:'rating'};
 }
@@ -1179,7 +1176,7 @@ function vRating(){
    Слева — кто вы: табличка с инициалами и именем, баллы и место в таблице, персональный код, история начислений; в самом низу — «Выйти».
    Справа — «Мои баллы»: блок на каждое испытание и сериал — сколько заработано из возможного, что открыто, что и когда откроется.
    На телефоне — то же одной колонкой, без вкладок: баллы и место, «Мои баллы», код, история */
-const SRC={quiz:'Спроси дорогу',forest:'Лес',tree:'Ёлка',serial:'Сказка-сериал'};
+const SRC={quiz:'Спроси дорогу',forest:'Лес',tree:'Елка',serial:'Сказка-сериал'};
 function pbHead(title,got,max,img,ic){
   const pct=max?Math.min(100,Math.round(got/max*100)):0;
   return `<div class="pb-h"><img class="pb-i${ic?' ic':''}" src="${A[img]}" alt=""><div class="pb-t"><b>${title}</b>${max?`<span class="pb-bar" aria-hidden="true"><i style="width:${pct}%"></i></span>`:''}</div>
@@ -1196,27 +1193,27 @@ function pointsBlocks(){
   const qrows=D.QUIZ.map((r,i)=>{const res=st.quiz[i],n=r.qs.length,pq=qPend(i),name=`Набор ${i+1} · ${r.title}`;
     if(st.day<r.open)return pbRow(name,`до ${n*20} баллов · откроется ${fmt(r.open)}`,pbLock(r.open),'locked');
     if(res&&res.done)return pbRow(name,`${qFirst(res)} из ${n} верных`,pbGot(qFirst(res)*20),'done');
-    if(pq)return pbRow(name,`остановились на вопросе ${pq.i+1} из ${n}`,pbBtn('Продолжить',{act:'goQuiz',i,gold:1}));
+    if(pq)return pbRow(name,`ты на вопросе ${pq.i+1} из ${n}`,pbBtn('Продолжить',{act:'goQuiz',i,gold:1}));
     return pbRow(name,`${n} вопросов · до ${n*20} баллов`,pbBtn('Пройти',{act:'goQuiz',i,gold:1}));}).join('');
   // Лес: баллы за лучший забег, потолка нет
   const g=st.forest.bestGifts||0;
   const frow=st.day<OPEN.forest?pbRow('Забег за подарками',`10 баллов за подарок · откроется ${fmt(OPEN.forest)}`,pbLock(OPEN.forest),'locked')
-    :st.forest.runs?pbRow(`Рекорд — ${g} ${plural(g,'подарок','подарка','подарков')}`,'каждый подарок сверх рекорда — ещё 10 баллов',pbBtn('Побить рекорд',{act:'go',v:'forest'}))
+    :st.forest.runs?pbRow(`Рекорд — ${g} ${plural(g,'подарок','подарка','подарков')}`,'каждый подарок сверх рекорда — еще 10 баллов',pbBtn('Побить рекорд',{act:'go',v:'forest'}))
     :pbRow('Забег за подарками','10 баллов за каждый подарок',pbBtn('Бежать',{act:'go',v:'forest',gold:1}));
-  // Ёлка: 100 баллов — когда игрушку впервые повесили на общую ёлку
-  const trow=st.day<OPEN.tree?pbRow('Игрушка на общей ёлке',`откроется ${fmt(OPEN.tree)}`,pbLock(OPEN.tree),'locked')
-    :st.tree.pts?pbRow('Игрушка на общей ёлке',st.tree.on?'висит на ёлке':'сейчас снята с ёлки',pbGot(100),'done')
-    :st.tree.ball?pbRow('Игрушка готова','повесьте её на ёлку — и сразу 100 баллов',pbBtn('Повесить',{act:'go',v:'tree',gold:1}))
-    :pbRow('Игрушка на общей ёлке','сделайте свою и повесьте — 100 баллов',pbBtn('Сделать',{act:'go',v:'tree',gold:1}));
+  // Елка: 100 баллов — когда игрушку впервые повесили на общую елку
+  const trow=st.day<OPEN.tree?pbRow('Игрушка на общей елке',`откроется ${fmt(OPEN.tree)}`,pbLock(OPEN.tree),'locked')
+    :st.tree.pts?pbRow('Игрушка на общей елке',st.tree.on?'висит на елке':'сейчас снята с елки',pbGot(100),'done')
+    :st.tree.ball?pbRow('Игрушка готова','повесь ее на елку — и сразу 100 баллов',pbBtn('Повесить',{act:'go',v:'tree',gold:1}))
+    :pbRow('Игрушка на общей елке','сделай свою и повесь — 100 баллов',pbBtn('Сделать',{act:'go',v:'tree',gold:1}));
   // Сказка-сериал: голос за каждую главу, в том числе за финальную
   const ch=D.CHAPTERS,S=serialState(),nv=Object.keys(st.serial.votes||{}).length,nx=ch.findIndex(c=>st.day<c.day);
-  const chips=`<div class="pb-ch">${ch.map((c,i)=>{const s=chState(i),v=st.serial.votes[i]!=null;return `<span class="${v?'got':s==='vote'?'live':s==='soon'?'soon':'miss'}" title="Глава ${ROMAN[i]}: ${v?'голос учтён':s==='vote'?'идёт голосование':s==='soon'?'выйдет '+fmt(c.day):'голосование прошло'}">${ROMAN[i]}</span>`;}).join('')}</div>`;
-  const srow=S.kind==='vote'?pbRow(`Глава ${ROMAN[S.cur]}: идёт голосование`,`до ${fmt(S.c.day+1)}, 23:59 мск`,pbBtn('Голосовать',{act:'openCh',i:S.cur,gold:1}))
-    :nx>=0?pbRow(`Глава ${ROMAN[nx]} выйдет ${fmt(nx>=0?ch[nx].day:0)}`,`голосование — 48 часов · ваших голосов ${nv} из ${ch.length}`,pbLock(ch[nx].day),'locked')
-    :pbRow('Все голосования прошли',`ваших голосов — ${nv} из ${ch.length}`,'','done');
+  const chips=`<div class="pb-ch">${ch.map((c,i)=>{const s=chState(i),v=st.serial.votes[i]!=null;return `<span class="${v?'got':s==='vote'?'live':s==='soon'?'soon':'miss'}" title="Глава ${ROMAN[i]}: ${v?'голос учтен':s==='vote'?'идет голосование':s==='soon'?'выйдет '+fmt(c.day):'голосование прошло'}">${ROMAN[i]}</span>`;}).join('')}</div>`;
+  const srow=S.kind==='vote'?pbRow(`Глава ${ROMAN[S.cur]}: идет голосование`,`до ${fmt(S.c.day+1)}, 23:59 мск`,pbBtn('Голосовать',{act:'openCh',i:S.cur,gold:1}))
+    :nx>=0?pbRow(`Глава ${ROMAN[nx]} выйдет ${fmt(nx>=0?ch[nx].day:0)}`,`голосование — 48 часов · твоих голосов ${nv} из ${ch.length}`,pbLock(ch[nx].day),'locked')
+    :pbRow('Все голосования прошли',`твоих голосов — ${nv} из ${ch.length}`,'','done');
   return `<section class="pb">${pbHead('Спроси дорогу',P.q,qmax,'tile_quiz')}${qrows}</section>
     <section class="pb">${pbHead('Лес',P.f,0,'art_forest')}${frow}</section>
-    <section class="pb">${pbHead('Ёлка',P.t,100,'tile_tree')}${trow}</section>
+    <section class="pb">${pbHead('Елка',P.t,100,'tile_tree')}${trow}</section>
     <section class="pb">${pbHead('Сказка-сериал',P.s,ch.length*VOTE_PTS,'serial',1)}${chips}${srow}</section>`;
 }
 function vProfile(){
@@ -1226,7 +1223,7 @@ function vProfile(){
   const plate=`<div class="pf-plate"><div class="nk-prev">${ava(u.nick,58,true)}<div class="nickplate"><div class="nk${nkLong(u.nick)?' long':''}">${esc(u.nick)}</div></div></div></div>`;
   const won=st.day>=OPEN.chest&&drawWinners().some(x=>x.me);
   const stats=`<div class="pf-k"><div><b>${num(p.total)}</b><span>${plural(p.total,'балл','балла','баллов')}</span></div><a href="${href('rating')}"><b>${me.place}</b><span>место в таблице</span></a></div>
-    ${won?`<a class="pf-win" href="${href('chest')}">${svg('check','width="16" height="16"')}<span>${nb(`Вы среди победителей розыгрыша — с вами свяжутся до ${fmt(PRIZE_DAY)}`)}</span></a>`:''}`;
+    ${won?`<a class="pf-win" href="${href('chest')}">${svg('check','width="16" height="16"')}<span>${nb(`Ты среди победителей розыгрыша — с тобой свяжутся до ${fmt(PRIZE_DAY)}`)}</span></a>`:''}`;
   const mailH=u.email?`<div class="note">Продублирован на ${esc(u.email)}</div>`
     :ui.pmail?`<div class="row pmail"><input class="input ${ui.auth.err?'err':''}" id="pmail" type="email" inputmode="email" autocomplete="email" placeholder="name@mail.ru" value="${esc(ui.pmailVal)}" aria-label="Личная почта"><button class="btn btn-ghost" data-act="pmailSend">Отправить</button></div>${ui.auth.err?`<div class="err-t">${ui.auth.err}</div>`:''}`
     :`<p class="note"><button class="link" data-act="pmailOpen">Прислать код на почту</button></p>`;
@@ -1234,9 +1231,9 @@ function vProfile(){
       <button class="btn btn-ghost btn-sm" data-act="copy" data-t="${u.code}">${svg('copy','width="14" height="14"')} Скопировать</button>${mailH}</div>
     ${st.day<=CODE_DEADLINE?portalHTML():''}`;
   const hist=`${lbl('История начислений')}${log.length?`<div class="hist">${log.map(e=>`<div class="hr"><span class="d">${fmt(e.d,true)}</span><span class="w"><b>${SRC[e.k]}</b><small>${esc(e.t)}</small></span><span class="p">+${num(e.p)}</span></div>`).join('')}</div>`
-    :'<p class="tale small">Пока пусто — первые баллы даёт Спроси дорогу.</p>'}`;
+    :'<p class="tale small">Пока пусто — первые баллы дает Спроси дорогу.</p>'}`;
   // выход — в самом низу и неприметно: вернуться можно только по коду
-  const out=`<div class="logout">${ui.logout?`<p class="small">Выйти на этом устройстве? Вернуться можно будет только по коду <b>${u.code}</b> — сохраните его.</p><div class="row-c"><button class="btn btn-ghost btn-sm" data-act="logoutNo">Остаться</button><button class="btn btn-ghost btn-sm" data-act="logout">Выйти</button></div>`
+  const out=`<div class="logout">${ui.logout?`<p class="small">Выйти на этом устройстве? Вернуться можно будет только по коду <b>${u.code}</b> — сохрани его.</p><div class="row-c"><button class="btn btn-ghost btn-sm" data-act="logoutNo">Остаться</button><button class="btn btn-ghost btn-sm" data-act="logout">Выйти</button></div>`
     :'<button class="link" data-act="logoutAsk">Выйти</button>'}</div>`;
   const mine=`<div id="points">${lbl('Мои баллы')}${pointsBlocks()}</div>`;
   if(DESK)return {L:[`${stats}${code}`,`${hist}${out}`],R:[mine],dstage:plate,cls:'profile'};
@@ -1249,16 +1246,16 @@ function vArchive(){
   bar('Итоги сказки','1 декабря — 17 января');
   const votes=D.CHAPTERS.filter(c=>!c.final).reduce((x,c)=>x+c.votes,0), P=participants(), C=citiesCount(), T=treeCount();
   const S=[[num(P),'помощников'],[C,plural(C,'город','города','городов')],[num(giftsTotal()),'подарков собрали в Лесу'],
-    [num(T),plural(T,'игрушка','игрушки','игрушек')+' на общей ёлке'],[num(votes),'голосов в сказке-сериале'],[num(Math.round(P*24.6)),'ответов в квизе']];
+    [num(T),plural(T,'игрушка','игрушки','игрушек')+' на общей елке'],[num(votes),'голосов в сказке-сериале'],[num(Math.round(P*24.6)),'ответов в квизе']];
   const hello=say('m_mikhail','Дед Мороз Михаил','спасибо, помощники! Я успел во все одиннадцать полуночей, подарки нашли своих хозяев. Сказку можно перечитать и послушать.','compact');
   const stats=`<div class="astats">${S.map(([b2,t])=>`<div><b>${b2}</b><span>${t}</span></div>`).join('')}</div>`;
-  const bookC=`<div class="wcard"><img class="wim" src="${A.book}" alt=""><div class="wb"><span class="lbl-s">Сказка-сериал</span><b>Большая книга сказок</b><span>${num(D.SERIAL_AUTHORS)} сотрудников выбирали, куда повернёт сюжет: шесть глав и пять голосований</span>
+  const bookC=`<div class="wcard"><img class="wim" src="${A.book}" alt=""><div class="wb"><span class="lbl-s">Сказка-сериал</span><b>Большая книга сказок</b><span>${num(D.SERIAL_AUTHORS)} сотрудников выбирали, куда повернет сюжет: шесть глав и пять голосований</span>
     <div class="row tight">${btn({t:'Читать',act:'go',v:'fulltale',gold:1,noarrow:1,cls:'btn-sm'})}${btn({t:`${svg('down','width="16" height="16"')} PDF`,act:'pdf',cls:'btn-sm'})}</div></div></div>`;
   const izbaC=`<div class="wcard"><img class="wim" src="${A.hut}" alt=""><div class="wb"><span class="lbl-s">Для детей</span><b>Пряничная избушка</b><span>Десять аудиосказок народов России — здесь и в плейлистах VK Музыки и Яндекс Музыки</span>${btn({t:'Слушать',act:'go',v:'izba',noarrow:1,cls:'btn-sm'})}</div></div>`;
   const note=`<p class="note">Итоги турнирной таблицы и розыгрыша подведены. Испытания, голосования и личные кабинеты закрыты — спасибо всем, кто участвовал!</p>`;
   const head=sub=>`<h1 class="sc-t">Сказка закончилась</h1><p class="sc-sub">${sub}</p>`;
   return {L:`${hello}${stats}`,
-    R:`${pt('Перечитать и послушать','Остаётся с вами')}${bookC}${izbaC}${note}`,
+    R:`${pt('Перечитать и послушать','Остается с тобой')}${bookC}${izbaC}${note}`,
     dstage:`<div class="sc-title">${head('Новогодняя ночь длиной в страну · 1 декабря — 17 января')}</div>`,
     stage:`<div class="sc-hero"><img class="sc-ava" src="${A.bear_moroz}" alt=""><div class="sc-hb">${head('1 декабря — 17 января')}</div></div>`,
     M:[`${hello}${stats}`,`${lbl('Перечитать и послушать','s')}${bookC}${izbaC}${note}`],
@@ -1281,7 +1278,7 @@ const WORLD=['route','quiz','forest','tree','chest','rating','profile'];
 const VIEWS={route:vRoute,profile:vProfile,quiz:vQuiz,forest:vForest,tree:vTree,serial:vSerial,chapter:vChapter,fulltale:vFullTale,izba:vIzba,chest:vChest,rating:vRating};
 const MOUNTS={route:()=>{if(location.hash==='#tree'){const t=$('#tree');if(t)setTimeout(()=>t.scrollIntoView({block:'start'}),60);}},
   profile:()=>{if(location.hash==='#points'&&!render._pts){render._pts=1;const t=$('#points');if(t)setTimeout(()=>{const y=t.getBoundingClientRect().top+scrollY-(DESK?96:70);window.scrollTo({top:Math.max(0,y)});},60);}},forest:()=>{if(DESK||ui.fmode)mountForest(); if(DESK&&ui.fauto&&game){ui.fauto=false;ACT.fStart();}},chapter:mountChapter,izba:mountIzba};
-const FOOT=()=>`<div class="foot"><span class="psb">${LOGO}</span>${footLinks()}<p>Прототип платформы · Deep × ПСБ · контент и цифры — примеры</p></div>`;
+const FOOT=()=>`<div class="foot"><i class="foot-orn" aria-hidden="true"></i>${footLinks()}<p>Прототип платформы · Deep × ПСБ · контент и цифры — примеры</p></div>`;
 function render(){
   clearTimers();
   const app=$('#app'); ui.bar=null;
@@ -1316,13 +1313,13 @@ let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add
 function copy(t){const done2=()=>toast('Скопировано: '+t);if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(done2,()=>fallback());}else fallback();function fallback(){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');done2();}catch(e){toast(t);}a.remove();}}
 
 /* ===== Панель прототипа ===== */
-const MARKS=[[0,'1 дек · старт'],[7,'8 дек · Лес'],[14,'15 дек · Ёлка'],[21,'22 дек · набор IV'],[24,'25 дек · розыгрыш'],[31,'1 января'],[47,'17 янв · конец'],[48,'18 янв · архив']];
-const JUMPS=[['prologue','Обложка'],['nick','Имя героя'],['auth','Персональный код'],['login','Вход по коду'],['route','Маршрут'],['quiz','Квиз'],['forest','Лес'],['tree','Ёлка'],['serial','Сериал'],['chapter','Глава + голосование'],['izba','Избушка'],['chest','Сундук'],['rating','Рейтинг'],['profile','Кабинет']];
+const MARKS=[[0,'1 дек · старт'],[7,'8 дек · Лес'],[14,'15 дек · Елка'],[21,'22 дек · набор IV'],[24,'25 дек · розыгрыш'],[31,'1 января'],[47,'17 янв · конец'],[48,'18 янв · архив']];
+const JUMPS=[['prologue','Обложка'],['nick','Имя героя'],['auth','Персональный код'],['login','Вход по коду'],['route','Маршрут'],['quiz','Квиз'],['forest','Лес'],['tree','Елка'],['serial','Сериал'],['chapter','Глава + голосование'],['izba','Избушка'],['chest','Сундук'],['rating','Рейтинг'],['profile','Кабинет']];
 function renderDemo(){
   const el=$('#demo');
   el.innerHTML=`<button class="demo-fab" data-act="demo" aria-label="Панель прототипа">${svg('sliders')}<span>Прототип</span></button>
   ${ui.demo?`<div class="demo" role="dialog" aria-label="Панель прототипа"><button class="x" data-act="demo" aria-label="Закрыть">×</button>
-    <h4>Панель прототипа</h4><p>На платформе её не будет. Двигайте дату — разделы открываются по графику запуска.</p>
+    <h4>Панель прототипа</h4><p>На платформе ее не будет. Двигайте дату — разделы открываются по графику запуска.</p>
     <div class="dl">Дата на платформе</div>
     <div class="dv"><b id="dlab">${fmt(st.day)}${st.day>=31?' 2027':''}</b><span class="small">${st.day<31?nyLeft():''}</span></div>
     <input type="range" min="0" max="${LAST_DAY+1}" value="${st.day}" id="dayr" aria-label="Дата">
@@ -1348,7 +1345,7 @@ async function fillAll(){
   ensureUser();
   D.QUIZ.forEach((r,i)=>{if((st.day>=r.open||i===0)&&!(st.quiz[i]&&st.quiz[i].done)){const n=r.qs.length,b=n-2;st.quiz[i]={first:b,best:b,done:true};addLog('quiz',`Набор ${i+1} «${r.title}»: ${b} из ${n} верных`,b*20);}});
   if(!st.forest.runs){st.forest.runs=1;st.forest.bestGifts=26;st.forest.gifts+=26;addLog('forest','Забег: 26 подарков',260);}
-  if(!st.tree.pts){if(!st.tree.ball)st.tree.ball=await renderBall(AI.sample_girl,0);st.tree.made=1;st.tree.on=true;st.tree.ok=true;st.tree.pts=true;addLog('tree','Игрушка на общей ёлке',100);}
+  if(!st.tree.pts){if(!st.tree.ball)st.tree.ball=await renderBall((await loadToys()).s_cat,0);st.tree.made=1;st.tree.on=true;st.tree.ok=true;st.tree.pts=true;addLog('tree','Игрушка на общей елке',100);}
   save();
   if(st.screen!=='app'){flash('Готово: все испытания отмечены пройденными');go('route');return;}
   ui.demo=false;render();toast('Готово: все испытания отмечены пройденными');
@@ -1361,23 +1358,18 @@ const ACT={
   toast:(d,e,ev)=>{ev.preventDefault();toast(d.m);}, copy:d=>copy(d.t),
   startAuth:()=>{if(st.user){go('route');return;}st.draft=null;go('nick');},
   toNick:(d,e,ev)=>{ev.preventDefault();saveDraft();go('nick');},
-  pickA:d=>{ui.nick.a=+d.i;if(ui.sheet){ui.sheet=null;render();}else patchNick(false);},
-  pickN:d=>{ui.nick.n=+d.i;if(ui.sheet){ui.sheet=null;render();}else patchNick(false);},
-  pkOpen:d=>{ui.sheet=d.k==='a'?'pkA':'pkN';render();const on=$('.sheet .pk-i.on');if(on){const l=on.closest('.pk-list');l.scrollTop=on.offsetTop-l.offsetTop-l.clientHeight/2+on.offsetHeight/2;}},
-  rndA:()=>{for(let t=0;t<100;t++){const a=rndI(D.ADJ.length);if(a!==ui.nick.a&&!nameOdd(a,ui.nick.n)){ui.nick.a=a;break;}}patchNick(true);},
-  rndN:()=>{for(let t=0;t<100;t++){const n=rndI(NOUNS.length);if(n!==ui.nick.n&&!nameOdd(ui.nick.a,n)){ui.nick.n=n;break;}}patchNick(true);},
-  regen:()=>{ui.nick=rndNick();patchNick(true);},
+  regen:()=>{ui.nick=rndNick();patchNick();},
   mailSend:()=>{const v2=$('#email').value.trim();ui.auth.email=v2;const er=mailErr(v2);if(er){ui.auth.err=er;return render();}
     ui.auth.err='';ui.auth.sentTo=v2;saveDraft();render();toast('Код отправлен на '+v2);},
   mailEdit:()=>{ui.auth.sentTo=null;saveDraft();render();const e=$('#email');e&&e.focus();},
   saveNick:()=>{const q=cityQ();ui.city=cityFind(q);if(cityNorm(q)&&!ui.city){ui.cityErr=true;patchCity();const f=$('#city');if(f){f.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'});f.focus({preventScroll:true});}return;}
     ui.cityQ=ui.city;const city=ui.city;const n=nickOf(ui.nick);ui.pending={nick:n.nick,g:n.g,city};saveDraft();go('auth');},
   citySel:d=>{ui.city=d.v;ui.cityQ=d.v;ui.cityErr=false;saveDraft();const f=$('#city');if(f){f.value=d.v;f.blur();}patchCity();},
-  codeNext:()=>{if(!ui.rulesOk){toast('Отметьте, что принимаете правила');const c=$('.chk.agree');if(c){c.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'});c.classList.remove('nudge');void c.offsetWidth;c.classList.add('nudge');}return;}if(!ui.auth.sentTo){ui.svOk=false;ui.sheet='savecode';render();return;}ACT.codeGo(null,null,null,true);},
-  portal:(d,e,ev)=>{ev&&ev.preventDefault&&ev.preventDefault();toast('Ссылку на внутреннюю платформу даст банк');},
+  codeNext:()=>{if(!ui.rulesOk){toast('Отметь, что принимаешь правила');const c=$('.chk.agree');if(c){c.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'});c.classList.remove('nudge');void c.offsetWidth;c.classList.add('nudge');}return;}if(!ui.auth.sentTo){ui.svOk=false;ui.sheet='savecode';render();return;}ACT.codeGo(null,null,null,true);},
+  portal:(d,e,ev)=>{ev&&ev.preventDefault&&ev.preventDefault();toast('Ссылку на портал «Ньютон» даст банк');},
   toMail:()=>{ui.sheet=null;render();const e=$('#email');if(e){e.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'});e.focus({preventScroll:true});}},
   codeGo:(d,e,ev,mailed)=>{if(!mailed&&!svReady())return;ui.sheet=null;const p=ui.pending;
-    // новый участник начинает с чистого листа; прежний (если был на этом устройстве) остаётся на «сервере»
+    // новый участник начинает с чистого листа; прежний (если был на этом устройстве) остается на «сервере»
     if(st.user){REG.put(snapshot());const day=st.day;st=fresh(day);}
     st.user={email:ui.auth.sentTo||'',nick:p.nick,g:p.g,city:p.city,code:ui.auth.code,confirmed:true};st.draft=null;REG.put(snapshot());SS.del('demo');flash(`Добро пожаловать в сказку, ${p.nick}!`);goBack();},
   toLogin:(d,e,ev)=>{ev&&ev.preventDefault&&ev.preventDefault();saveDraft();go('login');},
@@ -1386,10 +1378,10 @@ const ACT={
     if(!/^PSB-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code))return fail('Код выглядит иначе: PSB и восемь букв и цифр, например PSB-7KQ2-M9XA');
     const rec=st.user&&st.user.code===code?snapshot():REG.get(code);
     if(rec&&st.user&&st.user.code!==code)REG.put(snapshot());
-    if(!rec)return fail('Такой код не найден. Проверьте буквы и цифры — или начните сказку заново');
+    if(!rec)return fail('Такой код не найден. Проверь буквы и цифры — или начни сказку заново');
     const day=st.day;st=Object.assign(fresh(day),rec);st.draft=null;ui.login={code:'',err:''};SS.del('demo');flash(`С возвращением, ${st.user.nick}!`);goBack();},
   logoutAsk:()=>{ui.logout=true;render();}, logoutNo:()=>{ui.logout=false;render();},
-  logout:()=>{REG.put(snapshot());const day=st.day;st=fresh(day);save();flash('Вы вышли. Вернуться можно по персональному коду');go('cover');},
+  logout:()=>{REG.put(snapshot());const day=st.day;st=fresh(day);save();flash('Выход выполнен. Вернуться можно по персональному коду');go('cover');},
   pmailOpen:()=>{ui.pmail=true;ui.auth.err='';render();const e=$('#pmail');if(e)e.focus();},
   pmailSend:()=>{const el=$('#pmail');const v2=(el?el.value:'').trim();ui.pmailVal=v2;
     const er=mailErr(v2);if(er){ui.auth.err=er;return render();}
@@ -1407,7 +1399,7 @@ const ACT={
     const ex=$('#expl');if(ex){const r=ex.getBoundingClientRect();if(r.top>innerHeight*.55)window.scrollBy({top:r.top-(DESK?120:90),behavior:reduced()?'auto':'smooth'});}},
   qNext:()=>{const q=ui.quiz,R=D.QUIZ[q.r];ui.sheet=null;
     if(q.i<R.qs.length-1){q.i++;q.answered=false;q.pick=null;st.qrun=Object.assign({},q);save();ui.turn=true;render();window.scrollTo(0,0);return;}
-    // в зачёт — первая попытка; повтор только обновляет «лучший» для статистики, без баллов
+    // в зачет — первая попытка; повтор только обновляет «лучший» для статистики, без баллов
     const prev=st.quiz[q.r],n=R.qs.length;
     if(prev&&prev.done){q.gain=0;q.replay=true;prev.best=Math.max(prev.best||0,q.correct);}
     else{q.gain=q.correct*20;if(q.gain>0)addLog('quiz',`Набор ${q.r+1} «${R.title}»: ${q.correct} из ${n} верных`,q.gain);st.quiz[q.r]={first:q.correct,best:q.correct,done:true};}
@@ -1424,22 +1416,24 @@ const ACT={
     $$('.snd').forEach(b=>{b.innerHTML=svg(on?'snd':'sndOff');b.setAttribute('aria-pressed',on);b.title=on?'Выключить звук':'Включить звук';});if(t&&t.blur)t.blur();},
   fExit:(d,e,ev)=>{ev&&ev.preventDefault&&ev.preventDefault();if(game&&game.state.run){game.finish();return;}if(DESK)return;ForestSound.musicPause();landscapeUnlock();ui.fmode=false;render();window.scrollTo(0,0);},
   fLite:(d,e,ev)=>{ev&&ev.preventDefault();if(!DESK){ui.fmode=true;render();}startLite();},
-  // ёлка
+  // елка
   tStyle:d=>{ui.tree.style=+d.i;render();},
   tStep:(d,e,ev)=>{ev&&ev.preventDefault();ui.tree.step=+d.s;render();},
-  // «Тестовая картинка» — подставляет готовую, чтобы попробовать без своего файла; каждое нажатие — следующая из трёх
-  tSample:()=>{const k=TEST_PICS[ui.tree.ti=((ui.tree.ti==null?-1:ui.tree.ti)+1)%TEST_PICS.length];setTreeSrc(AI[k]||A[k]);},
+  // «Тестовая картинка» — подставляет готовую, чтобы попробовать без своего файла; каждое нажатие — следующая из трех
+  tSample:async()=>{const T=await loadToys();const k=TEST_PICS[ui.tree.ti=((ui.tree.ti==null?-1:ui.tree.ti)+1)%TEST_PICS.length];setTreeSrc(T[k]);},
   tMake:()=>makeBall(),
   treeRot:d=>rotateTree(+d.d),
+  treeMine:()=>{if(!st.tree.on){toast('Твоей игрушки пока нет на елке');return;}ui._tfFrom=ui.treeSide;if(ui.treeSide!==0)rotateTree(-1,0);treeHighlight('.mine');},
+  treeFind:()=>{const i=$('#tfq');treeFind(i?i.value:'');},
   // «Повесить» — сразу +100 баллов; у всех игрушка появится после проверки модератором
   tHang:()=>hangToy(true),
   tDownloadMine:()=>download(mineBall(),'novogodnyaya-igrushka.png'),
   // сериал
   openCh:d=>go('chapter','?ch='+(+d.i+1)),
-  vote:d=>{const i=ui.chapter;if(st.serial.votes[i]!=null)return;st.serial.votes[i]=+d.k;addLog('serial',D.CHAPTERS[i].final?`Голос «Как вам финал?» · глава ${ROMAN[i]}`:`Голос за продолжение · глава ${ROMAN[i]}`,VOTE_PTS);save();render();toast(`Голос учтён · +${VOTE_PTS} баллов`);},
+  vote:d=>{const i=ui.chapter;if(st.serial.votes[i]!=null)return;st.serial.votes[i]=+d.k;addLog('serial',D.CHAPTERS[i].final?`Голос «Как тебе финал?» · глава ${ROMAN[i]}`:`Голос за продолжение · глава ${ROMAN[i]}`,VOTE_PTS);save();render();toast(`Голос учтен · +${VOTE_PTS} баллов`);},
   toVote:()=>{const el=$('#vote');if(el)el.scrollIntoView({behavior:reduced()?'auto':'smooth',block:'start'});},
   ftCh:d=>{ui.seg.ft=+d.i;render();const s=DESK?$('.fulltale .pg.pr'):$('#chsel');if(s&&(!DESK||s.getBoundingClientRect().top<70))s.scrollIntoView({behavior:reduced()?'auto':'smooth',block:'start'});},
-  pdf:()=>{const w=window.open('','_blank');if(!w){toast('Разрешите всплывающие окна, чтобы скачать PDF');return;}
+  pdf:()=>{const w=window.open('','_blank');if(!w){toast('Разреши всплывающие окна, чтобы скачать PDF');return;}
     w.document.write(`<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Большая книга сказок — ПСБ</title><style>body{font:16px/1.7 Georgia,serif;max-width:680px;margin:40px auto;padding:0 24px;color:#222}h1{text-align:center;font-size:30px}p.sub{text-align:center;color:#777}</style></head><body><h1>Большая книга сказок</h1><p class="sub">Эту сказку написали ${num(D.SERIAL_AUTHORS)} сотрудников ПСБ</p>${fullTaleHTML(true)}<script>setTimeout(()=>print(),300)<\/script></body></html>`);w.document.close();},
   // избушка
   play:d=>{const i=+d.i;if(ui.izba.cur!==i)ui.izba={cur:i,playing:true,pos:0};ui.sheet='tale';render();},
@@ -1449,7 +1443,7 @@ const ACT={
   demo:()=>{ui.demo=!ui.demo;renderDemo();},
   setDay:d=>setDay(+d.d),
   fillAll:()=>fillAll(),
-  winToggle:()=>{ensureUser();st.chest.win=!st.chest.win;save();ui.demo=false;render();toast(st.chest.win?'Вы среди победителей розыгрыша — итоги с 25 декабря':'Вы больше не среди победителей розыгрыша');},
+  winToggle:()=>{ensureUser();st.chest.win=!st.chest.win;save();ui.demo=false;render();toast(st.chest.win?'Ты среди победителей розыгрыша — итоги с 25 декабря':'Ты больше не среди победителей розыгрыша');},
   resetAll:()=>{if(!confirm('Сбросить прогресс прототипа и начать с обложки?'))return;if(st.user)REG.put(snapshot());const day=st.day;st=fresh(day);go('cover');},
   jump:d=>{const k=d.k;SS.set('demo',1);
     if(k==='nick')st.draft=null;
@@ -1466,25 +1460,26 @@ document.addEventListener('keydown',e=>{
     if(e.key==='Enter'&&e.target.id==='city'&&o.length===1){e.preventDefault();o[0].click();}
     if(e.key==='Escape'){const b=$('#citySug');if(b&&!b.hidden){e.stopPropagation();b.hidden=true;return;}}}
   if(e.key==='Enter'&&e.target.id==='email')ACT.mailSend();
+  if(e.key==='Enter'&&e.target.id==='tfq'){e.preventDefault();ACT.treeFind();}
   if(e.key==='Enter'&&e.target.id==='logincode')ACT.login();
   if(e.key==='Enter'&&e.target.id==='pmail')ACT.pmailSend();
   if(e.key==='Escape'){if(ui.sheet){ui.sheet=null;render();}else if($('#gm .sheet'))ACT.fAgain();}
 });
 document.addEventListener('change',e=>{
-  // галочки-подтверждения: «код сохранён» и «можно показать на ёлке»
+  // галочки-подтверждения: «код сохранен» и «можно показать на елке»
   if(e.target.id==='svOk'){ui.svOk=e.target.checked;$$('[data-act=codeGo]').forEach(b=>b.disabled=!svReady());}
   if(e.target.id==='rulesOk'){ui.rulesOk=e.target.checked;$$('[data-act=codeNext]').forEach(b=>b.classList.toggle('is-off',!ui.rulesOk));const c=$('.chk.agree');if(c)c.classList.remove('nudge');}
   if(e.target.id==='hangSw')hangToy(e.target.checked);
   if(e.target.id==='file'){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>setTreeSrc(r.result);r.readAsDataURL(f);}
 });
 document.addEventListener('input',e=>{
-  if(e.target.classList.contains('pk-q')){filterPk(e.target);const l=e.target.closest('.pk-box').querySelector('.pk-list');if(l)l.scrollTop=0;}if(e.target.id==='city'){ui.cityQ=e.target.value;ui.city=cityFind(ui.cityQ);if(ui.city)ui.cityQ=ui.city;ui.cityErr=false;saveDraft();patchCity();}});
+  if(e.target.id==='city'){ui.cityQ=e.target.value;ui.city=cityFind(ui.cityQ);if(ui.city)ui.cityQ=ui.city;ui.cityErr=false;saveDraft();patchCity();}});
 // Поле города: стрелка вниз — к подсказкам, Esc — закрыть; при уходе из поля подсказки прячутся
 document.addEventListener('focusout',e=>{if(e.target.id==='city'||e.target.classList.contains('city-o'))setTimeout(()=>{const a=document.activeElement;if(a&&(a.id==='city'||a.classList.contains('city-o')))return;const b=$('#citySug');if(b){b.hidden=true;const i=$('#city');if(i)i.setAttribute('aria-expanded','false');}},150);});
 document.addEventListener('focusin',e=>{if(e.target.id!=='city')return;patchCity();
   // телефон: поднимаем поле к верху экрана, чтобы под ним поместились подсказки
   if(!DESK)setTimeout(()=>{const f=$('#city');if(!f||document.activeElement!==f)return;const y=f.getBoundingClientRect().top-76;if(y>0)window.scrollBy({top:y,behavior:reduced()?'auto':'smooth'});setTimeout(placeCitySug,reduced()?0:350);},300);});
-// мышью по подсказке — фокус остаётся в поле, список не закрывается до выбора
+// мышью по подсказке — фокус остается в поле, список не закрывается до выбора
 document.addEventListener('mousedown',e=>{if(e.target.closest('.city-o'))e.preventDefault();});
 document.addEventListener('dragover',e=>{const d=e.target.closest('#drop');if(d){e.preventDefault();d.classList.add('over');}});
 document.addEventListener('dragleave',e=>{const d=e.target.closest('#drop');if(d)d.classList.remove('over');});
@@ -1502,21 +1497,21 @@ function applyPage(){
   else if(PAGE==='nick'||PAGE==='auth'||PAGE==='login'){st.screen=PAGE;}
   else {st.screen='app';st.view=PAGE;}
 }
-// После входа или создания героя — туда, куда человек шёл по ссылке (например, на главу сериала из рассылки)
+// После входа или создания героя — туда, куда человек шел по ссылке (например, на главу сериала из рассылки)
 function goBack(){const b=SS.get('back');SS.del('back');save();SS.set('turn',1);clearTimers();location.href=b&&/^[\w-]+\.html(\?[\w=&%-]*)?$/.test(b)?b:href('route');}
 const ONB=['cover','prologue','nick','auth','login'], STEPS1=['nick','auth','login'];
 function guard(){
-  // Флаг панели «Прототип» живёт, пока идёт знакомство (имя → код), и снимается на любом другом экране
+  // Флаг панели «Прототип» живет, пока идет знакомство (имя → код), и снимается на любом другом экране
   const demo=SS.get('demo');if(!STEPS1.includes(PAGE))SS.del('demo');
   // После 17 января — архив: итоги, книга сказок и избушка открыты всем, остальные адреса ведут на итоги
   if(ARCH()){if(!ARCH_PAGES.includes(PAGE)){location.replace(href('route'));return true;}return false;}
-  // Без героя в разделы не попасть: запоминаем адрес и ведём на обложку, после входа вернём
+  // Без героя в разделы не попасть: запоминаем адрес и ведем на обложку, после входа вернем
   if(!st.user&&!ONB.includes(PAGE)&&!demo){SS.set('back',(location.pathname.split('/').pop()||'')+location.search);location.replace(href('cover'));return true;}
   // Герой уже есть — повторно проходить знакомство и вход не нужно
   if(st.user&&STEPS1.includes(PAGE)&&!demo){location.replace(href('route'));return true;}
   return false;
 }
-// Старый формат ёлки (до 26 октября: hung / rev) → одна игрушка с переключателем «на ёлке»
+// Старый формат елки (до 26 октября: hung / rev) → одна игрушка с переключателем «на елке»
 function migrateTree(){const t=st.tree;if(!t||!('hung' in t||'rev' in t))return;
   if(t.rev){t.ball=t.rev.ball;t.on=true;t.ok=false;t.pts=true;}else if(t.hung){t.ball=t.ball||A.toy0;t.on=true;t.ok=true;t.pts=true;}else{t.on=!!t.on;t.ok=!!t.ok;t.pts=!!t.pts;}
   delete t.hung;delete t.rev;save();}
@@ -1526,7 +1521,7 @@ function migrateTree(){const t=st.tree;if(!t||!('hung' in t||'rev' in t))return;
   applyPage();
   if(PAGE==='quiz'){const n=+QS.get('set');if(n>=1&&n<=D.QUIZ.length&&st.day>=D.QUIZ[n-1].open){ui.quizRound=n-1;if(st.qrun&&st.qrun.r!==n-1)stashRun();
       if(!st.qrun&&st.qpart&&st.qpart[n-1]){st.qrun=st.qpart[n-1];delete st.qpart[n-1];}}
-    // незавершённый набор: возвращаем к тому же вопросу
+    // незавершенный набор: возвращаем к тому же вопросу
     if(st.qrun){ui.quiz=Object.assign({},st.qrun);ui.quizRound=st.qrun.r;}}
   if(PAGE==='chapter'){const n=+QS.get('ch');if(n>=1&&n<=D.CHAPTERS.length)ui.chapter=n-1;else{let i=0;D.CHAPTERS.forEach((c,j)=>{if(st.day>=c.day)i=j;});ui.chapter=i;}}
   if(SS.get('turn')){SS.del('turn');ui.turn=true;}

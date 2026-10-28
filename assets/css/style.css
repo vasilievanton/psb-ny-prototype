@@ -1561,7 +1561,7 @@ body.scene #app::after{top:-410px;bottom:0;
    Телефон: картинка сверху во всю ширину, текст — под ней, на её растворяющемся нижнем крае.
    Второй экран — карта: заголовок на поляне, ниже снежная панель с тропой через три испытания и ветками */
 .hero{position:relative;isolation:isolate;display:flex;flex-direction:column;justify-content:flex-end;min-height:clamp(470px,calc(100svh - 150px),600px);overflow:hidden}
-.hero-pic{position:absolute;z-index:-1;left:0;top:0;width:100%;height:68%;object-fit:cover;object-position:70% 42%;
+.hero-pic{position:absolute;z-index:-2;left:0;top:0;width:100%;height:68%;object-fit:cover;object-position:70% 42%;
   -webkit-mask-image:linear-gradient(180deg,#000 62%,transparent 100%);mask-image:linear-gradient(180deg,#000 62%,transparent 100%)}
 .hero::before{content:"";position:absolute;z-index:-1;inset:0;pointer-events:none;
   background:linear-gradient(180deg,rgba(4,11,42,0) 40%,rgba(4,11,42,.78) 62%,rgba(4,11,42,.86) 86%,rgba(4,11,42,0) 100%)}
@@ -1816,3 +1816,83 @@ body[data-screen=forest] #app::before,body[data-screen=forest] #app::after{displ
 .gm>.snd{position:relative;top:auto;right:auto;flex:none;width:42px;height:42px;z-index:6}
 @media (orientation:portrait){.gm>.snd{display:none}}
 @media (orientation:landscape){.gm>.snd{grid-column:1;grid-row:1;align-self:start;justify-self:center}}
+
+/* ===================== Правки по комментариям ПСБ 28.10 ===================== */
+:root{--lav:#8d87ff;--lav-hi:#b9b5ff}   /* лавандовый из логотипа ПСБ */
+/* Обложка: сверху только логотип, по центру, без подписи */
+.cv-top .psb{display:flex;justify-content:center}
+.cv-top .psb-logo{height:26px}
+/* Подвал: вместо логотипа — узор из сказки-сериала (самоцвет и снег), концы растворяются */
+.foot-orn{display:block;width:200px;height:86px;margin:-4px auto 6px;background:var(--a-gem) center/contain no-repeat;pointer-events:none;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 24%,#000 76%,transparent);mask-image:linear-gradient(90deg,transparent,#000 24%,#000 76%,transparent)}
+.foot .foot-l{position:relative;margin:0 0 8px}
+/* Персональный код: три кегля на странице — 26 (код), 15 (текст), 13 (подписи); цвета — белый, золото и приглушенный */
+.codepg .tale,.sc-stage .code-hero .tale,.codepg .code-hero .tale{font:400 15px/1.5 var(--ui)}
+.codepg .tale.small{font-size:15px;color:var(--ink)}
+.codepg .lbl-s,.codepg .lbl.s>span{font-size:13px;letter-spacing:.06em}
+.codepg .codebox .code{font-size:26px}
+.codepg .codebox .btn,.codepg .row .btn,.codepg .input{font-size:15px}
+.codepg .portal{gap:14px;box-shadow:inset 0 0 0 1px rgba(233,189,104,.45)}
+.codepg .portal b{font:700 15px/1.4 var(--ui);color:var(--ink)}
+.codepg .portal span{margin:4px 0 0;font:400 13px/1.45 var(--ui);color:var(--ink2)}
+.codepg .chk{font-size:15px}
+.codepg .note,.codepg .err-t,.codepg .sent{font-size:13px}
+.savecode .sv-w{font-size:15px}.savecode .note{font-size:13px}.savecode .chk{font-size:15px}
+.savecode .codebox .code{font-size:26px}
+/* Главная: сундук под ёлкой — на уровне заголовка, а не у кнопки */
+.mp-chest{align-items:flex-start}
+.mp-ci{width:84px;margin-top:-2px}
+/* Спроси дорогу: снежинка над словом, вариант — с новой строки по центру кнопки */
+.opt{flex-direction:column;justify-content:center;gap:4px;padding:10px 14px;text-align:center}
+.opt::before{width:18px;height:18px}
+.opt span{display:block;width:100%;text-align:center}
+/* Елка: пройденные шаги — лавандовые из брендбука, а не зеленые */
+.tsteps li.done i{background:var(--lav);border-color:var(--lav);color:#fff}
+/* Лес: окно перед стартом — крупнее текст */
+.overlay .ov-lead{font-size:16px;line-height:1.5}
+.rules b{font-size:16px}
+.rules span{font-size:14px;line-height:1.4}
+.ov-pill span{font-size:12px}.ov-pill b{font-size:21px}
+.ov-cap{font-size:14px}
+.gm .overlay .ov-lead{font-size:13px;line-height:1.4}
+.gm .rules b{font-size:13.5px}
+.gm .rules span{font-size:11.5px}
+.gm .ov-cap{font-size:12.5px}
+@media (min-width:900px) and (min-height:541px), (min-width:900px) and (hover:hover) and (pointer:fine){
+  .cv-top .psb-logo{height:30px}
+  .foot-orn{width:230px;height:99px;margin:-8px auto 8px}
+  /* первый экран главной: текст слева на темной подложке — справа светлое небо и снег */
+  .hero::before{background:linear-gradient(90deg,rgba(4,11,42,.95) 0%,rgba(4,11,42,.9) 34%,rgba(4,11,42,.72) 47%,rgba(4,11,42,.26) 61%,rgba(4,11,42,0) 72%)}
+  .hero-in>*{max-width:520px}
+  .opt{gap:5px;min-height:74px;border-radius:22px}
+  .rules b{font-size:17px}.rules span{font-size:15px}
+  .overlay .ov-lead{font-size:18px}
+}
+/* Елка: найти свою игрушку или игрушку коллеги по имени героя */
+.tfind{display:flex;flex-direction:column;align-items:center;gap:8px;margin:14px auto 0;max-width:520px}
+.tf-row{display:flex;gap:8px;width:100%}
+.tf-row .input{flex:1;min-width:0}
+.tfind .note{margin:0}
+.treesvg .mine .halo{animation:halo 2.4s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes halo{0%,100%{opacity:.55;transform:scale(.92)}50%{opacity:1;transform:scale(1.06)}}
+.treesvg .tb.hl,.treesvg .mine.hl{animation:tbHl 1.1s ease-in-out 4;filter:drop-shadow(0 0 6px #fff3c4) drop-shadow(0 0 14px #ffd76e)}
+@keyframes tbHl{0%,100%{transform:scale(1)}50%{transform:scale(1.55)}}
+/* Елка: игрушки из исходников — вертикальные 2:3 */
+.styles button img{aspect-ratio:2/3}
+.bv-img{width:min(180px,46vw)}
+.mc-img img{width:min(190px,48vw)}
+/* Пряничная избушка: обложки сказок — вертикальные иллюстрации */
+.tale-r .cv,.iz-t .cv{width:52px;height:68px}
+.tale-r .cv img,.iz-t .cv img,.tsh-cv img{display:block;width:100%;height:100%;object-fit:cover}
+.tsh-cv{width:min(210px,56vw);aspect-ratio:3/4}
+@media (min-width:900px) and (min-height:541px), (min-width:900px) and (hover:hover) and (pointer:fine){.tale-r .cv{width:54px;height:70px}}
+/* Сказка-сериал: заглавная картинка горизонтальная — во всю ширину колонки, подводка под ней */
+.ser-head{display:block}
+.ser-head .illo{display:block;width:100%;max-width:520px;height:auto;max-height:none;margin:-4px auto 6px;
+  -webkit-mask-image:linear-gradient(180deg,#000 78%,transparent),linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);-webkit-mask-composite:source-in;
+  mask-image:linear-gradient(180deg,#000 78%,transparent),linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-composite:intersect}
+.ser-head .tale{margin:0}
+.illu img{max-width:100%}
+@media (min-width:900px) and (min-height:541px), (min-width:900px) and (hover:hover) and (pointer:fine){
+  .ser-head .illo{max-width:none;max-height:none;margin:-10px auto 8px}
+}

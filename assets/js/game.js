@@ -42,14 +42,14 @@ function patternSVG(kind){
 }
 
 /* ===== Игра «Лес» ===== */
-// Медведь (Пётр, старший сын), подарки и препятствия — PNG с прозрачным фоном из папки assets/img/forest/.
+// Медведь (Петр, старший сын), подарки и препятствия — PNG с прозрачным фоном из папки assets/img/forest/.
 // Пока какого-то файла нет, на его месте рисуется прежняя векторная графика — игра работает и без картинок.
 //   bear_run_1.png … bear_run_6.png — кадры бега по кругу
 //   bear_idle.png, bear_jump.png, bear_fall.png, bear_hit.png — стойка до старта, прыжок вверх, падение, столкновение
 //   gift_1.png … gift_4.png — варианты подарков
 //   obstacle_log.png, obstacle_stump.png, obstacle_drift.png — бревно, пень, сугроб
-//   tree_1.png … tree_3.png — ели: ближний ряд как есть, дальний — те же ели, затемнённые под ночное небо
-//   lamp.png — фонарь на столбе; тёплое свечение вокруг рисует игра
+//   tree_1.png … tree_3.png — ели: ближний ряд как есть, дальний — те же ели, затемненные под ночное небо
+//   lamp.png — фонарь на столбе; теплое свечение вокруг рисует игра
 //   platform_log.png, platform_hill.png — огромное бревно и снежная гора: на них запрыгивают и бегут поверху
 //   heart.png — сердечко жизни на панели в углу поля
 const FOREST_DIR='assets/img/forest/';
@@ -58,7 +58,7 @@ const FOREST_RUN_FRAMES=6, FOREST_GIFT_KINDS=4, FOREST_TREE_KINDS=3;
 // Отдельные кадры медведя. Если какого-то не будет — убрать его из списка: вместо прыжка и стойки покажется первый кадр бега, вместо падения — прыжок, вместо столкновения — бег с миганием
 const FOREST_BEAR_EXTRA=['idle','jump','fall','hit'];
 // Препятствия: h — высота в игре (поле — 400 единиц в высоту, медведь — около 110), ширина — по пропорциям PNG; w — ширина векторной заглушки.
-// stand — на препятствие можно приземлиться сверху и пробежать по нему (бревно, пень): где верх, на котором стоит медведь, — доля высоты картинки от её верхнего края.
+// stand — на препятствие можно приземлиться сверху и пробежать по нему (бревно, пень): где верх, на котором стоит медведь, — доля высоты картинки от ее верхнего края.
 // На сугроб встать нельзя — кристаллы, любое касание — удар. Новое препятствие — строка здесь и файл obstacle_<k>.png; пока файла нет, оно рисуется сугробом
 const FOREST_OBSTACLES=[{k:'log',h:34,w:72,stand:.25},{k:'stump',h:48,w:42,stand:.04},{k:'drift',h:30,w:76}];
 // Платформы: на них надо запрыгнуть и бежать поверху. Врезался в бок — минус жизнь, медведь всё равно забирается наверх.
@@ -75,13 +75,13 @@ const FOREST_TOP_LOG_H=56;   // верхнее бревно двухэтажно
 // Где на картинке фонаря горит свет: доли ширины и высоты от левого верхнего угла; туда игра ставит свечение
 const FOREST_LAMP_LIGHT=[0.68,0.30];
 // Фон и передний план — дополнительные картинки; нет файла — нет и элемента.
-// izba_1…: избушки (FOREST_IZBA_WIN — центры окон, там тёплое свечение; FOREST_IZBA_PIPE — верх трубы, оттуда дым; доли картинки);
-// tree_deco — наряженная ёлка, birch — берёза, snowman — снеговик, bush — куст; fg_1…: детали в снегу у нижнего края экрана (передний план)
+// izba_1…: избушки (FOREST_IZBA_WIN — центры окон, там теплое свечение; FOREST_IZBA_PIPE — верх трубы, оттуда дым; доли картинки);
+// tree_deco — наряженная елка, birch — береза, snowman — снеговик, bush — куст; fg_1…: детали в снегу у нижнего края экрана (передний план)
 const FOREST_IZBA_KINDS=2, FOREST_FG_KINDS=8;
 const FOREST_IZBA_WIN=[[[.366,.749],[.630,.749]],[[.338,.745]]], FOREST_IZBA_PIPE=[[.763,.08],[.723,.01]];
-// Огоньки гирлянды на наряженной ёлке (доли картинки): игра заставляет их мерцать
+// Огоньки гирлянды на наряженной елке (доли картинки): игра заставляет их мерцать
 const FOREST_DECO_LIGHTS=[[.54,.17],[.47,.18],[.37,.25],[.41,.26],[.47,.28],[.53,.30],[.59,.31],[.29,.41],[.58,.42],[.66,.44],[.51,.45],[.38,.46],[.44,.46],[.22,.54],[.71,.57],[.25,.58],[.30,.60],[.35,.62],[.40,.64],[.21,.69],[.25,.71],[.76,.74],[.84,.76],[.55,.76],[.60,.78],[.66,.80],[.73,.80],[.45,.82],[.52,.85],[.70,.92]];
-// Хеш номера ячейки → число 0…1. Фон собирается из бесконечной цепочки ячеек: что стоит в ячейке, решает хеш её номера, поэтому узор не повторяется, а кадр стабилен
+// Хеш номера ячейки → число 0…1. Фон собирается из бесконечной цепочки ячеек: что стоит в ячейке, решает хеш ее номера, поэтому узор не повторяется, а кадр стабилен
 function forestHash(i,s){let t=(Math.imul(i|0,374761393)+Math.imul(s|0,668265263))|0; t=Math.imul(t^(t>>>13),1274126177); t^=t>>>16; return (t>>>0)/4294967296;}
 const FOREST_ART={run:[],idle:null,jump:null,fall:null,hit:null,gifts:[],ob:{},pf:{},pfSl:{},trees:[],treesFar:[],lamp:null,heart:null,izba:[],fg:[],treeDeco:null,birch:null,snowman:null,bush:null};
 let forestArtReq=null;
@@ -92,14 +92,14 @@ async function forestSeq(prefix,count,into){
   const rest=await Promise.all([...Array(Math.max(0,count-1))].map((_,i)=>forestImg(prefix+(i+2)+'.png')));
   into.push(first,...rest.filter(Boolean));
 }
-// Дальние ели — те же картинки, затемнённые под цвет ночного неба: так лес выглядит глубже
+// Дальние ели — те же картинки, затемненные под цвет ночного неба: так лес выглядит глубже
 function forestTint(img){
   const h=Math.min(320,img.naturalHeight), w=Math.round(img.naturalWidth*h/img.naturalHeight);
   const c=document.createElement('canvas'); c.width=w; c.height=h; const x=c.getContext('2d');
   x.drawImage(img,0,0,w,h); x.globalCompositeOperation='source-atop'; x.fillStyle='rgba(12,26,72,.6)'; x.fillRect(0,0,w,h);
   return c;
 }
-// Куски для длинных платформ: середина (обычная и зеркальная) и правый край. У каждого слева — плавное появление: положенный внахлёст, он перетекает в соседний без шва
+// Куски для длинных платформ: середина (обычная и зеркальная) и правый край. У каждого слева — плавное появление: положенный внахлест, он перетекает в соседний без шва
 function forestSlices(d,img){
   const W=img.naturalWidth, H=img.naturalHeight, b=Math.round(d.cut*W), o=d.seam;
   const piece=(x0,x1,flip)=>{
@@ -129,7 +129,7 @@ if(document.body&&document.body.dataset.page==='forest')loadForestArt();
 /* ===== Звуки «Леса» =====
    Эффекты и музыка — из бесплатных наборов с лицензией CC0 (список и источники — в README, раздел 6.5).
    Эффекты играет Web Audio: без задержки и по нескольку сразу. Музыка — элемент <audio>: длинный файл не раскодируется в память целиком,
-   идёт по кругу. Браузеры дают звук только после касания или клика, поэтому звук «включается» на кнопке старта (unlock).
+   идет по кругу. Браузеры дают звук только после касания или клика, поэтому звук «включается» на кнопке старта (unlock).
    Выключатель — кнопка на поле; выбор запоминается на устройстве. Страница открыта прямо с диска (file://) — эффекты через <audio>. */
 // имя → [файл, громкость]; громкость музыки задана в самом файле (на iPhone громкость элемента <audio> не меняется)
 const FOREST_SFX={jump:['jump',.5],jump2:['jump2',.55],land:['land',.3],gift:['gift',.55],heart:['heart',.6],hit:['hit',.85],fall:['fall',.7],boost:['boost',.55],over:['over',.7],record:['record',.75]};
@@ -167,7 +167,7 @@ const ForestSound=(()=>{
       const s=ctx.createBufferSource(), g=ctx.createGain(); s.buffer=x.b; s.playbackRate.value=rate; g.gain.value=vol;
       s.connect(g); g.connect(out); s.start(0,x.off); return;
     }
-    if(WA||!ever()) return;   // Web Audio есть, но звук ещё не включён касанием
+    if(WA||!ever()) return;   // Web Audio есть, но звук еще не включен касанием
     try{const a=new Audio(DIR+d[0]+'.mp3'); a.volume=Math.min(1,vol); a.preservesPitch=false; a.playbackRate=rate; const p=a.play(); if(p&&p.catch)p.catch(()=>{});}catch(e){}
   }
   function musicPlay(){
@@ -204,14 +204,14 @@ function ForestGame(canvas, hooks){
   // Ноги медведя мелькают не быстрее, чем на ANIM_V единицах в секунду: на большом ускорении кадры бега не сливаются в кашу
   const ANIM_V=900;
   const STEP=10;   // ступенька, на которую медведь забегает без прыжка; выше — это стена
-  const FOOT=14;   // полступни: на бревно и пень медведь встаёт, даже если над ними только передние или задние лапы
-  // Дополнительная жизнь — сердечко высоко, ловится прыжком. Появляется, только если жизней меньше трёх: не чаще раза в LIFE_EVERY секунд бега,
-  // не раньше чем через LIFE_AFTER_HIT секунд после удара, с шансом LIFE_CHANCE вместо высокого подарка. На поле — не больше одного, жизней — не больше трёх
+  const FOOT=14;   // полступни: на бревно и пень медведь встает, даже если над ними только передние или задние лапы
+  // Дополнительная жизнь — сердечко высоко, ловится прыжком. Появляется, только если жизней меньше трех: не чаще раза в LIFE_EVERY секунд бега,
+  // не раньше чем через LIFE_AFTER_HIT секунд после удара, с шансом LIFE_CHANCE вместо высокого подарка. На поле — не больше одного, жизней — не больше трех
   const LIFE_EVERY=15, LIFE_AFTER_HIT=6, LIFE_CHANCE=.3, LIFE_D=34;
   let LW=800, TOP=0, sc=1, dpr=1, raf=0, last=0, alive=true;
   const S={run:false,done:false,lives:3,out:false,t:0,dist:0,gifts:0,score:0,cleared:0,py:GROUND,vy:0,ground:true,stun:0,inv:0,boost:false,objs:[],parts:[],next:520,jumpAt:-1e9,lowAt:-1e9,lifeAt:-1e9,hitAt:-1e9,bk:1,best:0,paused:false,ph:0,rt:0,v0:280,dj:false,flip:0};
-  // Лес бесконечный: скорость плавно растёт со временем бега — каждые RAMP_EVERY секунд на RAMP от стартовой V0, без потолка
-  // (через 30 секунд — в 2,5 раза быстрее, через минуту — в 4). Забег идёт, пока есть жизни, — рано или поздно скорость становится непосильной
+  // Лес бесконечный: скорость плавно растет со временем бега — каждые RAMP_EVERY секунд на RAMP от стартовой V0, без потолка
+  // (через 30 секунд — в 2,5 раза быстрее, через минуту — в 4). Забег идет, пока есть жизни, — рано или поздно скорость становится непосильной
   const V0=280, RAMP=.25, RAMP_EVERY=5;
   const speedAt=t=>V0*(1+RAMP*t/RAMP_EVERY);
   const AHEAD=4;   // расстановка считается по скорости через AHEAD секунд бега: к тому времени медведь добежит до новых событий
@@ -219,10 +219,10 @@ function ForestGame(canvas, hooks){
   const stars=[...Array(70)].map(()=>({x:Math.random(),y:Math.random()*0.55,r:Math.random()*1.4+.3,p:Math.random()*6}));
   const flakes=[...Array(60)].map(()=>({x:Math.random(),y:Math.random(),r:Math.random()*2+.6,v:Math.random()*30+20,w:Math.random()*2}));
   const hsh=forestHash, SEED=Math.floor(Math.random()*1e6);   // у каждого забега свой лес
-  // Ближний слой фона: ячейки по 130 единиц. В ячейке — ель (три формы), иногда берёза или наряженная ёлка, изредка избушка, снеговик или куст; бывают просветы
+  // Ближний слой фона: ячейки по 130 единиц. В ячейке — ель (три формы), иногда береза или наряженная елка, изредка избушка, снеговик или куст; бывают просветы
   const NEAR=130;
   const rawKind=i=>{const r=hsh(i,SEED+21); return r<.09?'gap':r<.14?'izba':r<.18?'deco':r<.28?'birch':r<.31?'snowman':r<.40?'bush':'fir';};
-  // редкие — избушка, наряженная ёлка, снеговик — не ближе GAP ячеек к такому же; иначе в ячейке обычная ель
+  // редкие — избушка, наряженная елка, снеговик — не ближе GAP ячеек к такому же; иначе в ячейке обычная ель
   const GAP={izba:10,deco:10,snowman:12};
   const nearKind=i=>{const k=rawKind(i), g=GAP[k]; if(g) for(let j=1;j<=g;j++) if(rawKind(i-j)===k) return 'fir'; return k;};
   const isIzba=i=>F.izba.length>0&&nearKind(i)==='izba';
@@ -237,7 +237,7 @@ function ForestGame(canvas, hooks){
     const maxH=box&&box.clientHeight>0?box.clientHeight-16:vfit?Math.max(360,innerHeight-vfit):+(canvas.dataset.maxh||440);
     const h=Math.max(180,Math.min(maxH,Math.round(w*ratio)));
     dpr=Math.min(2,window.devicePixelRatio||1); canvas.width=Math.round(w*dpr); canvas.height=Math.round(h*dpr); canvas.style.height=h+'px';
-    // data-lh — сколько единиц в высоту видно минимум: над верхней точкой двойного прыжка остаётся небо, медведь не уходит за край
+    // data-lh — сколько единиц в высоту видно минимум: над верхней точкой двойного прыжка остается небо, медведь не уходит за край
     const minLH=+(canvas.dataset.lh||0);
     sc=h/LH; if(minLW&&w/sc<minLW)sc=w/minLW; if(minLH&&h/sc<minLH)sc=h/minLH; LW=w/sc; TOP=Math.max(0,h/sc-LH);
   }
@@ -270,7 +270,7 @@ function ForestGame(canvas, hooks){
   function giftAt(cx,elev){S.objs.push({k:'gift',x:cx-13,y:GROUND-elev-12,c:Math.floor(Math.random()*4)});}
   // Профиль верха платформы в точке f (0 — левый край, 1 — правый)
   function profAt(prof,f){const t=Math.min(1,Math.max(0,f))*(prof.length-1),i=Math.floor(t),fr=t-i;return prof[i]+(prof[Math.min(i+1,prof.length-1)]-prof[i])*fr;}
-  // Профиль верха платформы длиной w (W0 — длина картинки в игре): края — с картинки, середина — повтор её середины
+  // Профиль верха платформы длиной w (W0 — длина картинки в игре): края — с картинки, середина — повтор ее середины
   function pfProf(d,W0,w){
     if(w<=W0+1) return d.top;
     const n=Math.max(24,Math.round(w/14)), a=d.mids[0][0], b=d.cut, mid=(d.mids[0][1]-a)*W0, out=[];
@@ -288,7 +288,7 @@ function ForestGame(canvas, hooks){
   }
   function pfPush(P,x,w,base){const o={k:'pf',type:P.d.k,x,w,h:P.h,ih:P.ih,base,png:!!P.img,prof:pfProf(P.d,P.W0,w),seed:Math.floor(Math.random()*4)}; S.objs.push(o); return o;}
   // Большие препятствия разной длины: длинное бревно, длинный снежный вал или двухэтажное — на нижнее бревно (или вал) положено бревно потоньше.
-  // Длина растёт со скоростью: поверху бежать примерно от полсекунды до двух. Двухэтажное: запрыгнуть на нижнее, с него — на верхнее; не успел — удар о бок,
+  // Длина растет со скоростью: поверху бежать примерно от полсекунды до двух. Двухэтажное: запрыгнуть на нижнее, с него — на верхнее; не успел — удар о бок,
   // медведь всё равно забирается наверх. До верхнего бревна по нижнему — не меньше 0,6 скорости, верхнее — не короче 0,8: приземлиться на него можно при любом прыжке с нижнего
   function bigOne(v,jumpGap,half){
     const t=Math.random(), stack=t<.4, P=pfDef(stack?(Math.random()<.7?'log':'hill'):(t<.72?'log':'hill'));
@@ -349,7 +349,7 @@ function ForestGame(canvas, hooks){
     hud(S);
     if(S.lives<=0){S.run=false;S.done=true;S.out=true;setTimeout(()=>hooks.end(S),700);}
   }
-  // Опора под точкой x для медведя, у которого лапы на высоте feet: земля, верх платформы (там, где верх выше половины её высоты)
+  // Опора под точкой x для медведя, у которого лапы на высоте feet: земля, верх платформы (там, где верх выше половины ее высоты)
   // или верх бревна и пня — только если лапы уже над ним: сверху на них приземляются, а сбоку это обычное препятствие
   function surfAt(x,feet){
     let y=GROUND;
@@ -393,7 +393,7 @@ function ForestGame(canvas, hooks){
       S.py=GROUND; S.vy=0; S.ground=true; return;
     }
     if(S.ground){
-      if(under<S.py) S.py=under;                                        // небольшой подъём
+      if(under<S.py) S.py=under;                                        // небольшой подъем
       else if(under>S.py+1){ if(under-S.py>8){S.ground=false;S.vy=0;} else S.py=under; }   // сбежал с края — падает
     } else {
       S.vy+=2300*dt; const ny=S.py+S.vy*dt;
@@ -404,7 +404,7 @@ function ForestGame(canvas, hooks){
       if(o.gone||o.k==='pf'||o.k==='pit') continue;
       if(o.k==='ob'){
         const r={x:o.x+o.hb.x,y:GROUND-o.h+o.hb.y,w:o.hb.w,h:o.h-o.hb.y};
-        // бревно и пень бьют только в бок: лапы ниже верха и медведь ещё не за серединой. Стоит сверху или спрыгивает с них — не удар
+        // бревно и пень бьют только в бок: лапы ниже верха и медведь еще не за серединой. Стоит сверху или спрыгивает с них — не удар
         const side=!o.stand||(S.py>o.top+STEP&&px+PX<r.x+r.w/2);
         if(side&&pr.x<r.x+r.w&&pr.x+pr.w>r.x&&pr.y<r.y+r.h&&pr.y+pr.h>r.y){ if(!o.hit){o.hit=1;hit();} }
         if(!o.passed&&o.x+o.w<px+PX-26){o.passed=1; if(!o.hit){S.cleared++;S.score+=5;hud(S);}}
@@ -439,7 +439,7 @@ function ForestGame(canvas, hooks){
     if(F.heart){ctx.drawImage(F.heart,cx-d/2,cy-d/2,d,d);return;}
     ctx.fillStyle='#e8473f'; ctx.beginPath(); ctx.moveTo(cx,cy+d*.4); ctx.bezierCurveTo(cx-d*.7,cy-d*.1,cx-d*.3,cy-d*.55,cx,cy-d*.22); ctx.bezierCurveTo(cx+d*.3,cy-d*.55,cx+d*.7,cy-d*.1,cx,cy+d*.4); ctx.fill();
   }
-  // Яма в снегу: тёмный провал с ледяными стенками и снежными кромками
+  // Яма в снегу: темный провал с ледяными стенками и снежными кромками
   function pit(o,sx){
     const x0=sx, x1=sx+o.w, y0=GROUND-1;
     const g=ctx.createLinearGradient(0,y0,0,LH); g.addColorStop(0,'#0d1a44'); g.addColorStop(1,'#02050f');
@@ -450,8 +450,8 @@ function ForestGame(canvas, hooks){
     for(const [ex,dir] of [[x0,1],[x1,-1]]) for(let i=0;i<3;i++){const ix=ex+dir*(5+i*6), il=7+((i*7+Math.round(o.w))%5)*2; ctx.beginPath(); ctx.moveTo(ix-2.5,y0+3); ctx.lineTo(ix+2.5,y0+3); ctx.lineTo(ix,y0+3+il); ctx.closePath(); ctx.fill();}
     ctx.fillStyle='#f4f8ff'; ctx.beginPath(); ctx.ellipse(x0-2,y0+2,13,6,0,0,7); ctx.ellipse(x1+2,y0+2,13,6,0,0,7); ctx.fill();
   }
-  // Платформа: PNG или заглушка по профилю верха. base — на какой высоте её низ (верхнее бревно двухэтажного препятствия)
-  // Длиннее картинки — собирается из кусков: левый край и первая середина, повторы середины внахлёст, правый край
+  // Платформа: PNG или заглушка по профилю верха. base — на какой высоте ее низ (верхнее бревно двухэтажного препятствия)
+  // Длиннее картинки — собирается из кусков: левый край и первая середина, повторы середины внахлест, правый край
   function platform(o,sx){
     const img=o.png&&F.pf[o.type], base=o.base||0;
     if(img){
@@ -475,7 +475,7 @@ function ForestGame(canvas, hooks){
   }
   // Ель из PNG: x — середина, base — где ствол уходит в снег
   function treeImg(im,x,base,h){const w=h*(im.naturalWidth||im.width)/(im.naturalHeight||im.height); ctx.drawImage(im,x-w/2,base-h,w,h);}
-  // Избушка на ближнем слое фона: тёплый свет в окнах и дымок из трубы
+  // Избушка на ближнем слое фона: теплый свет в окнах и дымок из трубы
   function izba(i,x,t){
     const k=Math.floor(hsh(i,SEED+25)*F.izba.length), im=F.izba[k], h=96+14*hsh(i,SEED+28), w=h*im.naturalWidth/im.naturalHeight, x0=x-w/2, y0=GROUND+6-h;
     const pipe=FOREST_IZBA_PIPE[k];
@@ -486,7 +486,7 @@ function ForestGame(canvas, hooks){
     for(const [fx,fy] of FOREST_IZBA_WIN[k]||[]){const gx=x0+w*fx, gy=y0+h*fy, g=ctx.createRadialGradient(gx,gy,1,gx,gy,22); g.addColorStop(0,'rgba(255,190,90,.38)'); g.addColorStop(1,'rgba(255,170,70,0)'); ctx.fillStyle=g; ctx.fillRect(gx-22,gy-22,44,44);}
     ctx.restore();
   }
-  // Гирлянда на наряженной ёлке мерцает: у каждого огонька своя фаза
+  // Гирлянда на наряженной елке мерцает: у каждого огонька своя фаза
   function twinkle(im,x,base,h,i,t){
     const w=h*im.naturalWidth/im.naturalHeight, x0=x-w/2, y0=base-h;
     ctx.save(); ctx.globalCompositeOperation='lighter';
@@ -587,7 +587,7 @@ function ForestGame(canvas, hooks){
     // moon
     const mx=LW*.82, my=64-TOP*.7; ctx.fillStyle='rgba(255,240,200,.12)';ctx.beginPath();ctx.arc(mx,my,48,0,7);ctx.fill();
     ctx.fillStyle='#fff3cf';ctx.beginPath();ctx.arc(mx,my,24,0,7);ctx.fill();ctx.fillStyle='#14245a';ctx.beginPath();ctx.arc(mx+10,my-6,22,0,7);ctx.fill();
-    // mountains — бесконечная цепочка вершин, высота каждой — из хеша её номера
+    // mountains — бесконечная цепочка вершин, высота каждой — из хеша ее номера
     ctx.fillStyle='#152660';ctx.beginPath();
     {const m0=d*.08, i0=Math.floor(m0/120)-1, i1=Math.ceil((m0+LW)/120)+1; ctx.moveTo(i0*120-m0,GROUND-40);
      for(let i=i0;i<=i1;i++){const x=i*120-m0; ctx.lineTo(x,GROUND-120-70*hsh(i,SEED+11));ctx.lineTo(x+60,GROUND-60);}
@@ -598,7 +598,7 @@ function ForestGame(canvas, hooks){
        if(hsh(i,SEED+31)<.1+.32*hsh(Math.floor(i/9),SEED+32)) continue;
        const x=i*48+(hsh(i,SEED+33)-.5)*26-f0, h=(58+56*hsh(i,SEED+34))*1.1, k=Math.floor(hsh(i,SEED+35)*9);
        const im=F.treesFar.length?F.treesFar[k%F.treesFar.length]:null; if(im)treeImg(im,x,GROUND-8,h); else fir(x,GROUND-14,h/1.1,'#11214f',true);}}
-    // near layer: сначала избушки (за ёлками), потом деревья, потом фонари, снеговики и кусты
+    // near layer: сначала избушки (за елками), потом деревья, потом фонари, снеговики и кусты
     {const n0=d*.55, i0=Math.floor((n0-220)/NEAR), i1=Math.ceil((n0+LW+220)/NEAR), X=i=>i*NEAR+(hsh(i,SEED+23)-.5)*60-n0;
      for(let i=i0;i<=i1;i++) if(isIzba(i)) izba(i,X(i)+25,t);
      for(let i=i0;i<=i1;i++){
@@ -628,7 +628,7 @@ function ForestGame(canvas, hooks){
     const fr=bearFrame(), sy=surfAt(d+PX,S.py);
     if(sy<=GROUND){ctx.fillStyle='rgba(20,40,90,.28)';ctx.beginPath();ctx.ellipse(PX,sy+4,(fr?40:34)*(S.ground?1:.7),7,0,0,7);ctx.fill();}
     if(!(S.inv>0&&Math.floor(S.t*14)%2)){
-      if(fr&&S.flip>0){                                                  // сальто на втором прыжке: полный оборот вперёд вокруг середины медведя
+      if(fr&&S.flip>0){                                                  // сальто на втором прыжке: полный оборот вперед вокруг середины медведя
         const w=BEAR_H*fr.naturalWidth/fr.naturalHeight, a=(1-S.flip/FLIP), e=a<.5?2*a*a:1-2*(1-a)*(1-a);
         ctx.save(); ctx.translate(PX,S.py-BEAR_H/2+BEAR_SINK); ctx.rotate(e*Math.PI*2); ctx.drawImage(fr,-w/2,-BEAR_H/2,w,BEAR_H); ctx.restore();
       }
@@ -664,7 +664,7 @@ function ForestGame(canvas, hooks){
     ctx.setTransform(dpr,0,0,dpr,0,0);
     const x0=10, y0=10, hs=22, gap=4, rec=S.best>0;
     const giftX=x0+12+3*(hs+gap)+10, cnt=String(S.gifts), over=rec&&S.gifts>S.best;
-    const label=!rec?'Каждый подарок — 10 баллов':over?`Новый рекорд · +${(S.gifts-S.best)*10} баллов`:S.gifts===S.best?'Рекорд повторён · дальше +10 за подарок':`До рекорда ${S.best-S.gifts} ${plural(S.best-S.gifts,'подарок','подарка','подарков')}`;
+    const label=!rec?'Каждый подарок — 10 баллов':over?`Новый рекорд · +${(S.gifts-S.best)*10} баллов`:S.gifts===S.best?'Рекорд повторен · дальше +10 за подарок':`До рекорда ${S.best-S.gifts} ${plural(S.best-S.gifts,'подарок','подарка','подарков')}`;
     // таймер забега: время бега без пауз и экрана «Готовы?»
     const sec=Math.floor(S.rt||0), tm=Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
     ctx.font='500 11px '+UI_FONT; const lw=ctx.measureText(label).width;
@@ -721,84 +721,44 @@ function ForestGame(canvas, hooks){
   };
 }
 
-/* ===== Ёлочная игрушка из картинки =====
-   Шесть форм: шар, звезда, колокольчик, сосулька, сердце, фонарик. Картинка вписывается в форму, поверх — оттенок, блик стекла,
-   золотой кант, колпачок и петелька. ИИ на платформе перерисовывает картинку в стиле игрушки; в прототипе — этот рисунок на canvas */
-const BALL_STYLES=[
-  {n:'Шар', shape:'ball', glow:'rgba(150,190,255,.6)', tint:'#3a6fe0', deco:'snow'},
-  {n:'Звезда', shape:'star', glow:'rgba(255,214,140,.6)', tint:'#e8a640', deco:'pattern'},
-  {n:'Колокольчик', shape:'bell', glow:'rgba(255,170,110,.55)', tint:'#d8423a', deco:'gifts'},
-  {n:'Сосулька', shape:'icicle', glow:'rgba(200,230,255,.65)', tint:'#9fc0ff', deco:'snow'},
-  {n:'Сердце', shape:'heart', glow:'rgba(255,150,170,.55)', tint:'#d84a6a', deco:'notes'},
-  {n:'Фонарик', shape:'lantern', glow:'rgba(255,190,120,.6)', tint:'#b06a2a', deco:'ginger'}
-];
+/* ===== Елочная игрушка из картинки =====
+   Шесть форм: шар, звезда, колокольчик, сосулька, сердце, фонарик. Исходники нарисованы в ChatGPT: синее стекло,
+   золотая филигрань, иней; у каждой — рамка с прозрачным окном и маска окна (assets/js/toys.js, встроены, чтобы
+   сборка и скачивание работали и с диска). Картинка вписывается в окно, поверх — блик стекла и рамка.
+   ИИ на платформе перерисовывает картинку в стиле игрушки; в прототипе — эта сборка на canvas */
+const BALL_STYLES=[{n:'Шар',shape:'ball'},{n:'Звезда',shape:'star'},{n:'Колокольчик',shape:'bell'},{n:'Сосулька',shape:'icicle'},{n:'Сердце',shape:'heart'},{n:'Фонарик',shape:'lantern'}];
+const TOY_W=420, TOY_H=630;
 function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src;});}
-function goldGrad(ctx,x0,y0,x1,y1){const g=ctx.createLinearGradient(x0,y0,x1,y1);g.addColorStop(0,'#fff1c2');g.addColorStop(.35,'#f1c565');g.addColorStop(.7,'#b67f2c');g.addColorStop(1,'#f6d98a');return g;}
-function star4(ctx,x,y,r,c){ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(x,y-r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.quadraticCurveTo(x,y,x,y+r);ctx.quadraticCurveTo(x,y,x-r,y);ctx.quadraticCurveTo(x,y,x,y-r);ctx.fill();}
-// контур формы; возвращает верхнюю точку — туда крепится колпачок
-function toyPath(ctx,shape,cx,cy,r){
-  ctx.beginPath();
-  if(shape==='star'){const R=r*1.08,ri=r*.5;for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?ri:R;ctx.lineTo(cx+Math.cos(a)*rr,cy+12+Math.sin(a)*rr);}ctx.closePath();return cy+12-R;}
-  if(shape==='bell'){ctx.moveTo(cx-58,cy-178);ctx.quadraticCurveTo(cx,cy-214,cx+58,cy-178);ctx.bezierCurveTo(cx+112,cy-132,cx+104,cy+42,cx+186,cy+146);ctx.quadraticCurveTo(cx+200,cy+184,cx+148,cy+184);
-    ctx.lineTo(cx-148,cy+184);ctx.quadraticCurveTo(cx-200,cy+184,cx-186,cy+146);ctx.bezierCurveTo(cx-104,cy+42,cx-112,cy-132,cx-58,cy-178);ctx.closePath();return cy-196;}
-  if(shape==='icicle'){ctx.moveTo(cx,cy+228);ctx.bezierCurveTo(cx+40,cy+120,cx+132,cy-40,cx+122,cy-138);ctx.quadraticCurveTo(cx+112,cy-202,cx,cy-206);
-    ctx.quadraticCurveTo(cx-112,cy-202,cx-122,cy-138);ctx.bezierCurveTo(cx-132,cy-40,cx-40,cy+120,cx,cy+228);ctx.closePath();return cy-206;}
-  if(shape==='heart'){ctx.moveTo(cx,cy+196);ctx.bezierCurveTo(cx-60,cy+128,cx-212,cy+40,cx-206,cy-80);ctx.bezierCurveTo(cx-200,cy-182,cx-70,cy-214,cx,cy-118);
-    ctx.bezierCurveTo(cx+70,cy-214,cx+200,cy-182,cx+206,cy-80);ctx.bezierCurveTo(cx+212,cy+40,cx+60,cy+128,cx,cy+196);ctx.closePath();return cy-126;}
-  if(shape==='lantern'){ctx.moveTo(cx-118,cy-168);ctx.quadraticCurveTo(cx-182,cy,cx-118,cy+168);ctx.lineTo(cx+118,cy+168);ctx.quadraticCurveTo(cx+182,cy,cx+118,cy-168);ctx.closePath();return cy-168;}
-  ctx.arc(cx,cy,r,0,7);return cy-r;
+let toysData=null;
+function loadToys(){
+  if(window.TOYS_AI)return Promise.resolve(window.TOYS_AI);
+  return toysData||(toysData=new Promise((res,rej)=>{const s=document.createElement('script');s.src='assets/js/toys.js';s.onload=()=>res(window.TOYS_AI);s.onerror=rej;document.head.appendChild(s);}));
 }
 async function renderBall(src, styleIdx){
-  const s=BALL_STYLES[styleIdx]||BALL_STYLES[0], sh=s.shape;
-  const img=src?await loadImg(src):null;
-  const W=480,H=560,cx=240,cy=322,r=200;
-  const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
-  let g=ctx.createRadialGradient(cx,cy,r*.7,cx,cy,r*1.18);g.addColorStop(0,s.glow);g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-  // стекло с картинкой внутри
-  ctx.save();const top=toyPath(ctx,sh,cx,cy,r);ctx.clip();
-  g=ctx.createLinearGradient(0,cy-r,0,cy+r);g.addColorStop(0,'#13235f');g.addColorStop(1,'#2c4a9e');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-  if(img){
-    const k=Math.max(2*r/img.width,2*r/img.height)*1.06; const iw=img.width*k, ih=img.height*k;
-    ctx.filter='saturate(1.25) contrast(1.08) brightness(1.04)';
-    ctx.drawImage(img,cx-iw/2,cy-ih/2-r*.06,iw,ih);ctx.filter='none';
-    ctx.globalCompositeOperation='soft-light';ctx.globalAlpha=.55;ctx.fillStyle=s.tint;ctx.fillRect(0,0,W,H);
-    ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
-  }
-  g=ctx.createRadialGradient(cx,cy-20,r*.45,cx,cy,r*1.05);g.addColorStop(0,'rgba(10,20,60,0)');g.addColorStop(1,'rgba(10,20,60,.7)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-  // снежные холмики внизу
-  ctx.fillStyle='rgba(245,249,255,.96)';
-  ctx.beginPath();ctx.ellipse(cx-90,cy+r*.92,150,58,0,0,7);ctx.fill();ctx.beginPath();ctx.ellipse(cx+110,cy+r*.95,160,62,0,0,7);ctx.fill();
-  const D2=s.deco;
-  if(D2==='gifts'){[[cx-120,cy+120,'#d8423a'],[cx+96,cy+126,'#2f56c8'],[cx+136,cy+108,'#e9bd68']].forEach(([x,y,col])=>{ctx.fillStyle=col;ctx.fillRect(x,y,30,26);ctx.fillStyle='#fde7a8';ctx.fillRect(x+13,y,4,26);ctx.fillRect(x,y+10,30,4);});}
-  if(D2==='notes'){ctx.fillStyle='#fde7a8';ctx.font='700 40px Georgia, serif';ctx.fillText('♪',cx-150,cy-30);ctx.fillText('♫',cx+110,cy-60);ctx.fillText('♪',cx+130,cy+40);}
-  if(D2==='pattern'){ctx.strokeStyle='rgba(253,231,168,.85)';ctx.lineWidth=3;for(let i=0;i<9;i++){const a=Math.PI*(.15+i*.0875);const x=cx+Math.cos(a)*(r-46),y=cy+Math.sin(a)*(r-46)-6;ctx.beginPath();ctx.moveTo(x,y-9);ctx.lineTo(x+9,y);ctx.lineTo(x,y+9);ctx.lineTo(x-9,y);ctx.closePath();ctx.stroke();}}
-  if(D2==='ginger'){[[cx-110,cy+96],[cx+100,cy+100],[cx+110,cy-60]].forEach(([x,y])=>{ctx.fillStyle='#b8743a';ctx.beginPath();for(let i=0;i<10;i++){const rr=i%2?9:20,a=-Math.PI/2+i*Math.PI/5;ctx.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}ctx.closePath();ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();});}
-  for(let i=0;i<34;i++){const a=Math.random()*7,rr=Math.random()*r;const x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;ctx.fillStyle='rgba(255,255,255,'+(.5+Math.random()*.5)+')';ctx.beginPath();ctx.arc(x,y,Math.random()*2.6+.8,0,7);ctx.fill();}
-  // блик стекла
-  g=ctx.createRadialGradient(cx-80,cy-100,10,cx-80,cy-100,140);g.addColorStop(0,'rgba(255,255,255,.55)');g.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-  ctx.fillStyle='rgba(255,255,255,.75)';ctx.beginPath();ctx.ellipse(cx-92,cy-96,24,11,-.7,0,7);ctx.fill();
-  if(sh==='lantern'){ctx.strokeStyle='rgba(255,255,255,.28)';ctx.lineWidth=3;[-70,0,70].forEach(dx=>{ctx.beginPath();ctx.moveTo(cx+dx,cy-168);ctx.quadraticCurveTo(cx+dx*1.3,cy,cx+dx,cy+168);ctx.stroke();});}
-  ctx.restore();
-  // золотой кант по контуру
-  toyPath(ctx,sh,cx,cy,r);ctx.lineJoin='round';ctx.strokeStyle=goldGrad(ctx,cx-r,cy-r,cx+r,cy+r);ctx.lineWidth=11;ctx.stroke();
-  if(sh==='ball'){ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,r-9,0,7);ctx.stroke();}
-  if(sh==='bell'){ctx.fillStyle=goldGrad(ctx,cx-20,cy+180,cx+20,cy+220);ctx.beginPath();ctx.arc(cx,cy+200,20,0,7);ctx.fill();}
-  if(sh==='lantern'){ctx.fillStyle=goldGrad(ctx,cx-130,0,cx+130,0);ctx.fillRect(cx-126,cy+160,252,22);}
-  // колпачок и петелька над верхней точкой формы (у сердца — маленькие, в ложбинке между половинками)
-  const k=sh==='heart'?.55:1;
-  ctx.save();ctx.translate(cx,top-24*k);ctx.scale(k,k);
-  ctx.strokeStyle=goldGrad(ctx,-24,-62,24,-2);ctx.lineWidth=8;ctx.beginPath();ctx.arc(0,-26,22,0,7);ctx.stroke();
-  ctx.fillStyle=goldGrad(ctx,-50,0,50,38);
-  ctx.beginPath();ctx.moveTo(-44,0);ctx.lineTo(44,0);ctx.lineTo(52,38);ctx.lineTo(-52,38);ctx.closePath();ctx.fill();
-  ctx.fillStyle='rgba(120,70,20,.45)';for(let i=-36;i<=36;i+=12)ctx.fillRect(i-1,4,2,30);
-  ctx.fillStyle='#2a4fc0';ctx.beginPath();ctx.moveTo(0,6);ctx.lineTo(8,18);ctx.lineTo(0,30);ctx.lineTo(-8,18);ctx.fill();
-  ctx.restore();
-  [[cx+r*.9,cy-r*.75,16],[cx-r*.98,cy+r*.2,12],[cx+r*.75,cy+r*.85,10]].forEach(([x,y,rr])=>star4(ctx,x,y,rr,'#fff6d6'));
+  const i=BALL_STYLES[styleIdx]?styleIdx:0;
+  const T=await loadToys();
+  const [img,frame,mask]=await Promise.all([src?loadImg(src):null,loadImg(T['tf'+i]),loadImg(T['tm'+i])]);
+  const [wx0,wy0,ww,wh]=T.win[i], cx=wx0+ww/2, cy=wy0+wh/2;
+  const c=document.createElement('canvas');c.width=TOY_W;c.height=TOY_H;const ctx=c.getContext('2d');
+  // окно: картинка по размеру окна (cover), обрезанная по маске
+  const w=document.createElement('canvas');w.width=TOY_W;w.height=TOY_H;const wx=w.getContext('2d');
+  wx.fillStyle='#16285e';wx.fillRect(0,0,TOY_W,TOY_H);
+  if(img){const k=Math.max(ww/img.width,wh/img.height)*1.04;const iw=img.width*k,ih=img.height*k;
+    wx.filter='saturate(1.12) contrast(1.05)';wx.drawImage(img,cx-iw/2,cy-ih/2,iw,ih);wx.filter='none';}
+  // стекло: мягкая тень по краю окна и блик сверху слева
+  let g=wx.createRadialGradient(cx,cy,Math.min(ww,wh)*.32,cx,cy,Math.max(ww,wh)*.62);
+  g.addColorStop(0,'rgba(10,20,60,0)');g.addColorStop(1,'rgba(10,20,60,.42)');wx.fillStyle=g;wx.fillRect(0,0,TOY_W,TOY_H);
+  const hx=wx0+ww*.3, hy=wy0+wh*.22;
+  g=wx.createRadialGradient(hx,hy,2,hx,hy,Math.min(ww,wh)*.42);g.addColorStop(0,'rgba(255,255,255,.4)');g.addColorStop(1,'rgba(255,255,255,0)');
+  wx.fillStyle=g;wx.fillRect(0,0,TOY_W,TOY_H);
+  wx.fillStyle='rgba(255,255,255,.55)';wx.beginPath();wx.ellipse(hx-ww*.04,hy-wh*.02,ww*.07,wh*.035,-.7,0,7);wx.fill();
+  wx.globalCompositeOperation='destination-in';wx.drawImage(mask,0,0,TOY_W,TOY_H);
+  ctx.drawImage(w,0,0);ctx.drawImage(frame,0,0,TOY_W,TOY_H);
   return c.toDataURL('image/png');
 }
 
-/* ===== Общая ёлка банка ===== */
-// Общая ёлка: картинка ёлки без игрушек, поверх — игрушки коллег. Силуэт ёлки — ширина кроны по высоте
+/* ===== Общая елка банка ===== */
+// Общая елка: картинка елки без игрушек, поверх — игрушки коллег. Силуэт елки — ширина кроны по высоте
 // в единицах viewBox 600×720: игрушки висят только на ветках, не выходят за край
 const TREE_SIL=[[80,269,330],[100,266,333],[120,249,346],[140,232,365],[160,235,368],[180,202,389],[200,192,402],[220,200,419],[240,188,419],[260,162,422],[280,143,439],[300,138,450],[320,170,474],[340,130,477],[360,119,470],[380,117,487],[400,85,502],[420,77,500],[440,77,510],[460,96,547],[480,74,555],[500,53,549],[520,34,553],[540,29,573],[560,30,575],[580,30,571],[600,9,591],[620,6,595],[640,10,590]];
 function treeSil(y){let l=-1e9,r=1e9,f=false;for(const [yy,a,b] of TREE_SIL)if(Math.abs(yy-y)<=20){l=Math.max(l,a);r=Math.min(r,b);f=true;}return f?[l,r]:null;}
@@ -811,19 +771,20 @@ function treeSVG(mineSrc, balls, seed){
     const y=150+rr()*450, s=treeSil(y); if(!s)continue;
     const l=s[0]+26, r=s[1]-26; if(r<=l)continue;
     const x=l+rr()*(r-l);
-    if(placed.some(p=>Math.hypot(p[0]-x,p[1]-y)<34))continue; if(mineSrc&&Math.hypot(x-300,y-MINE_Y)<66)continue; placed.push([x,y]);
+    if(placed.some(p=>Math.hypot(p[0]-x,p[1]-y)<34))continue; if(mineSrc&&Math.hypot(x-300,(y-MINE_Y-14)*.8)<74)continue; placed.push([x,y]);
   }
   // каждый шар можно открыть: увидеть его поближе и кто его повесил
   placed.forEach(([x,y],i)=>{const o=balls[i];const c=cols[i%cols.length];
     const at=`class="tb" data-tip="${esc(o.nick)} · ${esc(o.city)}" data-act="ballView" data-n="${esc(o.nick)}" data-c="${esc(o.city)}" data-b="${o.img}" data-col="${c}" role="button" aria-label="Игрушка: ${esc(o.nick)}"`;
-    if(o.img>=0) bs+=`<g ${at}><use href="#tb${o.img}" x="${x-20}" y="${y-27}"/></g>`;
+    if(o.img>=0) bs+=`<g ${at}><use href="#tb${o.img}" x="${x-20}" y="${y-33}"/></g>`;
     else bs+=`<g ${at}><line x1="${x}" y1="${y-16}" x2="${x}" y2="${y-11}" stroke="#d8b26a" stroke-width="2"/><circle cx="${x}" cy="${y}" r="12" fill="${c}"/><circle cx="${x-4}" cy="${y-4}" r="3.5" fill="#fff" opacity=".55"/><text x="${x}" y="${y+4}" text-anchor="middle" font-size="9" font-weight="800" font-family="PT Serif,Georgia,serif" fill="#fff">${esc(initials(o.nick))}</text></g>`;
   });
   let mine='';
-  if(mineSrc) mine=`<g class="mine" data-tip="Ваша игрушка" data-act="ballView" data-me="1" role="button" aria-label="Ваша игрушка"><line x1="300" y1="${MINE_Y-64}" x2="300" y2="${MINE_Y-52}" stroke="#f3c96b" stroke-width="2"/><image href="${mineSrc}" x="256" y="${MINE_Y-52}" width="88" height="103"/></g>`;
-  return `<svg class="treesvg" viewBox="0 0 600 720" role="img" aria-label="Общая ёлка банка">
+  if(mineSrc) mine=`<g class="mine" data-tip="Твоя игрушка" data-act="ballView" data-me="1" role="button" aria-label="Твоя игрушка"><line x1="300" y1="${MINE_Y-64}" x2="300" y2="${MINE_Y-52}" stroke="#f3c96b" stroke-width="2"/><circle class="halo" cx="300" cy="${MINE_Y+8}" r="58" fill="url(#mh)"/><image href="${mineSrc}" x="260" y="${MINE_Y-52}" width="80" height="120"/></g>`;
+  return `<svg class="treesvg" viewBox="0 0 600 720" role="img" aria-label="Общая елка банка">
     <defs><radialGradient id="tg" cx="50%" cy="55%" r="55%"><stop offset="0" stop-color="#ffdca0" stop-opacity=".2"/><stop offset="1" stop-color="#ffdca0" stop-opacity="0"/></radialGradient>
-    ${[0,1,2,3,4,5].map(i=>`<image id="tb${i}" href="${A['toy'+i]||A['ball'+i]}" width="40" height="47"/>`).join('')}</defs>
+    <radialGradient id="mh"><stop offset="0" stop-color="#fff3c4" stop-opacity=".75"/><stop offset=".55" stop-color="#ffd76e" stop-opacity=".28"/><stop offset="1" stop-color="#ffd76e" stop-opacity="0"/></radialGradient>
+    ${[0,1,2,3,4,5].map(i=>`<image id="tb${i}" href="${A['toy'+i]}" width="40" height="60"/>`).join('')}</defs>
     <ellipse cx="300" cy="430" rx="300" ry="320" fill="url(#tg)"/>
     <image href="${A.tree_big}" x="0" y="0" width="600" height="720"/>
     <g class="tballs">${bs}${mine}</g>
