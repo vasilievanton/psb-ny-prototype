@@ -149,7 +149,7 @@ body[data-screen="cover"] main.app,body[data-screen="prologue"] main.app{min-hei
 /* Фокус с клавиатуры — золотая обводка; у полей ввода своя подсветка */
 :focus-visible{outline:2px solid var(--gold-hi);outline-offset:3px}
 .input:focus-visible{outline:none}
-/* Вход по коду, выход, почта в кабинете */
+/* Вход по коду, выход */
 .code-in{font-weight:700;font-size:18px;letter-spacing:.08em;text-transform:uppercase;text-align:center}
 .code-in::placeholder{font-weight:400;letter-spacing:.08em;color:var(--muted)}
 .cv-cta .link{padding:10px 12px;font-size:15px}
@@ -157,8 +157,6 @@ body[data-screen="cover"] main.app,body[data-screen="prologue"] main.app{min-hei
 .logout>.link{padding:8px 10px;font-size:14px;font-weight:400;color:var(--ink2);text-decoration-color:rgba(255,255,255,.3)}
 .logout p.small{margin:0 0 10px;line-height:1.5;color:var(--ink2)}
 .logout p.small b{color:var(--gold-hi);white-space:nowrap}
-.codebox .pmail{margin-top:10px}
-.codebox .err-t{text-align:left}
 
 /* ---------- Верхняя панель ---------- */
 .abar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:6px;height:56px;padding:0 12px 0 4px;
@@ -220,7 +218,7 @@ body[data-screen="cover"] main.app,body[data-screen="prologue"] main.app{min-hei
 .modal{position:fixed;left:50%;top:50%;z-index:61;width:min(480px,calc(100vw - 32px));max-height:calc(100vh - 48px);overflow:auto;transform:translate(-50%,-50%);padding:26px 28px 24px;border-radius:18px;
   background:linear-gradient(180deg,#0c2566,#061748);box-shadow:0 0 0 1.5px #e2b25e,0 0 0 4px rgba(10,20,51,.9),0 0 0 5px rgba(226,178,94,.5),0 24px 60px rgba(0,0,0,.6);animation:modalIn .25s cubic-bezier(.2,.8,.2,1)}
 @keyframes modalIn{from{opacity:0;transform:translate(-50%,-46%)}to{opacity:1;transform:translate(-50%,-50%)}}
-/* «Сохраните код» — перед стартом без почты */
+/* «Сохраните код» — перед стартом */
 .savecode{text-align:center}
 .savecode .sv-t{margin:2px 0 4px;font:800 24px/1.2 var(--display);background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .savecode .codebox{margin:12px 0}
@@ -436,9 +434,6 @@ body[data-screen="cover"] main.app,body[data-screen="prologue"] main.app{min-hei
 .code-hero{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center}
 .code-hero .mascot{width:92px}
 .code-hero .tale{margin:0;font-size:15.5px}
-.sent{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:rgba(143,217,171,.08);box-shadow:inset 0 0 0 1px rgba(143,217,171,.5);font-size:14px}
-.sent svg{color:var(--ok);flex:none}
-.sent span{flex:1;min-width:0;overflow-wrap:anywhere}
 
 /* ---------- Маршрут: путь героя карточками по порядку и «Ещё в сказке» ---------- */
 .rt-lead{max-width:600px;margin:0 auto 16px}
@@ -1120,7 +1115,6 @@ body[data-screen="izba"] main.app{padding-bottom:calc(var(--tb) + 76px)}
   .code-hero{gap:12px;align-items:end}
   .code-hero .mascot{width:112px}
   .code-hero .tale{font-size:17px}
-  .sent{padding:12px 14px;font-size:14.5px}
 
   /* маршрут: четыре карточки пути в ряд; ёлка, сериал и избушка — панелями под ним */
   .rt-lead{margin-bottom:22px}
@@ -1366,7 +1360,7 @@ body[data-screen="izba"] main.app{padding-bottom:calc(var(--tb) + 76px)}
 
 /* ---------- Фирменная типографика ПСБ ----------
    Сказка — книжными шрифтами (заголовки Playfair Display, текст PT Serif), интерфейс и цифры — фирменным ПСБ Лавр */
-.note,.err-t,.ab-note,.sent,.stats3 span,.rcs span,.howto span,.prizes span,
+.note,.err-t,.ab-note,.stats3 span,.rcs span,.howto span,.prizes span,
 .lbmini .n,.hist .d,.codebox .note{font-family:var(--ui)}
 /* Имя в турнирной таблице с городом: «Снежный Лось из Барнаула» */
 .from{font-weight:400;color:var(--ink2)}
@@ -1836,7 +1830,7 @@ body[data-screen=forest] #app::before,body[data-screen=forest] #app::after{displ
 .codepg .portal b{font:700 15px/1.4 var(--ui);color:var(--ink)}
 .codepg .portal span{margin:4px 0 0;font:400 13px/1.45 var(--ui);color:var(--ink2)}
 .codepg .chk{font-size:15px}
-.codepg .note,.codepg .err-t,.codepg .sent{font-size:13px}
+.codepg .note,.codepg .err-t{font-size:13px}
 .savecode .sv-w{font-size:15px}.savecode .note{font-size:13px}.savecode .chk{font-size:15px}
 .savecode .codebox .code{font-size:26px}
 /* Главная: сундук под ёлкой — на уровне заголовка, а не у кнопки */

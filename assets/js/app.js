@@ -57,7 +57,7 @@ function fresh(day){return {screen:'prologue',view:'route',day:day==null?14:day,
   serial:{votes:{}},chest:{win:false,seen:false},log:[]};}
 let st;try{st=Object.assign(fresh(),JSON.parse(localStorage.getItem(KEY)||'null')||{});}catch(e){st=fresh();}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){try{const c=Object.assign({},st,{tree:Object.assign({},st.tree,{ball:null})});localStorage.setItem(KEY,JSON.stringify(c));}catch(e2){}}}
-const AUTH0=()=>({code:null,email:'',err:'',sentTo:null});
+const AUTH0=()=>({code:null,err:''});
 // Имитация сервера: участники по персональному коду. На платформе это база на бэкенде (README, раздел 11)
 const REGKEY='psb-ny-proto-codes';
 const REG={all(){try{return JSON.parse(localStorage.getItem(REGKEY)||'{}')||{};}catch(e){return {};}},
@@ -72,7 +72,7 @@ function normCode(v){let x=String(v||'').toUpperCase().replace(/[АВЕКМНО�
   return x.length===11&&x.startsWith('PSB')?`PSB-${x.slice(3,7)}-${x.slice(7)}`:x;}
 const ui={auth:AUTH0(),nick:null,pending:null,city:'',cityQ:null,cityErr:false,treeSide:0,quiz:null,quizRound:null,turn:false,
   tree:{step:1,src:null,style:0,ball:null},chapter:null,izba:{cur:null,playing:false,pos:0},svOk:false,rulesOk:false,pubOk:true,demo:false,
-  sheet:null,seg:{ft:0},fmode:false,bar:null,login:{code:'',err:''},logout:false,pmail:false,pmailVal:'',ball:null};
+  sheet:null,seg:{ft:0},fmode:false,bar:null,login:{code:'',err:''},logout:false,ball:null};
 /* ===== Страницы ===== */
 // Каждый экран — отдельная HTML-страница. Общее состояние живет в localStorage, переходы — обычные ссылки.
 const PAGE=document.body.dataset.page||'cover';
@@ -87,7 +87,7 @@ const SS={get(k){try{return JSON.parse(sessionStorage.getItem('psb-'+k));}catch(
 function href(view,q){return (PAGES[view]||'route.html')+(q||'');}
 function flash(m){SS.set('toast',m);}
 // Черновик персонажа: живет между страницами «Имя героя» и «Персональный код», после «В путь» удаляется
-function saveDraft(){st.draft={nick:ui.nick,city:ui.city,cityQ:ui.cityQ,pending:ui.pending,auth:{code:ui.auth.code,email:ui.auth.email,sentTo:ui.auth.sentTo}};save();}
+function saveDraft(){st.draft={nick:ui.nick,city:ui.city,cityQ:ui.cityQ,pending:ui.pending,auth:{code:ui.auth.code}};save();}
 if(st.draft){ui.nick=st.draft.nick||null;ui.city=st.draft.city||'';ui.cityQ=st.draft.cityQ!=null?st.draft.cityQ:null;ui.pending=st.draft.pending||null;ui.auth=Object.assign(AUTH0(),st.draft.auth||{});}
 let game=null, timers=[];
 function clearTimers(){timers.forEach(t=>clearInterval(t));timers=[];if(game){game.destroy();game=null;ForestSound.musicPause();}}
@@ -215,7 +215,7 @@ function rndNick(){const taken=new Set(FAKES.map(f=>f.nick));for(let t=0;t<200;t
 function ava(nick,size,me){return `<span class="ava${me?' me':''}" style="--s:${size}px"><b>${esc(initials(nick))}</b></span>`;}
 function genCode(prefix){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<8;i++){s+=a[Math.floor(Math.random()*a.length)];if(i===3)s+='-';}return prefix+'-'+s;}
 function v(m,f){return st.user&&st.user.g?f:m;}
-function ensureUser(){if(!st.user){st.user={email:'',nick:'Серый Волк',g:0,city:'Москва',code:genCode('PSB'),confirmed:true};save();}}
+function ensureUser(){if(!st.user){st.user={nick:'Серый Волк',g:0,city:'Москва',code:genCode('PSB'),confirmed:true};save();}}
 
 /* ===== Верстка: телефон и компьютер =====
    Основная верстка — мобильная: экран-страница в компактной рамке, нижнее меню, кнопки действий у нижнего края.
@@ -380,7 +380,7 @@ function rulesHTML(){
 function supportHTML(){
   return `<div class="info"><h3 class="info-t">Поддержка</h3>
     <p class="tale small">Что-то не работает или потерялся код — напиши нам: <b>${SUPPORT_MAIL}</b>. Отвечаем в рабочие дни.</p>
-    <p class="note">Если код при создании героя отправляли на почту, он есть в письме. Без кода вернуть героя нельзя — поэтому мы просим его сохранить.</p></div>`;
+    <p class="note">Без кода вернуть героя нельзя — поэтому мы просим его сохранить.</p></div>`;
 }
 // Спроси дорогу: перед набором — окно «Готовы?» с правилами (как у Леса). Начатый набор продолжается сразу, без окна
 function qRulesHTML(){
@@ -451,10 +451,7 @@ function patchNick(){
 }
 
 /* ===== Формирование персонажа: шаг 2 — персональный код (регистрации нет) ===== */
-// Почта — по желанию и только личная: рабочую почту ПСБ указать нельзя (список доменов — в настройках админки)
-const WORK_DOMAINS=['psbank.ru'];
-function workMail(v){const d=(String(v).toLowerCase().split('@')[1]||'').trim();return WORK_DOMAINS.some(w=>d===w||d.endsWith('.'+w));}
-function mailErr(v){if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))return 'Похоже, в адресе ошибка — проверь, пожалуйста';if(workMail(v))return 'Это рабочая почта ПСБ — укажи, пожалуйста, личную';return '';}
+// Отправки кода на почту нет (решение 29 октября): код только сохраняют
 // Розыгрыш — среди тех, кто ввел код на портале «Ньютон»: напоминаем сразу, как только код выдан
 function portalHTML(){return `<div class="portal"><img src="${A.chest}" alt=""><div><b>Введи код на корпоративном портале «Ньютон» — лучше сразу</b><span>${nb(`Так герой закрепится за тобой: в рейтинге засчитывается самый первый. А до ${fmt(CODE_DEADLINE)}, 23:59 мск код открывает участие в розыгрыше подарков ${fmt(OPEN.chest)}`)}</span></div></div>`;}
 // «Сохраните код»: «В путь» — после галочки «Да, код точно сохранен»
@@ -463,36 +460,29 @@ function vAuth(){
   const a=ui.auth;
   if(!a.code)a.code=genCode('PSB');
   if(!ui.pending){const n=nickOf(ui.nick||rndNick());ui.pending={nick:n.nick,g:n.g,city:''};}
-  const sent=a.sentTo;
   bar('Персональный код','Шаг 2 из 2','nick');
   const hero=`<div class="code-hero"><img class="mascot" src="${A.bear_archer}" alt="">${tale(`${ui.pending.nick}, это твой персональный код. По нему можно зайти с другого устройства — например, с телефона.`)}</div>`;
   const code=`<div class="codebox"><div class="lbl-s">Персональный код</div><div class="code">${a.code}</div>
       <button class="btn btn-ghost btn-sm" data-act="copy" data-t="${a.code}">${svg('copy','width="15" height="15"')} Скопировать</button></div>`;
-  const mail=`<p class="tale small">Можно прислать код себе на личную почту — больше она ни для чего не используется.</p>
-    <div class="field">
-      ${sent?`<div class="sent">${svg('check','width="16" height="16"')}<span>Отправили код на <b>${esc(sent)}</b></span><button class="link" data-act="mailEdit">Изменить</button></div>`
-      :`<div class="row"><input class="input ${a.err?'err':''}" id="email" type="email" inputmode="email" autocomplete="email" placeholder="name@mail.ru" value="${esc(a.email)}" aria-label="Личная почта"><button class="btn btn-ghost" data-act="mailSend">Отправить</button></div>
-        ${a.err?`<div class="err-t">${a.err}</div>`:''}`}
-    </div>`;
   const agree=`<label class="chk agree"><input type="checkbox" id="rulesOk"${ui.rulesOk?' checked':''}><span>Принимаю <a class="link" href="#" data-act="sheetOpen" data-v="rules">правила</a></span></label>`;
   const acts=[{t:'В путь',act:'codeNext',gold:1,cls:ui.rulesOk?'':'is-off'}];   // без галочки кнопка выглядит неактивной, а по нажатию показывает, чего не хватает
-  // Почту не указали — перед стартом просим сохранить код: он единственный ключ к прогрессу
+  // Перед стартом просим сохранить код: он единственный ключ к прогрессу
   const save=ui.sheet==='savecode'?`<div class="savecode"><h3 class="sv-t">Сохрани код</h3>
       <div class="codebox"><div class="code">${a.code}</div><button class="btn btn-ghost btn-sm" data-act="copy" data-t="${a.code}">${svg('copy','width="15" height="15"')} Скопировать</button></div>
       <p class="sv-w"><b>Это твой единственный ключ к герою.</b> Без него не получится войти с другого устройства или после выхода.</p>
-      <p class="note">Скопируй код, сделай скриншот или запиши. Надежнее всего — прислать его себе на почту.</p>
+      <p class="note">Скопируй код, сделай скриншот или запиши.</p>
       <label class="chk"><input type="checkbox" id="svOk"${ui.svOk?' checked':''}><span>Да, код точно сохранен</span></label>
-      <div class="sv-acts">${btn({t:'В путь',act:'codeGo',gold:1,disabled:!svReady()})}${btn({t:'Прислать на почту',act:'toMail',noarrow:1})}</div></div>`:'';
-  if(DESK)return {one:`${pt('Персональный код','Шаг 2 из 2','h1')}${hero}${code}${portalHTML()}${lbl('Почта — по желанию','s')}${mail}${agree}`,
+      <div class="sv-acts">${btn({t:'В путь',act:'codeGo',gold:1,disabled:!svReady()})}</div></div>`:'';
+  if(DESK)return {one:`${pt('Персональный код','Шаг 2 из 2','h1')}${hero}${code}${portalHTML()}${agree}`,
     acts,nbt:false,dnote:'<a class="link" href="#" data-act="toNick">Изменить имя</a>',cls:'onb codepg',post:save?modal(save):'',scene:1};
-  return {stage:hero,M:[`${code}${portalHTML()}`,`${lbl('Почта — по желанию','s')}${mail}${agree}<p class="note"><a class="link" href="#" data-act="toNick">Изменить имя</a></p>`],acts,sheet:save?sheet(save):'',cls:'codepg',scene:1};
+  return {stage:hero,M:[`${code}${portalHTML()}${agree}<p class="note"><a class="link" href="#" data-act="toNick">Изменить имя</a></p>`],acts,sheet:save?sheet(save):'',cls:'codepg',scene:1};
 }
 
 /* ===== Вход по коду — для тех, кто уже создал героя: другое устройство или после выхода ===== */
 function vLogin(){
   bar('Вход по коду','Для тех, кто уже в сказке','cover');
   const L=ui.login;
-  const lhero=`<div class="code-hero"><img class="mascot" src="${A.bear_archer}" alt="">${tale('Введи персональный код — его выдают при создании героя. Если код отправляли на почту, он есть в письме.')}</div>`;
+  const lhero=`<div class="code-hero"><img class="mascot" src="${A.bear_archer}" alt="">${tale('Введи персональный код — его выдают при создании героя.')}</div>`;
   const form=`${DESK?lhero:''}
     <label class="field"><span>Персональный код</span>
       <input class="input code-in ${L.err?'err':''}" id="logincode" placeholder="PSB-XXXX-XXXX" value="${esc(L.code)}" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="20"></label>
@@ -1224,11 +1214,8 @@ function vProfile(){
   const won=st.day>=OPEN.chest&&drawWinners().some(x=>x.me);
   const stats=`<div class="pf-k"><div><b>${num(p.total)}</b><span>${plural(p.total,'балл','балла','баллов')}</span></div><a href="${href('rating')}"><b>${me.place}</b><span>место в таблице</span></a></div>
     ${won?`<a class="pf-win" href="${href('chest')}">${svg('check','width="16" height="16"')}<span>${nb(`Ты среди победителей розыгрыша — с тобой свяжутся до ${fmt(PRIZE_DAY)}`)}</span></a>`:''}`;
-  const mailH=u.email?`<div class="note">Продублирован на ${esc(u.email)}</div>`
-    :ui.pmail?`<div class="row pmail"><input class="input ${ui.auth.err?'err':''}" id="pmail" type="email" inputmode="email" autocomplete="email" placeholder="name@mail.ru" value="${esc(ui.pmailVal)}" aria-label="Личная почта"><button class="btn btn-ghost" data-act="pmailSend">Отправить</button></div>${ui.auth.err?`<div class="err-t">${ui.auth.err}</div>`:''}`
-    :`<p class="note"><button class="link" data-act="pmailOpen">Прислать код на почту</button></p>`;
   const code=`${lbl('Персональный код')}<div class="codebox"><div class="code sm">${u.code}</div>
-      <button class="btn btn-ghost btn-sm" data-act="copy" data-t="${u.code}">${svg('copy','width="14" height="14"')} Скопировать</button>${mailH}</div>
+      <button class="btn btn-ghost btn-sm" data-act="copy" data-t="${u.code}">${svg('copy','width="14" height="14"')} Скопировать</button></div>
     ${st.day<=CODE_DEADLINE?portalHTML():''}`;
   const hist=`${lbl('История начислений')}${log.length?`<div class="hist">${log.map(e=>`<div class="hr"><span class="d">${fmt(e.d,true)}</span><span class="w"><b>${SRC[e.k]}</b><small>${esc(e.t)}</small></span><span class="p">+${num(e.p)}</span></div>`).join('')}</div>`
     :'<p class="tale small">Пока пусто — первые баллы дает Спроси дорогу.</p>'}`;
@@ -1359,19 +1346,15 @@ const ACT={
   startAuth:()=>{if(st.user){go('route');return;}st.draft=null;go('nick');},
   toNick:(d,e,ev)=>{ev.preventDefault();saveDraft();go('nick');},
   regen:()=>{ui.nick=rndNick();patchNick();},
-  mailSend:()=>{const v2=$('#email').value.trim();ui.auth.email=v2;const er=mailErr(v2);if(er){ui.auth.err=er;return render();}
-    ui.auth.err='';ui.auth.sentTo=v2;saveDraft();render();toast('Код отправлен на '+v2);},
-  mailEdit:()=>{ui.auth.sentTo=null;saveDraft();render();const e=$('#email');e&&e.focus();},
   saveNick:()=>{const q=cityQ();ui.city=cityFind(q);if(cityNorm(q)&&!ui.city){ui.cityErr=true;patchCity();const f=$('#city');if(f){f.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'});f.focus({preventScroll:true});}return;}
     ui.cityQ=ui.city;const city=ui.city;const n=nickOf(ui.nick);ui.pending={nick:n.nick,g:n.g,city};saveDraft();go('auth');},
   citySel:d=>{ui.city=d.v;ui.cityQ=d.v;ui.cityErr=false;saveDraft();const f=$('#city');if(f){f.value=d.v;f.blur();}patchCity();},
-  codeNext:()=>{if(!ui.rulesOk){toast('Отметь, что принимаешь правила');const c=$('.chk.agree');if(c){c.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'});c.classList.remove('nudge');void c.offsetWidth;c.classList.add('nudge');}return;}if(!ui.auth.sentTo){ui.svOk=false;ui.sheet='savecode';render();return;}ACT.codeGo(null,null,null,true);},
+  codeNext:()=>{if(!ui.rulesOk){toast('Отметь, что принимаешь правила');const c=$('.chk.agree');if(c){c.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'});c.classList.remove('nudge');void c.offsetWidth;c.classList.add('nudge');}return;}ui.svOk=false;ui.sheet='savecode';render();},
   portal:(d,e,ev)=>{ev&&ev.preventDefault&&ev.preventDefault();toast('Ссылку на портал «Ньютон» даст банк');},
-  toMail:()=>{ui.sheet=null;render();const e=$('#email');if(e){e.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'});e.focus({preventScroll:true});}},
-  codeGo:(d,e,ev,mailed)=>{if(!mailed&&!svReady())return;ui.sheet=null;const p=ui.pending;
+  codeGo:()=>{if(!svReady())return;ui.sheet=null;const p=ui.pending;
     // новый участник начинает с чистого листа; прежний (если был на этом устройстве) остается на «сервере»
     if(st.user){REG.put(snapshot());const day=st.day;st=fresh(day);}
-    st.user={email:ui.auth.sentTo||'',nick:p.nick,g:p.g,city:p.city,code:ui.auth.code,confirmed:true};st.draft=null;REG.put(snapshot());SS.del('demo');flash(`Добро пожаловать в сказку, ${p.nick}!`);goBack();},
+    st.user={nick:p.nick,g:p.g,city:p.city,code:ui.auth.code,confirmed:true};st.draft=null;REG.put(snapshot());SS.del('demo');flash(`Добро пожаловать в сказку, ${p.nick}!`);goBack();},
   toLogin:(d,e,ev)=>{ev&&ev.preventDefault&&ev.preventDefault();saveDraft();go('login');},
   login:()=>{const inp=$('#logincode');const raw=inp?inp.value:'';ui.login.code=raw;const code=normCode(raw);
     const fail=m=>{ui.login.err=m;render();const i=$('#logincode');if(i)i.focus();};
@@ -1382,10 +1365,6 @@ const ACT={
     const day=st.day;st=Object.assign(fresh(day),rec);st.draft=null;ui.login={code:'',err:''};SS.del('demo');flash(`С возвращением, ${st.user.nick}!`);goBack();},
   logoutAsk:()=>{ui.logout=true;render();}, logoutNo:()=>{ui.logout=false;render();},
   logout:()=>{REG.put(snapshot());const day=st.day;st=fresh(day);save();flash('Выход выполнен. Вернуться можно по персональному коду');go('cover');},
-  pmailOpen:()=>{ui.pmail=true;ui.auth.err='';render();const e=$('#pmail');if(e)e.focus();},
-  pmailSend:()=>{const el=$('#pmail');const v2=(el?el.value:'').trim();ui.pmailVal=v2;
-    const er=mailErr(v2);if(er){ui.auth.err=er;return render();}
-    ui.auth.err='';ui.pmail=false;st.user.email=v2;save();render();toast('Код отправлен на '+v2);},
   sheetOpen:(d,e,ev)=>{ev&&ev.preventDefault&&ev.preventDefault();ui.sheet=d.v;render();}, sheetClose:()=>{ui.sheet=null;render();},
   ballView:d=>{ui.ball=d.me?{me:1}:{n:d.n,c:d.c,b:+d.b,col:d.col};ui.sheet='ball';render();},
   seg:d=>{ui.seg[d.k]=d.v;render();},
@@ -1459,10 +1438,8 @@ document.addEventListener('keydown',e=>{
     if(e.key==='ArrowUp'&&o.length){e.preventDefault();if(i>0)o[i-1].focus();else $('#city').focus();}
     if(e.key==='Enter'&&e.target.id==='city'&&o.length===1){e.preventDefault();o[0].click();}
     if(e.key==='Escape'){const b=$('#citySug');if(b&&!b.hidden){e.stopPropagation();b.hidden=true;return;}}}
-  if(e.key==='Enter'&&e.target.id==='email')ACT.mailSend();
   if(e.key==='Enter'&&e.target.id==='tfq'){e.preventDefault();ACT.treeFind();}
   if(e.key==='Enter'&&e.target.id==='logincode')ACT.login();
-  if(e.key==='Enter'&&e.target.id==='pmail')ACT.pmailSend();
   if(e.key==='Escape'){if(ui.sheet){ui.sheet=null;render();}else if($('#gm .sheet'))ACT.fAgain();}
 });
 document.addEventListener('change',e=>{
