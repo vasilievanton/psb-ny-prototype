@@ -496,16 +496,18 @@ function vLogin(){
 }
 
 /* ===== Маршрут (главная) =====
-   Сверху — подводка: название проекта, завязка сценой-комиксом и три пункта о том, что здесь происходит.
-   Ниже — карта: тропа через три испытания-плитки (картинка с сутью активности, персонаж выглядывает из угла, сюжетная подпись,
-   состояние и одна кнопка — золотая только у следующего шага). От тропы — ветки к сказке-сериалу и Пряничной избушке,
-   у третьего испытания — общая елка банка (10–20 шаров, их можно открыть), под елкой — Сундук чудес */
+   Первый экран — картинка и завязка. Ниже — карта маршрута: фон-дорога (картинка ночного леса со светящейся тропой),
+   на нем — отдельные элементы-картинки и короткие подписи. Главная тропа идет через три испытания (медальоны 1–3).
+   От тропы — ветки: у первого испытания — сказка-сериал, у второго — Пряничная избушка, у третьего — общая елка банка
+   (живая: шары коллег можно открыть), под елкой — Сундук чудес.
+   Телефон: тропа слева, элементы вдоль нее, подписи справа. Компьютер: тропа по центру, испытания слева, ветки справа;
+   при наведении элемент приподнимается и светится, а герой-проводник говорит свою реплику */
 const STOPS=[
-  {k:'quiz',n:1,l:'Квиз',t:'Спроси дорогу',d:'Узнай у местных, куда ушел Михаил: в каждом краю свои слова и узоры',m:'m_mlad',who:'Борис, младший сын',art:'tile_quiz'},
-  {k:'forest',n:2,l:'Игра',t:'Лес',d:'В тайге порвался мешок с подарками — помоги их собрать',m:'m_star',who:'Петр, старший сын',art:'art_forest',pos:'50% 14%'},
-  {k:'tree',n:3,l:'Творчество',t:'Елка',d:'Подарки собраны — осталось нарядить общую елку банка',m:'m_doch',who:'София, средняя дочь',art:'tile_tree'}
+  {k:'quiz',n:1,l:'Квиз',t:'Спроси дорогу',el:'rm_quiz',say:'Спросим дорогу!',alt:'Борис, младший сын Михаила, у указателя с узорами народов'},
+  {k:'forest',n:2,l:'Игра',t:'Лес',el:'rm_forest',say:'Бежим собирать!',alt:'Петр, старший сын Михаила, в прыжке за подарком'},
+  {k:'tree',n:3,l:'Творчество',t:'Елка',el:'rm_tree',say:'Нарядим вместе!',alt:'София, дочь Михаила, вешает игрушку на елку'}
 ];
-// Состояние плитки: cls — locked / done, note — строка о прогрессе, live — оранжевая метка, cta — кнопка
+// Состояние испытания: cls — locked / done, note — строка о прогрессе, live — оранжевая метка, cta — кнопка
 function stopState(s,now){
   const P=pts(), b=(t,o)=>btn(Object.assign({t,act:'go',v:s.k,cls:'btn-sm',noarrow:1,gold:now?1:0},o||{}));
   if(st.day<OPEN[s.k])return {cls:'locked',cta:soonChip(OPEN[s.k])};
@@ -515,32 +517,21 @@ function stopState(s,now){
     if(pq)return {note:`Набор ${pq.r+1}: вопрос ${pq.i+1} из ${R[pq.r].qs.length}`,cta:b('Продолжить',{act:'goQuiz',i:pq.r})};
     const f=R.findIndex((r,i)=>st.day>=r.open&&!isDone(i));
     if(f>=0&&!nd)return {cta:b('Начать',{act:'goQuiz',i:f})};
-    const got=`Пройдено ${nd} из ${R.length} · +${num(P.q)} баллов`;
+    const got=`Наборы ${nd} из ${R.length} · +${num(P.q)}`;
     if(f>=0)return {cls:'done',live:'новый набор',note:got,cta:b(`Пройти набор ${f+1}`,{act:'goQuiz',i:f})};
-    const nx=R.find(r=>st.day<r.open);
-    return {cls:'done',note:got+(nx?` · следующий набор ${fmt(nx.open,true)}`:''),cta:b('Еще раз')};
+    return {cls:'done',note:got,cta:b('Еще раз')};
   }
   if(s.k==='forest'){
     if(!done.forest())return {cta:b('Начать')};
-    const g=st.forest.bestGifts;
-    return {cls:'done',note:`Рекорд ${g} ${plural(g,'подарок','подарка','подарков')} · +${num(P.f)} баллов`,cta:b('Еще раз')};
+    return {cls:'done',note:`Рекорд ${st.forest.bestGifts} · +${num(P.f)}`,cta:b('Еще раз')};
   }
   // елка: одна игрушка на участника; баллы — когда ее впервые повесили на общую елку
   if(!st.tree.ball)return {cta:b('Украсить')};
-  if(!st.tree.pts)return {note:'Игрушка готова — повесь ее на елку',cta:b('Повесить')};
-  return {cls:'done',note:`Твоя игрушка на елке · +${num(P.t)} баллов`,cta:b('Смотреть')};
+  if(!st.tree.pts)return {note:'Игрушка готова',cta:b('Повесить')};
+  return {cls:'done',note:`На елке · +${num(P.t)}`,cta:b('Смотреть')};
 }
 // Закрыто до даты — плашка вместо кнопки
 function soonChip(day){return `<span class="rt-soon">${svg('lock','width="13" height="13"')}<span>Откроется ${fmt(day,!DESK)}</span></span>`;}
-function stopCard(s,ns){
-  const now=s.k===ns, S=stopState(s,now);
-  return `<article class="mp-stop ${S.cls||''}${now?' now':''}" data-k="${s.k}">
-    <img class="mp-med" src="${A['med'+s.n]}" alt="Испытание ${s.n}">${S.cls==='done'?`<span class="mp-ok">${svg('check','width="11" height="11" stroke-width="3"')}</span>`:''}
-    <div class="mp-art"><img class="mp-pic" src="${A[s.art]}"${s.pos?` style="object-position:${s.pos}"`:''} alt=""><span class="mp-who" title="${s.who}"><img src="${A[s.m]}" alt="${s.who}"></span></div>
-    <div class="mp-b">${S.live?`<span class="chip live">${S.live}</span>`:''}<span class="rt-l">${s.l}</span><h3 class="mp-t">${s.t}</h3><p class="mp-d">${nb(s.d)}</p>
-      ${S.note?`<span class="rt-s">${S.cls==='done'?svg('check','width="13" height="13" stroke-width="2.6"'):''}<span>${nb(S.note)}</span></span>`:''}<div class="mp-a">${S.cta}</div></div>
-  </article>`;
-}
 // Главное действие на сегодня — ключ раздела или null, если ждем открытия
 function nextStep(){
   if(anyPend()||!done.quiz())return 'quiz';
@@ -563,62 +554,112 @@ function serialState(){
   return {cur,full,c,nx,live,voted,kind:full?'full':live?(voted?'voted':'vote'):'read'};
 }
 function talesOpen(){return D.TALES.filter(t=>st.day>=t.open).length;}
+
+/* --- Карта маршрута: фон-дорога и что на нем стоит ---
+   Фон — картинки с тропой: на телефоне две, на компьютере две, ставятся друг под друга.
+   Координаты элементов, медальонов и подписей — в процентах от своей картинки: [слева, сверху, ширина] */
+const RMAP={
+  m:[{bg:'rm_m1',ar:'940/1672',it:{
+      quiz:{el:[13,5,40],med:[2,12],pn:[56,7,42]},
+      serial:{el:[17,31,38],pn:[56,33,42]},
+      forest:{el:[20,52,40],med:[3,52],pn:[56,56,42]},
+      izba:{el:[22,75,36],pn:[56,79,42]}}},
+    {bg:'rm_m2',ar:'941/1672',it:{
+      tree:{el:[8,6,34],med:[2,8],pn:[56,10,42]},
+      ctree:{el:[2,36,70],pn:[60,42,38]},
+      chest:{el:[8,78,34],pn:[56,79,42]}}}],
+  d:[{bg:'rm_d1',ar:'1536/1024',it:{
+      quiz:{el:[22,8,22],med:[44,12],pn:[3,12,19]},
+      serial:{el:[60,18,20],pn:[79,20,19]},
+      forest:{el:[23,47,22],med:[46,52],pn:[3,54,19]},
+      izba:{el:[61,55,19],pn:[79,60,19]}}},
+    {bg:'rm_d2',ar:'1536/1024',it:{
+      tree:{el:[24,4,17],med:[42,10],pn:[3,10,19]},
+      ctree:{el:[53,18,26],pn:[79,23,19]},
+      chest:{el:[59,58,15],pn:[79,65,19]}}}]
+};
+const pc=a=>`left:${a[0]}%;top:${a[1]}%${a[2]!=null?`;width:${a[2]}%`:''}`;
+const ICON_OK=()=>svg('check','width="13" height="13" stroke-width="2.6"');
+// Подпись: метка, название, одна строка о состоянии и одна кнопка
+function rmPanel(p,o){
+  return `<div class="rm-pn${o.cls?' '+o.cls:''}" style="${pc(p)}"><div class="rm-pl"><span class="rt-l">${o.l}</span>${o.live?`<span class="chip live">${o.live}</span>`:''}</div>
+    <h3 class="rm-ttl">${o.t}</h3>${o.note?`<span class="rm-s${o.ok?' ok':''}">${o.ok?ICON_OK():''}<span>${nb(o.note)}</span></span>`:''}${o.extra||''}
+    <div class="rm-cta">${o.cta}</div></div>`;
+}
+// Элемент на дороге: картинка-кнопка, ведет в раздел; у испытаний — облачко с репликой героя (видно при наведении)
+function rmEl(p,o){
+  const tag=o.act?'button':'span';
+  return `<${tag} class="rm-el"${o.act?` type="button" data-act="${o.act}" data-v="${o.v}"`:''} style="${pc(p)}" aria-label="${esc(o.label)}">
+    <img src="${A[o.img]}" alt="${esc(o.alt)}" draggable="false">${o.say?`<span class="rm-say" aria-hidden="true">${o.say}</span>`:''}</${tag}>`;
+}
+function rmStop(s,p,ns){
+  const now=s.k===ns, S=stopState(s,now), lock=S.cls==='locked';
+  return `<div class="rm-it rm-stop${S.cls?' '+S.cls:''}${now?' now':''}" data-k="${s.k}">
+    ${rmEl(p.el,{act:lock?null:'go',v:s.k,img:s.el,alt:s.alt,label:`${s.t}: ${s.alt}`,say:DESK&&!lock?s.say:''})}
+    <span class="rm-med" style="${pc(p.med)}"><img src="${A['med'+s.n]}" alt="Испытание ${s.n}">${S.cls==='done'?`<i class="rm-ok">${svg('check','width="10" height="10" stroke-width="3"')}</i>`:''}</span>
+    ${rmPanel(p.pn,{l:s.l,t:s.t,live:S.live,note:S.note,ok:S.cls==='done',cta:S.cta,cls:now?'now':''})}</div>`;
+}
 // Ветка «Сказка-сериал»: главы раз в 3–4 дня, сюжет решает голосование
-function serialSt(){
+function rmSerial(p){
   const S=serialState(), ch=D.CHAPTERS, cur=S.cur, c=S.c;
-  let txt, b=null, live='';
-  if(S.kind==='none')txt=`Первая глава выйдет ${fmt(ch[0].day)}`;
-  else if(S.kind==='vote'){txt=`Глава ${ROMAN[cur]} вышла — выбери, куда повернет сюжет. Голосование до ${fmt(c.day+1)}, 23:59 мск`;b={t:'Читать и голосовать',act:'openCh',i:cur,gold:1};live='голосование';}
-  else if(S.kind==='voted'){txt=`Твой голос за главу ${ROMAN[cur]} учтен. Итоги — ${fmt(c.day+2)}`;b={t:'Ход голосования',act:'openCh',i:cur};}
-  else if(S.kind==='full'){txt='Все шесть глав собраны в Большую книгу сказок';b={t:'Читать сказку',act:'go',v:'fulltale'};}
-  else {txt=S.nx?`Глава ${ROMAN[cur]} вышла. Глава ${ROMAN[cur+1]} — ${fmt(S.nx.day)}`:`Финальная глава вышла. Вся сказка — ${fmt(D.FULL_TALE_DAY)}`;b={t:`Читать главу ${ROMAN[cur]}`,act:'openCh',i:cur};}
-  const prog=`<div class="sr-prog" aria-label="Главы сериала">${ch.map((x,i)=>`<span class="${chState(i)}${i===cur&&!S.full?' cur':''}">${ROMAN[i]}</span>`).join('')}<span class="${S.full?'out':'soon'}">✦</span></div>`;
-  return `<section class="mp-st st-serial${live?' hot':''}"><div class="mp-sth"><img class="mp-si" src="${A.serial}" alt=""><div><span class="rt-l">Пишем сказку вместе</span><h3 class="mp-t">Сказка-сериал</h3>
-      <span class="rt-p">${STAR_SM}${VOTE_PTS} баллов за каждый голос</span></div></div>
-    ${live?`<span class="chip live">${live}</span>`:''}<p class="mp-x">${nb(txt)}</p>${prog}
-    ${b?`<div class="mp-a">${btn(Object.assign({cls:'btn-sm',noarrow:1},b))}</div>`:''}</section>`;
+  let note, b, live='';
+  if(S.kind==='none'){note=`Глава I — ${fmt(ch[0].day,true)}`;b=null;}
+  else if(S.kind==='vote'){note=`Голосуй до ${fmt(c.day+1,true)}`;b={t:'Читать и голосовать',act:'openCh',i:cur,gold:1};live='голосование';}
+  else if(S.kind==='voted'){note=`Голос учтен · итоги ${fmt(c.day+2,true)}`;b={t:'Ход голосования',act:'openCh',i:cur};}
+  else if(S.kind==='full'){note='Вся сказка — в одной книге';b={t:'Читать сказку',act:'go',v:'fulltale'};}
+  else {note=S.nx?`Глава ${ROMAN[cur+1]} — ${fmt(S.nx.day,true)}`:`Вся сказка — ${fmt(D.FULL_TALE_DAY,true)}`;b={t:`Читать главу ${ROMAN[cur]}`,act:'openCh',i:cur};}
+  const prog=`<div class="sr-prog rm-prog" aria-label="Главы сериала">${ch.map((x,i)=>`<span class="${chState(i)}${i===cur&&!S.full?' cur':''}">${ROMAN[i]}</span>`).join('')}<span class="${S.full?'out':'soon'}">✦</span></div>`;
+  return `<div class="rm-it rm-br${live?' hot':''}" data-k="serial">
+    ${rmEl(p.el,{act:'go',v:'serial',img:'rm_serial',alt:'Раскрытая волшебная книга, над ней — картинки глав',label:'Сказка-сериал'})}
+    ${rmPanel(p.pn,{l:'Пишем сказку вместе',t:'Сказка-сериал',live,note,extra:prog,cta:b?btn(Object.assign({cls:'btn-sm',noarrow:1},b)):'',cls:live?'hot':''})}</div>`;
 }
 // Ветка «Пряничная избушка»: аудиосказки народов России, две новые каждую неделю
-function izbaSt(){
+function rmIzba(p){
   const T=D.TALES, n=talesOpen(), nx=T.find(t=>st.day<t.open);
-  return `<section class="mp-st st-izba"><div class="mp-sth"><img class="mp-si" src="${A.hut}" alt=""><div><span class="rt-l">Аудиосказки на ночь</span><h3 class="mp-t">Пряничная избушка</h3></div></div>
-    <p class="mp-x">${nb(`Сказки народов России из коллекции Марии, жены Михаила. ${nx?`Открыто ${n} из ${T.length}, следующие — ${fmt(nx.open)}`:`Открыты все ${T.length} сказок`}`)}</p>
-    <div class="mp-a">${btn({t:'Слушать',act:'go',v:'izba',cls:'btn-sm',noarrow:1})}</div></section>`;
+  return `<div class="rm-it rm-br" data-k="izba">
+    ${rmEl(p.el,{act:'go',v:'izba',img:'rm_izba',alt:'Пряничный домик с теплыми окнами',label:'Пряничная избушка'})}
+    ${rmPanel(p.pn,{l:'Аудиосказки',t:'Пряничная избушка',note:nx?`Открыто ${n} из ${T.length}`:`Открыты все ${T.length}`,
+      cta:btn({t:'Слушать',act:'go',v:'izba',cls:'btn-sm',noarrow:1})})}</div>`;
 }
-// Общая елка банка на главной: 16 шаров коллег и своя игрушка у верхушки; шар можно открыть. Под елкой — Сундук чудес
-function treeSt(ns){
+// Ветка у третьего испытания — общая елка банка, живая: шары коллег и своя игрушка у верхушки, шар можно открыть
+function rmTree(p){
   const open=st.day>=OPEN.tree, tc=treeCount(), mine=st.tree.on?mineBall():null;
   const tree=open?treeSVG(mine,sideBalls(0).slice(0,16),901):treeSVG(null,[],901);
-  const lead=open?`${num(tc)} ${plural(tc,'игрушка','игрушки','игрушек')} от сотрудников со всей страны`:`Наряжаем вместе с ${fmt(OPEN.tree)}`;
+  const note=open?`${num(tc)} ${plural(tc,'игрушка','игрушки','игрушек')} со всей страны`:'';
   const cta=!open?soonChip(OPEN.tree):btn({t:st.tree.pts?'Смотреть всю елку':'Повесить свою игрушку',act:'go',v:'tree',cls:'btn-sm',noarrow:1});
+  return `<div class="rm-it rm-br rm-ctree${open?'':' locked'}" data-k="ctree">
+    <div class="rm-tree" id="tree" style="${pc(p.el)}">${tree}</div>
+    ${rmPanel(p.pn,{l:'Наряжаем вместе',t:'Общая елка банка',note,extra:open?`<span class="rm-hint">Нажми на шар</span>`:'',cta})}</div>`;
+}
+// Под елкой — Сундук чудес
+function rmChest(p,ns){
   const out=st.day>=OPEN.chest, fresh=out&&!st.chest.seen;
-  const chest=`<div class="mp-chest"><img class="mp-ci" src="${A.chest}" alt="">
-    <div class="mp-cb"><span class="rt-l">Под елкой</span><b class="mp-ct">Сундук чудес${fresh?' <span class="chip live">итоги</span>':''}</b>
-      <span class="mp-cs">${nb(out?'Розыгрыш прошел — посмотри, кому достались подарки':`Розыгрыш подарков — ${fmt(OPEN.chest)}`)}</span>
-      ${btn({t:out?'Итоги розыгрыша':'Как пройдет розыгрыш',act:'go',v:'chest',cls:'btn-sm',noarrow:1,gold:ns==='chest'?1:0})}</div></div>`;
-  return `<section class="mp-st st-tree"><div class="mp-sth"><div><span class="rt-l">Наряжаем вместе</span><h3 class="mp-t">Общая елка банка</h3></div></div>
-    <p class="mp-x">${nb(lead)}</p><div class="mp-tree" id="mtree">${tree}</div>
-    ${open?`<p class="note">${DESK?'Нажми на шар — увидишь его поближе и кто его повесил':'Нажми на шар — увидишь его поближе'}</p>`:''}
-    <div class="mp-a">${cta}</div>${chest}</section>`;
+  return `<div class="rm-it rm-br${ns==='chest'?' now':''}" data-k="chest">
+    ${rmEl(p.el,{act:'go',v:'chest',img:'chest',alt:'Сундук чудес',label:'Сундук чудес'})}
+    ${rmPanel(p.pn,{l:'Под елкой',t:'Сундук чудес',live:fresh?'итоги':'',note:out?'Розыгрыш прошел':`Розыгрыш — ${fmt(OPEN.chest,true)}`,
+      cta:btn({t:out?'Итоги розыгрыша':'Как пройдет розыгрыш',act:'go',v:'chest',cls:'btn-sm',noarrow:1,gold:ns==='chest'?1:0}),cls:ns==='chest'?'now':''})}</div>`;
+}
+function routeMap(ns){
+  const stop=k=>STOPS.find(s=>s.k===k);
+  const R={quiz:p=>rmStop(stop('quiz'),p,ns),forest:p=>rmStop(stop('forest'),p,ns),tree:p=>rmStop(stop('tree'),p,ns),
+    serial:rmSerial,izba:rmIzba,ctree:rmTree,chest:p=>rmChest(p,ns)};
+  return `<div class="rmap">${RMAP[DESK?'d':'m'].map((g,i)=>`<div class="rm-seg s${i+1}" style="aspect-ratio:${g.ar}"><i class="rm-bg" style="background-image:url(${A[g.bg]})" aria-hidden="true"></i>
+    ${Object.entries(g.it).map(([k,p])=>R[k](p)).join('')}</div>`).join('')}</div>`;
 }
 // Первый экран главной: картинка на фоне, сбоку — название проекта и короткое описание (завязка)
 const HERO_LEAD='В новогоднюю ночь Дед Мороз — медведь Михаил — идет через всю страну с востока на запад. Одиннадцать полуночей за одну ночь, и в каждом краю свой Новый год: свои традиции, угощения, песни и сказки. Одному не успеть — нужен помощник, и это ты.';
 function heroHTML(){
   return `<section class="hero"><img class="hero-pic" src="${A.story}" alt="Дед Мороз Михаил спешит через всю страну, за ним — одиннадцать часов: в каждом краю свое время">
-    <div class="hero-in"><h1 class="sc-t">Новогодняя ночь длиной в${'\u00a0'}страну</h1><p class="hero-lead">${nb(HERO_LEAD)}</p></div></section>`;
+    <div class="hero-in"><h1 class="sc-t">Новогодняя ночь длиной в${' '}страну</h1><p class="hero-lead">${nb(HERO_LEAD)}</p></div></section>`;
 }
-// Второй экран — карта: заголовок на поляне, ниже панель с тропой
+// Над картой — заголовок на поляне
 function mapHead(){
-  return `<div class="map-h"><h2 class="sc-t">Маршрут помощника</h2><p class="map-sub">${nb('Три испытания открываются по датам — проходи в любом порядке. За каждое — баллы в турнирную таблицу')}</p></div>`;
+  return `<div class="map-h"><h2 class="sc-t">Маршрут помощника</h2><p class="map-sub">${nb('Три испытания открываются по датам — проходи в любом порядке')}</p></div>`;
 }
 function vRoute(){
   bar('Маршрут');
-  const ns=nextStep();
-  // карта: тропа через три испытания; на компьютере ветки — справа от тропы, на телефоне — под своими испытаниями
-  const rows=[[STOPS[0],serialSt()],[STOPS[1],izbaSt()],[STOPS[2],treeSt(ns)]];
-  const map=`<div class="map">${rows.map(([s,x],i)=>`<div class="mp-row r${i+1}">${stopCard(s,ns)}<i class="mp-br" aria-hidden="true"></i>${x}</div>`).join('')}</div>`;
   const head=mapHead();
-  return {pre:endBanner()+heroHTML(),wide:[map],M:[map],cls:'home',dstage:head,stage:head,scene:1};
+  return {pre:endBanner()+heroHTML(),wide:[],M:[],post:routeMap(nextStep()),cls:'home',dstage:head,stage:head,scene:1};
 }
 
 /* ===== Испытания: шапка — снежная панель на всю ширину (как у Леса) =====
