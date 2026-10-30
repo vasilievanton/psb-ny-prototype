@@ -100,6 +100,12 @@ select.in{padding-right:6px}
 
 /* сериал */
 .thumb{width:100%;aspect-ratio:4/3;border-radius:8px;object-fit:cover;background:#121a3a}
+.pgs{display:flex;gap:8px;flex-wrap:wrap}
+.pgs figure{margin:0;position:relative;width:96px}
+.pgs img{display:block;width:96px;aspect-ratio:9/16;object-fit:cover;border-radius:6px;background:#121a3a}
+.pgs figcaption{position:absolute;left:4px;top:4px;min-width:20px;height:20px;border-radius:10px;display:grid;place-items:center;font:600 11px/1 system-ui;color:#fff;background:rgba(10,16,40,.75)}
+.pg0{width:96px;aspect-ratio:9/16;border-radius:6px;display:grid;place-items:center;font-size:12px;color:#9aa3c7;background:#121a3a}
+.opt .cth{flex:none;width:44px;height:44px;border-radius:6px;object-fit:cover;background:#121a3a}
 .bars{display:grid;gap:6px}
 .bar{position:relative;display:flex;justify-content:space-between;gap:10px;padding:7px 10px;border-radius:7px;background:var(--line2);overflow:hidden;font-size:13px}
 .bar i{position:absolute;left:0;top:0;bottom:0;background:#dfe7ff}

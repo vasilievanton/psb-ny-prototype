@@ -39,9 +39,9 @@ const SUSP=[
   {nick:USERS[17].nick,run:'14 дек, 22:47',gifts:39,time:'2 мин 10 с',why:'6 забегов за минуту с одного устройства',st:'wait'},
   {nick:USERS[25].nick,run:'14 дек, 18:03',gifts:52,time:'1 мин 02 с',why:'Длительность меньше возможной для такого пути',st:'wait'}
 ];
-const CH=D.CHAPTERS.map((c,i)=>({t:c.t,img:A[c.img],text:c.p.join('\n\n'),o:(c.o||[]).slice(),day:c.day,final:!!c.final,note:'',sched:false,
+const CH=D.CHAPTERS.map((c,i)=>({t:c.t,pages:(c.pages||[]).map(k=>A[k]),cards:(c.cards||[]).map(k=>A[k]),alt:(c.alt||[]).join('\n\n'),o:(c.o||[]).slice(),day:c.day,final:!!c.final,note:'',sched:false,
   empty:c.day>TODAY+1}));      // глава VI (18 декабря) еще не загружена: ее пишут по итогам голосования главы V
-CH.forEach(c=>{if(c.empty){c.t='';c.img='';c.text='';if(!c.final)c.o=['','',''];}});
+CH.forEach(c=>{if(c.empty){c.t='';c.pages=[];c.cards=[];c.alt='';if(!c.final)c.o=['','',''];}});
 const LOG=[
   ['10:32','Анна (модератор)','одобрила 46 игрушек на елке'],['09:58','Анна (модератор)','отклонила игрушку: реклама, QR-код'],
   ['09:15','Илья (редактор)','загрузил аудиосказки 9–10, публикация 22 декабря'],['00:00','Система','опубликованы глава V, набор III квиза, сказки 7–8; открыта Елка'],
@@ -111,26 +111,26 @@ function vTree(){
 function vSerial(){
   const i=sel.ch, c=CH[i], s=chState(i), v=votes(i);
   const prev=i>0?votes(i-1):null, pc=i>0?D.CHAPTERS[i-1]:null;
-  const brief=pc&&prev?`<div class="note i" style="margin:0 0 12px"><b>Основа сюжета:</b> ${prev.done?`в главе ${ROMAN[i-1]} победил вариант «${esc(pc.o[prev.lead])}» — ${pc.pct[prev.lead]}%.`:`голосование главы ${ROMAN[i-1]} идет до ${fmt(pc.day+1)}, 23:59. Сейчас лидирует «${esc(pc.o[prev.lead])}».`} Текст и иллюстрацию генерируем в нейросети по этому выбору и правим вручную.</div>`:'';
-  const rows=CH.map((x,k)=>{const s2=chState(k),v2=votes(k);return `<tr class="click ${k===i?'on':''}" data-act="chSel" data-i="${k}"><td><b>${ROMAN[k]}</b></td><td>${x.t?esc(x.t):'<span class="muted">не загружена</span>'}${x.final?' <span class="small muted">· финальная, голосование для настроения</span>':''}</td><td>${fmt(x.day)}, 00:00</td><td>${st(s2[0],s2[1])}</td><td class="num">${v2?num(v2.tot):'—'}</td></tr>`;}).join('');
+  const brief=pc&&prev?`<div class="note i" style="margin:0 0 12px"><b>Основа сюжета:</b> ${prev.done?`в главе ${ROMAN[i-1]} победил вариант «${esc(pc.o[prev.lead])}» — ${pc.pct[prev.lead]}%.`:`голосование главы ${ROMAN[i-1]} идет до ${fmt(pc.day+1)}, 23:59. Сейчас лидирует «${esc(pc.o[prev.lead])}».`} Страницы комикса и карточки вариантов генерируем в нейросети по этому выбору, правим вручную и проверяем по канону персонажей.</div>`:'';
+  const rows=CH.map((x,k)=>{const s2=chState(k),v2=votes(k);return `<tr class="click ${k===i?'on':''}" data-act="chSel" data-i="${k}"><td><b>${ROMAN[k]}</b></td><td>${x.t?esc(x.t):D.CHAPTERS[k].stub&&!x.empty?'<span class="muted">заглушка прототипа — страницы после выбора стиля</span>':'<span class="muted">не загружена</span>'}${x.final?' <span class="small muted">· финальная, голосование для настроения</span>':''}</td><td>${fmt(x.day)}, 00:00</td><td>${st(s2[0],s2[1])}</td><td class="num">${v2?num(v2.tot):'—'}</td></tr>`;}).join('');
   const res=v?`<div class="panel"><h2>${v.done?'Итоги голосования':'Голосование идет'} · ${num(v.tot)} голосов</h2><div class="bars">${D.CHAPTERS[i].o.map((o,k)=>{const p=Math.round(v.cnt[k]/v.tot*100);return `<div class="bar ${v.done&&k===v.lead?'win':''}"><i style="width:${p}%"></i><span>${'АБВ'[k]}. ${esc(o)}</span><b>${p}%</b></div>`;}).join('')}</div>
     <p class="small muted" style="margin:10px 0 0">${v.done?(D.CHAPTERS[i].final?'Голосование для настроения: на сюжет не влияет.':`Победивший вариант — основа главы ${ROMAN[i+1]||''}.`):`Участники видят распределение голосов сразу после своего голоса. Голосование закрывается ${fmt(D.CHAPTERS[i].day+1)} в 23:59 мск.`}</p></div>`:'';
   const ed=`<div class="panel"><div class="row" style="margin:0 0 10px"><h2 style="margin:0">Глава ${ROMAN[i]} · ${c.empty&&!c.sched?'загрузка':'редактирование'}</h2><span class="sp"></span>${st(s[0],s[1])}</div>
     ${brief}${c.day<=TODAY?'<div class="note" style="margin:0 0 12px">Глава уже опубликована: исправления появятся у участников сразу после сохранения.</div>':''}
     <div class="grid g2"><div>
       <label class="f"><span>Название</span><input class="in" id="chT" value="${esc(c.t)}" placeholder="Например, «Последнее слово»"></label>
-      <label class="f"><span>Текст главы</span><textarea class="in" id="chX" rows="10" placeholder="Сгенерированный и отредактированный текст. Абзацы — через пустую строку">${esc(c.text)}</textarea><small>${c.text?c.text.split(/\n\s*\n/).length+' абз. · '+c.text.length+' знаков':'Рекомендуем 1 500–2 500 знаков: глава читается за 2–3 минуты'}</small></label>
+      <div class="f"><span>Страницы комикса</span><div class="pgs">${c.pages.map((u,k)=>`<figure><img src="${u}" alt=""><figcaption>${k+1}</figcaption></figure>`).join('')||'<div class="pg0">страниц нет</div>'}</div>
+        <label class="btn sm" style="margin-top:6px;align-self:flex-start">Добавить страницу<input type="file" accept="image/*" id="chPg" hidden></label><small>Вертикальные страницы 9:16, от 1080 px по ширине, реплики — в облачках. Перед загрузкой — проверка по канону персонажей и сверка реплик со сценарием</small></div>
+      <label class="f"><span>Реплики и описание страниц — для экранного диктора</span><textarea class="in" id="chX" rows="5" placeholder="Что происходит на странице и кто что говорит. Страницы — через пустую строку">${esc(c.alt)}</textarea></label>
     </div><div>
-      <div class="f"><span>Иллюстрация</span>${c.img?`<img class="thumb" id="chImg" src="${c.img}" alt="">`:`<div class="thumb" id="chImg" style="display:grid;place-items:center;color:#9aa3c7">нет картинки</div>`}
-        <label class="btn sm" style="margin-top:6px;align-self:flex-start">Загрузить картинку<input type="file" accept="image/*" id="chFile" hidden></label><small>Сгенерирована нейросетью · 4:3, от 1600 px по ширине</small></div>
-      ${c.final?`<div class="f"><span>Голосование для настроения — на сюжет не влияет</span>${c.o.map((o,k)=>`<div class="opt"><span class="k">${'АБВ'[k]}</span><input class="in" value="${esc(o)}" readonly></div>`).join('')}<small>Варианты постоянные. За голос — 20 баллов, как в других главах. 25 декабря все главы собираются в цельную сказку (PDF)</small></div>`:`<div class="f"><span>Варианты для голосования</span>${c.o.map((o,k)=>`<div class="opt"><span class="k">${'АБВ'[k]}</span><input class="in" value="${esc(o)}" placeholder="Вариант ${'АБВ'[k]}"></div>`).join('')}</div>`}
+      ${c.final?`<div class="f"><span>Голосование для настроения — на сюжет не влияет</span>${c.o.map((o,k)=>`<div class="opt"><span class="k">${'АБВ'[k]}</span><input class="in" value="${esc(o)}" readonly></div>`).join('')}<small>Варианты постоянные. За голос — 20 баллов, как в других главах. 25 декабря все главы собираются в цельную сказку (PDF)</small></div>`:`<div class="f"><span>Как поступят герои — три карточки</span>${c.o.map((o,k)=>`<div class="opt"><span class="k">${'АБВ'[k]}</span>${c.cards[k]?`<img class="cth" src="${c.cards[k]}" alt="">`:'<span class="cth"></span>'}<input class="in" value="${esc(o)}" placeholder="Подпись варианта ${'АБВ'[k]}"><label class="btn sm">Карточка<input type="file" accept="image/*" data-card="${k}" hidden></label></div>`).join('')}<small>Карточка 1:1, подпись — на плашке внизу картинки и в поле</small></div>`}
       <div class="grid g2"><label class="f"><span>Выход</span><input class="in" value="${dd(c.day)} 00:00 мск" readonly></label>${`<label class="f"><span>Голосование до</span><input class="in" value="${dd(c.day+1)} 23:59 мск" readonly><small>48 часов, считается само</small></label>`}</div>
     </div></div>
     <label class="f"><span>Заметка редактора — не публикуется</span><textarea class="in" rows="2" style="min-height:60px" placeholder="Промпт, источники, что поправили">${esc(c.note)}</textarea></label>
     <div class="row">${btn('Сохранить','chSave',{cls:'p'})}<a class="btn" href="chapter.html?ch=${i+1}" target="_blank" rel="noopener">Предпросмотр на платформе ↗</a>${c.day>TODAY?btn(c.sched?'Снять с публикации':'Запланировать на '+fmt(c.day)+', 00:00','chSched',{cls:c.sched?'':'ok'}):''}</div></div>`;
-  return head('Сказка-сериал','Главы генерируем в нейросети и немного правим. Глава = иллюстрация + текст + три варианта продолжения. Голосование — 48 часов, до 23:59 мск следующего дня; результаты участники видят сразу после голоса. За голос — 20 баллов в турнирную таблицу. В финальной главе — голосование для настроения: «Ура, класс!» или «Эх, а я думал, будет по-другому».')+
+  return head('Сказка-сериал','Сказка выходит комиксом. Главы генерируем в нейросети и немного правим. Глава = страницы комикса + три варианта продолжения карточками. Голосование — 48 часов, до 23:59 мск следующего дня; результаты участники видят сразу после голоса. За голос — 20 баллов в турнирную таблицу. В финальной главе — голосование для настроения: «Ура, класс!» или «Эх, а я думал, будет по-другому».')+
     `<div class="panel scroll"><table class="tbl"><tr><th>Глава</th><th>Название</th><th>Выход</th><th>Статус</th><th class="num">Голосов</th></tr>${rows}</table></div>${res}${ed}
-    <div class="panel"><h2>Цельная сказка · ${fmt(D.FULL_TALE_DAY)}</h2><p class="muted">Собирается автоматически из опубликованных глав: текст, иллюстрации, итоги голосований. Читается на платформе и скачивается в PDF.</p>${btn('Собрать предпросмотр PDF','pdf')}</div>`;
+    <div class="panel"><h2>Цельная сказка · ${fmt(D.FULL_TALE_DAY)}</h2><p class="muted">Собирается автоматически из опубликованных глав: страницы комикса и итоги голосований. Читается на платформе и скачивается в PDF.</p>${btn('Собрать предпросмотр PDF','pdf')}</div>`;
 }
 
 function vQuiz(){
@@ -270,9 +270,9 @@ const ACT={
   toyNo:d=>{const t=TOYS.find(x=>x.id==d.id);const s=$(`select[data-why="${d.id}"]`);if(!s||!s.value){toast('Выберите причину отказа');if(s)s.focus();return;}t.st='no';t.why=s.value;log('Анна (модератор)',`отклонила игрушку героя «${t.nick}»: ${t.why}`);render();toast('Отклонено — автор увидит причину');},
   toyAll:()=>{let n=0;TOYS.forEach(t=>{if(t.st==='wait'){t.st='ok';n++;}});log('Анна (модератор)',`одобрила ${n} ${plural(n,'игрушку','игрушки','игрушек')}`);render();toast(`Одобрено: ${n}`);},
   chSel:d=>{sel.ch=+d.i;render();},
-  chSave:()=>{const c=CH[sel.ch];const t=$('#chT'),x=$('#chX');c.t=t.value.trim();c.text=x.value;if(c.empty&&c.t&&c.text)c.empty=false;
-    $$('.opt .in').forEach((inp,k)=>{c.o[k]=inp.value;});log('Илья (редактор)',`сохранил главу ${ROMAN[sel.ch]}${c.t?' «'+c.t+'»':''}`);render();toast('Глава сохранена');},
-  chSched:()=>{const c=CH[sel.ch];if(!c.sched&&(!($('#chT').value.trim())||!($('#chX').value.trim())||!c.img)){toast('Для публикации нужны название, текст и иллюстрация');return;}
+  chSave:()=>{const c=CH[sel.ch];const t=$('#chT'),x=$('#chX');c.t=t.value.trim();c.alt=x.value;if(c.empty&&c.t&&c.pages.length)c.empty=false;
+    $$('.opt input.in').forEach((inp,k)=>{c.o[k]=inp.value;});log('Илья (редактор)',`сохранил главу ${ROMAN[sel.ch]}${c.t?' «'+c.t+'»':''}`);render();toast('Глава сохранена');},
+  chSched:()=>{const c=CH[sel.ch];if(!c.sched&&(!($('#chT').value.trim())||!c.pages.length||(!c.final&&c.cards.filter(Boolean).length<3))){toast('Для публикации нужны название, страницы комикса и три карточки');return;}
     ACT.chSave();c.sched=!c.sched;log('Илья (редактор)',`${c.sched?'запланировал':'снял с публикации'} главу ${ROMAN[sel.ch]}`);render();toast(c.sched?`Глава ${ROMAN[sel.ch]} выйдет ${fmt(c.day)} в 00:00 мск`:'Публикация отменена');},
   setSel:d=>{sel.set=+d.i;sel.q=0;render();},
   qSel:d=>{sel.q=+d.i;render();},
@@ -300,7 +300,7 @@ document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g
   const t=e.target.closest('[data-act]');if(!t||t.disabled)return;const f=ACT[t.dataset.act];if(f){e.preventDefault();f(t.dataset,t);}});
 document.addEventListener('change',e=>{
   if(e.target.id==='navsel'){location.hash=e.target.value;}
-  if(e.target.id==='chFile'){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{CH[sel.ch].img=r.result;render();toast('Картинка загружена — не забудьте сохранить');};r.readAsDataURL(f);}
+  if(e.target.id==='chPg'||e.target.dataset.card!=null){const f=e.target.files[0];if(!f)return;const card=e.target.dataset.card;const r=new FileReader();r.onload=()=>{const c=CH[sel.ch];if(card!=null)c.cards[+card]=r.result;else c.pages.push(r.result);render();toast(card!=null?'Карточка загружена — не забудьте сохранить':'Страница добавлена — не забудьте сохранить');};r.readAsDataURL(f);}
   if(e.target.dataset.conf!=null&&drawRes){drawRes[+e.target.dataset.conf].conf=e.target.checked;}
 });
 document.addEventListener('input',e=>{

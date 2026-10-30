@@ -1054,7 +1054,14 @@ function vChest(){
   return {pre:endBanner(),one:[`${img}${res}`,list],M:[`${img}${res}`,list],dstage:H.d,stage:H.m,cls:'chest'};
 }
 
-/* ===== Сказка-сериал ===== */
+/* ===== Сказка-сериал — комикс ===== */
+// Страницы главы: картинки с репликами в облачках. Глава-заглушка (stub) — рамка до выбора стиля комикса
+const chTitle=(c,i)=>c.t||`Глава ${ROMAN[i]}`;
+function comicHTML(c,i,from,to){
+  if(!c.pages)return `<div class="comic"><div class="cstub"><span class="cs-n">${ROMAN[i]}</span><b>Страницы главы — после выбора стиля комикса</b><small>${i>0?`Сюжет строится на варианте, который победил в главе ${ROMAN[i-1]}`:''}</small></div></div>`;
+  const f=from||0, ps=c.pages.slice(f,to==null?undefined:to);
+  return `<div class="comic">${ps.map((p,k)=>`<img class="cpage" src="${A[p]}" alt="Страница ${f+k+1}. ${esc((c.alt||[])[f+k]||'')}" loading="lazy">`).join('')}</div>`;
+}
 function chState(i){const c=D.CHAPTERS[i];if(st.day<c.day)return 'soon';if(st.day<=c.day+1)return 'vote';return 'out';}
 // Кнопки «что дальше» на странице сериала: сначала то, что ждет в сериале, потом — маршрут
 function serialActs(){
@@ -1066,9 +1073,9 @@ function serialActs(){
 function vSerial(){
   bar('Сказка-сериал','Пишут все вместе');
   const ch=D.CHAPTERS;
-  const head=`<div class="ser-head"><img class="illo" src="${A.serial}" alt="">${DESK?tale('Выходит глава — после нее герою нужно сделать выбор из трех вариантов. Вариант, набравший больше всего голосов, ложится в основу следующей главы. И так — до финала.',true):'<p class="tale small">Выходит глава — после нее герою нужно сделать выбор из трех вариантов. Вариант с большинством голосов ложится в основу следующей главы. И так — до финала.</p>'}</div>`;
+  const head=`<div class="ser-head"><img class="illo" src="${A.serial}" alt="">${DESK?tale('Выходит глава-комикс — в конце герои решают, как поступить, а ты выбираешь один из трех вариантов. Вариант, набравший больше всего голосов, ложится в основу следующей главы. И так — до финала.',true):'<p class="tale small">Выходит глава-комикс — в конце герои решают, как поступить, а ты выбираешь один из трех вариантов. Вариант с большинством голосов ложится в основу следующей главы. И так — до финала.</p>'}</div>`;
   const stats=`<div class="stats3"><div><b>3–4 дня</b><span>новая глава</span></div><div><b>48 часов</b><span>на голосование</span></div><div><b>${VOTE_PTS}</b><span>баллов за голос</span></div></div>`;
-  const toc=`<div class="toc">${ch.map((c,i)=>{const s=chState(i);return `<button class="tocr ${s}" data-act="openCh" data-i="${i}" ${s==='soon'?'disabled':''}><span class="rn">${ROMAN[i]}</span><span class="rt"><b>${s==='soon'?'Скоро':c.t}</b><small>${s==='soon'?'Выйдет '+fmt(c.day):s==='vote'?(st.serial.votes[i]!=null?'Твой голос учтен':'Идет голосование'):c.final?'Финальная глава':`Выбор читателей: «${c.o[c.win]}»`}</small></span>${s==='vote'?`<span class="chip live">${st.serial.votes[i]!=null?'учтен':'голосуем'}</span>`:`<span class="dots"></span><span class="pg-n">${fmt(c.day,true)}</span>`}</button>`;}).join('')}
+  const toc=`<div class="toc">${ch.map((c,i)=>{const s=chState(i);return `<button class="tocr ${s}" data-act="openCh" data-i="${i}" ${s==='soon'?'disabled':''}><span class="rn">${ROMAN[i]}</span><span class="rt"><b>${s==='soon'?'Скоро':c.t||'Страницы — после выбора стиля'}</b><small>${s==='soon'?'Выйдет '+fmt(c.day):s==='vote'?(st.serial.votes[i]!=null?'Твой голос учтен':'Идет голосование'):c.final?'Финальная глава':`Выбор читателей: «${c.o[c.win]}»`}</small></span>${s==='vote'?`<span class="chip live">${st.serial.votes[i]!=null?'учтен':'голосуем'}</span>`:`<span class="dots"></span><span class="pg-n">${fmt(c.day,true)}</span>`}</button>`;}).join('')}
       <button class="tocr fin ${st.day<D.FULL_TALE_DAY?'soon':''}" data-act="go" data-v="fulltale" ${st.day<D.FULL_TALE_DAY?'disabled':''}><span class="rn">✦</span><span class="rt"><b>Цельная сказка</b><small>${st.day<D.FULL_TALE_DAY?'Выйдет '+fmt(D.FULL_TALE_DAY):'Читать и скачать PDF'}</small></span><span class="dots"></span><span class="pg-n">${fmt(D.FULL_TALE_DAY,true)}</span></button></div>`;
   return {pre:endBanner(),
     L:`${pt('Сказка-сериал','Пишут все вместе','h1')}${head}${stats}`,
@@ -1084,12 +1091,12 @@ function voteBlock(i,cd){
   const cnt=c.pct.map((p,k)=>Math.round(tot*p/100)+(myv===k?1:0));
   const sum=cnt.reduce((a,b)=>a+b,0), show=myv!=null||!open;
   const lead=open?(myv==null?(c.final?`Голосование для настроения — на сюжет оно уже не влияет. За голос — ${VOTE_PTS} баллов. До ${fmt(c.day+1)}, 23:59\u00a0мск.`
-      :`Выбери вариант — большинство решит, что будет дальше. За голос — ${VOTE_PTS} баллов. Голосование до ${fmt(c.day+1)}, 23:59\u00a0мск.`):`Спасибо! Твой голос учтен, +${VOTE_PTS} баллов — следи за счетчиком.`)
-    :c.final?`Голосование завершено: «${c.o[c.win]}» — ${c.pct[c.win]}%.`:`Голосование завершено. Вариант «${c.o[c.win]}» лег в основу главы ${ROMAN[i+1]}.`;
-  const vt=c.final?'Как тебе финал?':'Как продолжится сказка?';
+      :`Выбери, как поступят герои, — большинство решит, что будет дальше. За голос — ${VOTE_PTS} баллов. Голосование до ${fmt(c.day+1)}, 23:59\u00a0мск.`):`Спасибо! Твой голос учтен, +${VOTE_PTS} баллов — следи за счетчиком.`)
+    :c.final?`Голосование завершено: «${c.o[c.win]}» — ${c.pct[c.win]}%.`:c.stub?`Голосование завершено. Победил вариант ${'АБВ'[c.win]} — на нем строится глава ${ROMAN[i+1]}.`:`Голосование завершено. Вариант «${c.o[c.win]}» лег в основу главы ${ROMAN[i+1]}.`;
+  const vt=c.final?'Как тебе финал?':'Как поступят герои?';
   return `<section class="vote ${open&&myv==null?'todo':''}" id="vote">${DESK?pt(vt,open?(myv==null?'Выбор за тобой':'Твой голос учтен'):'Голосование завершено'):lbl(vt)}
     ${cd||''}<p class="tale small center">${lead}</p>
-    <div class="vopts">${c.o.map((o,k)=>{const pc=Math.round(cnt[k]/sum*100);const win=!open&&k===c.win;return `<button class="vopt ${myv===k?'mine':''} ${win?'win':''}" data-act="vote" data-k="${k}" ${show?'disabled':''}>${show?`<span class="bar" style="width:${pc}%"></span>`:''}<span class="k">${'АБВ'[k]}</span><span class="vt">${o}${myv===k?'<span class="tag">твой выбор</span>':''}${win?'<span class="tag">победил</span>':''}</span>${show?`<span class="pc">${pc}%</span>`:''}</button>`;}).join('')}</div>
+    <div class="vopts${c.cards?' cards':''}">${c.o.map((o,k)=>{const pc=Math.round(cnt[k]/sum*100);const win=!open&&k===c.win;return `<button class="vopt ${myv===k?'mine':''} ${win?'win':''}" data-act="vote" data-k="${k}" ${show?'disabled':''}>${show?`<span class="bar" style="width:${pc}%"></span>`:''}${c.cards?`<span class="vimg"><img src="${A[c.cards[k]]}" alt="${esc((c.calt||[])[k]||'')}" loading="lazy"><span class="k">${'АБВ'[k]}</span></span>`:`<span class="k">${'АБВ'[k]}</span>`}<span class="vt">${o}${myv===k?'<span class="tag">твой выбор</span>':''}${win?'<span class="tag">победил</span>':''}</span>${show?`<span class="pc">${pc}%</span>`:''}</button>`;}).join('')}</div>
     ${open&&show?`<p class="note">Голосов: <b id="vtot">${num(sum)}</b> · счетчик обновляется вживую</p>`:''}
     ${open&&myv!=null?`<p class="note">Голосование идет до ${fmt(c.day+1)}, 23:59\u00a0мск${nx?`. Глава ${ROMAN[i+1]} выйдет ${fmt(nx.day)}`:''}</p>`:''}
   </section>`;
@@ -1097,19 +1104,20 @@ function voteBlock(i,cd){
 function vChapter(){
   const i=ui.chapter||0,c=D.CHAPTERS[i],s=chState(i);
   if(s==='soon')return vSerial();
-  bar(`Глава ${ROMAN[i]}`,c.t,'serial');
+  bar(`Глава ${ROMAN[i]}`,c.t||'','serial');
   const myv=st.serial.votes[i],open=s==='vote',nx=D.CHAPTERS[i+1],nxOut=nx&&st.day>=nx.day,full=st.day>=D.FULL_TALE_DAY;
   let acts,note='';
   if(open&&myv==null)acts=[{t:'К голосованию',act:'toVote',gold:1,noarrow:1}];
   else if(c.final)acts=[full?{t:'Читать сказку целиком',act:'go',v:'fulltale',gold:1}:routeNext(true),{t:'Все главы',act:'go',v:'serial'}];   // когда выйдет цельная сказка — в абзаце под голосованием
   else{acts=[nxOut?{t:`Читать главу ${ROMAN[i+1]}`,act:'openCh',i:i+1,gold:1}:routeNext(true),{t:'Все главы',act:'go',v:'serial'}];if(nx&&!nxOut&&!open)note=`Глава ${ROMAN[i+1]} выйдет ${fmt(nx.day)}`;}
-  const text=`<div class="parch story">${flowers()}${c.p.map((x,k)=>tale(x,k===0)).join('')}${c.final?'<div class="fin">Конец</div>':''}</div>`;
+  const n=(c.pages||[]).length, half=Math.ceil(n/2), sub=c.t?`Глава ${ROMAN[i]} · ${fmt(c.day)}`:fmt(c.day);
   const cd=open?`<div class="vote-h"><span class="chip live" id="vcd2">${countdown(c.day)}</span></div>`:'';
   const fin=c.final?`<p class="tale small center">${full?'Цельная сказка уже собрана — ее можно прочитать целиком и скачать.':`Это последняя глава. Цельная сказка с инфографикой голосований выйдет ${fmt(D.FULL_TALE_DAY)}.`}</p>`:'';
   return {
-    L:`${pt(c.t,`Глава ${ROMAN[i]} · ${fmt(c.day)}`,'h1')}<div class="illu"><img src="${A[c.img]}" alt=""></div>${text}`,
-    R:`${voteBlock(i,cd)}${fin}`,
-    M:`<div class="illu"><img src="${A[c.img]}" alt=""></div>${pt(c.t,`Глава ${ROMAN[i]} · ${fmt(c.day)}`,'h1')}${cd}${text}${voteBlock(i,'')}${fin}`,
+    // на компьютере глава — разворот комикса: первая половина страниц слева, вторая и голосование — справа
+    L:`${pt(chTitle(c,i),sub,'h1')}${n>1?comicHTML(c,i,0,half):comicHTML(c,i)}`,
+    R:`${n>1?comicHTML(c,i,half):''}${voteBlock(i,cd)}${fin}`,
+    M:`${pt(chTitle(c,i),sub,'h1')}${cd}${comicHTML(c,i)}${voteBlock(i,'')}${fin}`,
     acts,dacts:open&&myv==null?[]:acts,note,pn:21,cls:'chapter'};
 }
 // Голосование закрывается в 23:59:59 мск на следующий день после выхода главы — 48 часов
@@ -1120,9 +1128,9 @@ function mountChapter(){
   const t=setInterval(()=>{['#vcd','#vcd2'].forEach(s=>{const cd=$(s);if(cd)cd.innerHTML=countdown(D.CHAPTERS[i].day);});},1000);timers.push(t);
   const t2=setInterval(()=>{if(st.serial.votes[i]==null)return;ui.liveBump=(ui.liveBump||0)+Math.floor(1+Math.random()*4);const el=$('#vtot');if(el){const c=D.CHAPTERS[i];const frac=st.day===c.day?.55:.88;el.textContent=num(Math.round(c.votes*frac)+ui.liveBump+1);}},1500);timers.push(t2);
 }
-function chapterHTML(c,i){return `<h3 class="ch-t"><small>Глава ${ROMAN[i]}</small>${c.t}</h3>${c.p.map((x,k)=>tale(x,k===0)).join('')}${!c.final?`<p class="choice">Выбор читателей: «${c.o[c.win]}» — ${c.pct[c.win]}% голосов</p>`:''}`;}
+function chapterHTML(c,i){return `<h3 class="ch-t">${c.t?`<small>Глава ${ROMAN[i]}</small>${c.t}`:`Глава ${ROMAN[i]}`}</h3>${comicHTML(c,i)}${!c.final?`<p class="choice">Выбор читателей: «${c.o[c.win]}» — ${c.pct[c.win]}% голосов</p>`:''}`;}
 function fullTaleHTML(forPrint){
-  return D.CHAPTERS.map((c,i)=>forPrint?`<h3 style="font-family:Georgia;margin:28px 0 8px">Глава ${i+1}. ${c.t}</h3>${c.p.map(x=>`<p>${esc(x)}</p>`).join('')}${!c.final?`<p style="font-style:italic;color:#7a6a40">Выбор читателей: «${c.o[c.win]}» — ${c.pct[c.win]}% голосов</p>`:''}`:chapterHTML(c,i)).join('');
+  return D.CHAPTERS.map((c,i)=>forPrint?`<h3 style="font-family:Georgia;margin:28px 0 8px">Глава ${i+1}${c.t?'. '+c.t:''}</h3>${c.pages?c.pages.map(p=>`<img src="${new URL(A[p],location.href).href}" alt="" style="display:block;width:100%;margin:0 0 12px">`).join(''):'<p style="color:#888">Страницы главы — после выбора стиля комикса</p>'}${!c.final?`<p style="font-style:italic;color:#7a6a40">Выбор читателей: «${c.o[c.win]}» — ${c.pct[c.win]}% голосов</p>`:''}`:chapterHTML(c,i)).join('');
 }
 // Цельная сказка: читается по главам, переключатель глав
 function vFullTale(){
