@@ -60,11 +60,7 @@ const A={
 "rm_forest": "assets/img/route/forest.webp",
 "rm_tree": "assets/img/route/tree.webp",
 "rm_serial": "assets/img/route/serial.webp",
-"rm_izba": "assets/img/route/izba.webp",
-"rm_m1": "assets/img/route/bg_m1.webp",
-"rm_m2": "assets/img/route/bg_m2.webp",
-"rm_d1": "assets/img/route/bg_d1.webp",
-"rm_d2": "assets/img/route/bg_d2.webp"
+"rm_izba": "assets/img/route/izba.webp"
 };
 /* Встроенные копии картинок, которые рисуются на canvas и сохраняются в PNG (карточка героя, ёлочный шар).
    Встроены, чтобы скачивание работало и при открытии страниц прямо с диска. */
