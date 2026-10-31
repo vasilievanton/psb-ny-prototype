@@ -510,16 +510,17 @@ const STOPS=[
 ];
 // Дата в подписи: на компьютере — полностью, на телефоне — коротко
 const rmDate=d=>DESK?fmt(d):fmt(d,1);
-// Подпись испытания: cls — locked / done, note — строка о состоянии (tone: ok — зеленая с галочкой, live — оранжевая), go — кнопка шага на сегодня
+// Подпись испытания: cls — locked / done, note — строка о состоянии (tone: ok — зеленая с галочкой, live — оранжевая), go — кнопка шага на сегодня.
+// Кнопка, как картинка и название, ведет на главную страницу раздела (у квиза — с нужным набором), а не сразу внутрь
 function stopCap(s,now){
-  const P=pts(), go=(t,o)=>now?btn(Object.assign({t,act:'go',v:s.k,cls:'btn-sm rm-go',noarrow:1,gold:1},o||{})):'';
+  const P=pts(), go=(t,o)=>now?btn(Object.assign({t,act:'menu',v:s.k,cls:'btn-sm rm-go',noarrow:1,gold:1},o||{})):'';
   if(st.day<OPEN[s.k])return {cls:'locked',note:`Откроется ${rmDate(OPEN[s.k])}`,icon:'lock'};
   if(s.k==='quiz'){
     const R=D.QUIZ, isDone=i=>st.quiz[i]&&st.quiz[i].done, nd=R.filter((r,i)=>isDone(i)).length, pq=anyPend();
-    if(pq)return {note:`Набор ${pq.r+1}: вопрос ${pq.i+1} из ${R[pq.r].qs.length}`,go:go('Продолжить',{act:'goQuiz',i:pq.r})};
+    if(pq)return {note:`Набор ${pq.r+1}: вопрос ${pq.i+1} из ${R[pq.r].qs.length}`,go:go('Продолжить',{i:pq.r})};
     const f=R.findIndex((r,i)=>st.day>=r.open&&!isDone(i));
-    if(f>=0&&!nd)return {go:go('Начать',{act:'goQuiz',i:f})};
-    if(f>=0)return {cls:'done',note:'Вышел новый набор',tone:'live',go:go(`Пройти набор ${f+1}`,{act:'goQuiz',i:f})};
+    if(f>=0&&!nd)return {go:go('Начать',{i:f})};
+    if(f>=0)return {cls:'done',note:'Вышел новый набор',tone:'live',go:go(`Пройти набор ${f+1}`,{i:f})};
     return {cls:'done',note:`Наборы ${nd} из ${R.length} · +${num(P.q)}`,tone:'ok',icon:'check'};
   }
   if(s.k==='forest'){
@@ -579,25 +580,26 @@ function rmCap(p,o){
     ${o.act?`<button type="button" class="rm-ct"${rmData(o)}>${o.t}</button>`:`<span class="rm-ct">${o.t}</span>`}${o.note?`<span class="rm-st${o.tone?' '+o.tone:''}">${ic}<span>${nb(o.note)}</span></span>`:''}${o.go||''}</div>`;
 }
 function rmStop(s,p,ns){
-  const now=s.k===ns, S=stopCap(s,now), act=S.cls==='locked'?null:'go';
+  const now=s.k===ns, S=stopCap(s,now), act=S.cls==='locked'?null:'menu';
   return `<div class="rm-it rm-stop${S.cls?' '+S.cls:''}${now?' now':''}" data-k="${s.k}">${rmEl(p,{act,v:s.k,img:s.el,alt:s.alt})}
     ${rmCap(p,{t:s.t,act,v:s.k,note:S.note,tone:S.tone,icon:S.icon,go:S.go,cls:[S.cls,now?'now':''].filter(Boolean).join(' ')})}</div>`;
 }
-// Ветка «Сказка-сериал»: глава-комикс раз в 3–4 дня, сюжет решает голосование. Пока идет голосование — сразу к главе, с 25 декабря — к цельной сказке
+// Ветка «Сказка-сериал»: глава-комикс раз в 3–4 дня, сюжет решает голосование. Нажатие — на страницу сериала:
+// оглавление со статусами глав (что вышло, где идет голосование, что и когда выйдет), в главу — уже оттуда
 function rmSerial(p){
   const S=serialState(), ch=D.CHAPTERS, cur=S.cur, c=S.c;
-  let o={act:'go',v:'serial'};
+  const o={act:'menu',v:'serial'};
   if(S.kind==='none')o.note=`Глава I — ${rmDate(ch[0].day)}`;
-  else if(S.kind==='vote')o={act:'openCh',i:cur,note:`Голосуй до ${rmDate(c.day+1)}`,tone:'live'};
+  else if(S.kind==='vote'){o.note=`Голосуй до ${rmDate(c.day+1)}`;o.tone='live';}
   else if(S.kind==='voted')o.note=`Голос учтен · итоги ${rmDate(c.day+2)}`;
-  else if(S.kind==='full')o={act:'go',v:'fulltale',note:'Вся сказка — в одной книге'};
+  else if(S.kind==='full')o.note='Вся сказка — в одной книге';
   else o.note=S.nx?`Глава ${ROMAN[cur+1]} — ${rmDate(S.nx.day)}`:`Вся сказка — ${rmDate(D.FULL_TALE_DAY)}`;
   return `<div class="rm-it rm-br${o.tone?' hot':''}" data-k="serial">${rmEl(p,Object.assign({img:'rm_serial',alt:'Раскрытая волшебная книга, над ней — картинки глав'},o))}
     ${rmCap(p,Object.assign({t:'Сказка-сериал',cls:'n3'},o))}</div>`;
 }
 // Ветка «Пряничная избушка»: аудиосказки народов России, две новые каждую неделю
 function rmIzba(p){
-  const T=D.TALES, n=talesOpen(), nx=T.find(t=>st.day<t.open), o={act:'go',v:'izba'};
+  const T=D.TALES, n=talesOpen(), nx=T.find(t=>st.day<t.open), o={act:'menu',v:'izba'};
   return `<div class="rm-it rm-br" data-k="izba">${rmEl(p,Object.assign({img:'rm_izba',alt:'Пряничный домик с теплыми окнами'},o))}
     ${rmCap(p,Object.assign({t:'Пряничная избушка',cls:'n2',note:nx?`Аудиосказки: ${n} из ${T.length}`:`Аудиосказки: все ${T.length}`},o))}</div>`;
 }
@@ -605,17 +607,17 @@ function rmIzba(p){
 function rmTree(p){
   const open=st.day>=OPEN.tree, tc=treeCount(), mine=st.tree.on?mineBall():null;
   const tree=open?treeSVG(mine,sideBalls(0).slice(0,16),901):treeSVG(null,[],901);
-  const cap=open?{t:'Общая\u00a0елка банка',act:'go',v:'tree',cls:'n3',note:`${num(tc)} ${plural(tc,'игрушка','игрушки','игрушек')} со всей страны`}
+  const cap=open?{t:'Общая\u00a0елка банка',act:'menu',v:'tree',cls:'n3',note:`${num(tc)} ${plural(tc,'игрушка','игрушки','игрушек')} со всей страны`}
     :{t:'Общая\u00a0елка банка',note:`Откроется ${rmDate(OPEN.tree)}`,icon:'lock',cls:'locked n3'};
   return `<div class="rm-it rm-br rm-ctree${open?'':' locked'}" data-k="ctree">
     <div class="rm-tree" id="tree" style="${pc(p.el,rmZ(p.el[1]+p.h))}">${tree}<i class="rm-snow" aria-hidden="true"></i></div>${rmCap(p,cap)}</div>`;
 }
 // Конец дороги — Сундук чудес
 function rmChest(p,ns){
-  const out=st.day>=OPEN.chest, fresh=out&&!st.chest.seen, now=ns==='chest', o={act:'go',v:'chest'};
+  const out=st.day>=OPEN.chest, fresh=out&&!st.chest.seen, now=ns==='chest', o={act:'menu',v:'chest'};
   return `<div class="rm-it rm-br${now?' now':''}" data-k="chest">${rmEl(p,Object.assign({img:'chest',alt:'Сундук чудес'},o))}
     ${rmCap(p,Object.assign({t:'Сундук чудес',note:out?'Розыгрыш прошел':`Розыгрыш — ${rmDate(OPEN.chest)}`,tone:fresh?'live':'',
-      go:now?btn({t:'Узнать итоги',act:'go',v:'chest',cls:'btn-sm rm-go',noarrow:1,gold:1}):'',cls:now?'now':''},o))}</div>`;
+      go:now?btn({t:'Узнать итоги',act:'menu',v:'chest',cls:'btn-sm rm-go',noarrow:1,gold:1}):'',cls:now?'now':''},o))}</div>`;
 }
 // Дорога: светящаяся золотая лента постоянной ширины. Ответвления начинаются на ее оси, каждый слой рисуем сразу для всех линий — стыков не видно
 function rmRoad(L){
@@ -1061,7 +1063,7 @@ function vSerial(){
   const ch=D.CHAPTERS;
   const head=`<div class="ser-head"><img class="illo" src="${A.serial}" alt="">${DESK?tale('Выходит глава-комикс — в конце герои решают, как поступить, а ты выбираешь один из трех вариантов. Вариант, набравший больше всего голосов, ложится в основу следующей главы. И так — до финала.',true):'<p class="tale small">Выходит глава-комикс — в конце герои решают, как поступить, а ты выбираешь один из трех вариантов. Вариант с большинством голосов ложится в основу следующей главы. И так — до финала.</p>'}</div>`;
   const stats=`<div class="stats3"><div><b>3–4 дня</b><span>новая глава</span></div><div><b>48 часов</b><span>на голосование</span></div><div><b>${VOTE_PTS}</b><span>баллов за голос</span></div></div>`;
-  const toc=`<div class="toc">${ch.map((c,i)=>{const s=chState(i);return `<button class="tocr ${s}" data-act="openCh" data-i="${i}" ${s==='soon'?'disabled':''}><span class="rn">${ROMAN[i]}</span><span class="rt"><b>${s==='soon'?'Скоро':c.t||'Страницы — после выбора стиля'}</b><small>${s==='soon'?'Выйдет '+fmt(c.day):s==='vote'?(st.serial.votes[i]!=null?'Твой голос учтен':'Идет голосование'):c.final?'Финальная глава':`Выбор читателей: «${c.o[c.win]}»`}</small></span>${s==='vote'?`<span class="chip live">${st.serial.votes[i]!=null?'учтен':'голосуем'}</span>`:`<span class="dots"></span><span class="pg-n">${fmt(c.day,true)}</span>`}</button>`;}).join('')}
+  const toc=`<div class="toc">${ch.map((c,i)=>{const s=chState(i);return `<button class="tocr ${s}" data-act="openCh" data-i="${i}" ${s==='soon'?'disabled':''}><span class="rn">${ROMAN[i]}</span><span class="rt"><b>${s==='soon'?'Скоро':chTitle(c,i)}</b><small>${s==='soon'?'Выйдет '+fmt(c.day):s==='vote'?(st.serial.votes[i]!=null?'Твой голос учтен':'Идет голосование'):c.final?'Финальная глава':`Выбор читателей: «${c.o[c.win]}»`}</small></span>${s==='vote'?`<span class="chip live">${st.serial.votes[i]!=null?'учтен':'голосуем'}</span>`:`<span class="dots"></span><span class="pg-n">${fmt(c.day,true)}</span>`}</button>`;}).join('')}
       <button class="tocr fin ${st.day<D.FULL_TALE_DAY?'soon':''}" data-act="go" data-v="fulltale" ${st.day<D.FULL_TALE_DAY?'disabled':''}><span class="rn">✦</span><span class="rt"><b>Цельная сказка</b><small>${st.day<D.FULL_TALE_DAY?'Выйдет '+fmt(D.FULL_TALE_DAY):'Читать и скачать PDF'}</small></span><span class="dots"></span><span class="pg-n">${fmt(D.FULL_TALE_DAY,true)}</span></button></div>`;
   return {pre:endBanner(),
     L:`${pt('Сказка-сериал','Пишут все вместе','h1')}${head}${stats}`,
@@ -1386,6 +1388,9 @@ async function fillAll(){
 const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 const ACT={
   go:d=>go(d.v), enter:()=>{ensureUser();go('route');},
+  // с карты главной — всегда на главную страницу раздела: оглавление сериала, наборы квиза, список сказок. У квиза — с нужным набором,
+  // начатый набор не открывается сам: сначала список наборов, «Продолжить набор» — уже там
+  menu:d=>{SS.set('menu',1);go(d.v,d.v==='quiz'&&d.i!=null?'?set='+(+d.i+1):'');},
   toast:(d,e,ev)=>{ev.preventDefault();toast(d.m);}, copy:d=>copy(d.t),
   startAuth:()=>{if(st.user){go('route');return;}st.draft=null;go('nick');},
   toNick:(d,e,ev)=>{ev.preventDefault();saveDraft();go('nick');},
@@ -1537,13 +1542,17 @@ function migrateTree(){const t=st.tree;if(!t||!('hung' in t||'rev' in t))return;
   if(t.rev){t.ball=t.rev.ball;t.on=true;t.ok=false;t.pts=true;}else if(t.hung){t.ball=t.ball||A.toy0;t.on=true;t.ok=true;t.pts=true;}else{t.on=!!t.on;t.ok=!!t.ok;t.pts=!!t.pts;}
   delete t.hung;delete t.rev;save();}
 (function boot(){
+  const fromMap=SS.get('menu');SS.del('menu');   // пришли с карты главной — открываем главную страницу раздела
   if(guard())return;
   migrateTree();approveToy();
   applyPage();
-  if(PAGE==='quiz'){const n=+QS.get('set');if(n>=1&&n<=D.QUIZ.length&&st.day>=D.QUIZ[n-1].open){ui.quizRound=n-1;if(st.qrun&&st.qrun.r!==n-1)stashRun();
-      if(!st.qrun&&st.qpart&&st.qpart[n-1]){st.qrun=st.qpart[n-1];delete st.qpart[n-1];}}
-    // незавершенный набор: возвращаем к тому же вопросу
-    if(st.qrun){ui.quiz=Object.assign({},st.qrun);ui.quizRound=st.qrun.r;}}
+  if(PAGE==='quiz'){const n=+QS.get('set'), okSet=n>=1&&n<=D.QUIZ.length&&st.day>=D.QUIZ[n-1].open;
+    if(fromMap){if(st.qrun){stashRun();save();}if(okSet)ui.quizRound=n-1;}   // с карты — список наборов, нужный набор выбран
+    else{
+      if(okSet){ui.quizRound=n-1;if(st.qrun&&st.qrun.r!==n-1)stashRun();
+        if(!st.qrun&&st.qpart&&st.qpart[n-1]){st.qrun=st.qpart[n-1];delete st.qpart[n-1];}}
+      // незавершенный набор (перезагрузка страницы, ссылка из кабинета): возвращаем к тому же вопросу
+      if(st.qrun){ui.quiz=Object.assign({},st.qrun);ui.quizRound=st.qrun.r;}}}
   if(PAGE==='chapter'){const n=+QS.get('ch');if(n>=1&&n<=D.CHAPTERS.length)ui.chapter=n-1;else{let i=0;D.CHAPTERS.forEach((c,j)=>{if(st.day>=c.day)i=j;});ui.chapter=i;}}
   if(SS.get('turn')){SS.del('turn');ui.turn=true;}
   render();
