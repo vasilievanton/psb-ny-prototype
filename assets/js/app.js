@@ -103,7 +103,7 @@ function pts(){const q=Object.values(st.quiz).reduce((s,r)=>s+qFirst(r)*20,0);co
 // Разделы открываются в 00:00 мск указанного дня (день 0 — 1 декабря). chest — розыгрыш «Сундука чудес», 25 декабря
 const OPEN={quiz:0,forest:7,tree:14,chest:24};
 // Голос в сказке-сериале: баллы за каждый голос в окне голосования, в том числе за реакцию на финальную главу (рабочее предложение, как 20 / 10 / 100)
-const VOTE_PTS=20;
+const VOTE_PTS=100;   // за голос в сериале: 100 баллов, до 600 за шесть голосований (ставки выровнены 27 октября)
 const done={quiz:()=>Object.values(st.quiz).some(r=>r.done),forest:()=>st.forest.runs>0,tree:()=>!!st.tree.pts};
 function allDone(){return done.quiz()&&done.forest()&&done.tree();}
 /* Подпись в турнирной таблице: имя героя и город в родительном падеже — «Снежный Лось из Барнаула».

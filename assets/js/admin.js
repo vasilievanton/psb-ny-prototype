@@ -28,7 +28,7 @@ function mkCode(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='PSB-';for(le
 const USERS=[];{const seen=new Set();while(USERS.length<160){const nick=mkNick();if(seen.has(nick))continue;seen.add(nick);
   const q=Math.floor(R()*21)*20,f=Math.floor(R()*42)*10,t=R()<.42?100:0;
   if(R()<.34){R();R();}   // здесь раньше генерировалась почта: тянем те же случайные числа, чтобы данные-примеры не поменялись
-  const s=(USERS.length*7%5)*20;   // сериал: 20 баллов за голос, к 15 декабря — до 4 голосов
+  const s=(USERS.length*7%5)*100;   // сериал: 100 баллов за голос, к 15 декабря — до 4 голосов
   USERS.push({id:USERS.length+1,nick,city:R()<.28?'Москва':R()<.08?'':pick(CIT),code:mkCode(),q,f,t,s,pts:q+f+t+s,day:Math.floor(R()*(TODAY+1)),blocked:false});}}
 USERS.sort((a,b)=>b.pts-a.pts||a.day-b.day);
 const TOYS=[...Array(12)].map((_,i)=>{const u=pick(USERS);return {id:i+1,nick:u.nick,city:u.city,src:['sample_draw','sample_team','sample_girl'][i%3],style:(i*5)%6,
@@ -128,7 +128,7 @@ function vSerial(){
     </div></div>
     <label class="f"><span>Заметка редактора — не публикуется</span><textarea class="in" rows="2" style="min-height:60px" placeholder="Промпт, источники, что поправили">${esc(c.note)}</textarea></label>
     <div class="row">${btn('Сохранить','chSave',{cls:'p'})}<a class="btn" href="chapter.html?ch=${i+1}" target="_blank" rel="noopener">Предпросмотр на платформе ↗</a>${c.day>TODAY?btn(c.sched?'Снять с публикации':'Запланировать на '+fmt(c.day)+', 00:00','chSched',{cls:c.sched?'':'ok'}):''}</div></div>`;
-  return head('Сказка-сериал','Сказка выходит комиксом. Главы генерируем в нейросети и немного правим. Глава = страницы комикса + три варианта продолжения карточками. Голосование — 48 часов, до 23:59 мск следующего дня; результаты участники видят сразу после голоса. За голос — 20 баллов в турнирную таблицу. В финальной главе — голосование для настроения: «Ура, класс!» или «Эх, а я думал, будет по-другому».')+
+  return head('Сказка-сериал','Сказка выходит комиксом. Главы генерируем в нейросети и немного правим. Глава = страницы комикса + три варианта продолжения карточками. Голосование — 48 часов, до 23:59 мск следующего дня; результаты участники видят сразу после голоса. За голос — 100 баллов в турнирную таблицу. В финальной главе — голосование для настроения: «Ура, класс!» или «Эх, а я думал, будет по-другому».')+
     `<div class="panel scroll"><table class="tbl"><tr><th>Глава</th><th>Название</th><th>Выход</th><th>Статус</th><th class="num">Голосов</th></tr>${rows}</table></div>${res}${ed}
     <div class="panel"><h2>Цельная сказка · ${fmt(D.FULL_TALE_DAY)}</h2><p class="muted">Собирается автоматически из опубликованных глав: страницы комикса и итоги голосований. Читается на платформе и скачивается в PDF.</p>${btn('Собрать предпросмотр PDF','pdf')}</div>`;
 }
@@ -183,7 +183,7 @@ function vDraw(){
 
 function vRating(){
   const top=USERS.filter(u=>!u.blocked).slice(0,10);
-  return head('Турнирная таблица','Баллы дают испытания и голоса в сериале: Спроси дорогу — 20 за верный ответ с первой попытки, Лес — 10 за подарок в лучшем забеге, Елка — 100, когда игрушку впервые повесили на елку, сказка-сериал — 20 за голос. Топ-10 получают мерч. При равенстве выше тот, кто набрал баллы раньше. На платформе участник видит топ-20 и свою строку.',
+  return head('Турнирная таблица','Баллы дают испытания и голоса в сериале: Спроси дорогу — 20 за верный ответ с первой попытки, Лес — 10 за подарок в лучшем забеге, Елка — 100, когда игрушку впервые повесили на елку, сказка-сериал — 100 за голос. Топ-10 получают мерч. При равенстве выше тот, кто набрал баллы раньше. На платформе участник видит топ-20 и свою строку.',
     btn('Выгрузить таблицу (CSV)','topCsv')+btn(frozen?'Таблица зафиксирована':'Зафиксировать таблицу','freeze',{cls:'p',dis:frozen}))+
   `<div class="panel scroll"><table class="tbl"><tr><th>Место</th><th>Герой</th><th>Город</th><th>Код</th><th class="num">Квиз</th><th class="num">Лес</th><th class="num">Елка</th><th class="num">Сериал</th><th class="num">Итого</th></tr>
     ${top.map((u,k)=>`<tr><td>${k+1}</td><td><b>${esc(u.nick)}</b></td><td>${esc(u.city||'—')}</td><td><code>${u.code}</code></td><td class="num">${u.q}</td><td class="num">${u.f}</td><td class="num">${u.t}</td><td class="num">${u.s}</td><td class="num"><b>${u.pts}</b></td></tr>`).join('')}</table>
