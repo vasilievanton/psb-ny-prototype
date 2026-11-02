@@ -535,15 +535,23 @@ body[data-screen="cover"] main.app,body[data-screen="prologue"] main.app{min-hei
 .lbmini .p{font:700 15px var(--ui);font-variant-numeric:tabular-nums;color:var(--gold-hi)}
 
 /* ---------- Квиз ---------- */
-.rounds{display:flex;flex-direction:column;gap:8px;margin:4px 0}
-.rnd{display:flex;align-items:center;gap:10px;padding:9px 12px 9px 9px;border-radius:14px;text-align:left;background:rgba(8,16,44,.5);box-shadow:inset 0 0 0 1px rgba(233,189,104,.4)}
-.rnd.on{background:linear-gradient(90deg,rgba(233,189,104,.16),rgba(8,16,44,.5));box-shadow:inset 0 0 0 1.5px var(--gold-hi),0 0 18px rgba(251,228,164,.12)}
-.rnd .rn{width:36px;height:36px;flex:none;border-radius:50%;display:grid;place-items:center;font:700 14px var(--ui);color:#3a2207;background:radial-gradient(circle at 40% 35%,#fff3c9,#f0c25f 55%,#b57a2c);box-shadow:0 0 0 2px #7a4e18,0 3px 8px rgba(0,0,0,.4)}
-.rnd .rt{flex:1;min-width:0}
-.rnd .rt b{display:block;font:800 15.5px/1.2 var(--display);color:var(--gold-hi)}
-.rnd .rt small{font-size:12.5px;color:var(--ink2)}
-.rnd .rs{font:700 15px var(--ui);color:var(--gold)}
-.rnd[disabled]{opacity:.55;cursor:default}
+/* наборы — плитки по две в ряд: сверху картинка набора (PNG без фона, пока заглушки), номер и статус — как в макете */
+.rounds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:4px 0}
+.rnd{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:8px;width:100%;padding:10px;border-radius:20px;text-align:left;background:#000e5f;box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
+.rnd.on{background:#001f74;box-shadow:inset 0 0 0 1px #f9c34f}
+.rnd .rpic{position:relative;display:block;height:92px}
+.rnd .rpic img{display:block;width:100%;height:100%;object-fit:contain}
+.rnd .rn{position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:700 13px/1 var(--display);color:#000f3c;background:linear-gradient(#feea8f,#f58a10)}
+.rnd .rs{position:absolute;right:0;top:0;padding:2px 7px;border-radius:999px;background:#000e5f;box-shadow:inset 0 0 0 1px rgba(249,195,79,.6);font:700 12px/16px var(--ui);font-variant-numeric:tabular-nums;color:#f9c34f}
+.rnd .rl{position:absolute;right:0;top:0;width:20px;height:20px;color:rgba(255,255,255,.75)}
+.rnd .rl svg{display:block;width:20px;height:20px}
+.rnd .rt{display:block;min-width:0}
+.rnd .rt b{display:block;font:800 16px/19px var(--display);color:#f9c34f}
+.rnd .rt small{display:block;margin-top:3px;font:400 12px/16px var(--ui);color:rgba(255,255,255,.75)}
+.rnd[disabled]{cursor:default}
+.rnd[disabled] .rpic img{opacity:.45}
+.rnd[disabled] .rn{background:rgba(255,255,255,.06);color:rgba(255,255,255,.55)}
+.rnd[disabled] .rt b{color:rgba(255,255,255,.55)}
 .qbar{display:flex;gap:4px;margin:0 0 14px}
 .qbar i{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 1px rgba(233,189,104,.25)}
 .qbar i.done{background:linear-gradient(90deg,#e0a84e,#f6d27a)}
@@ -1163,13 +1171,14 @@ body[data-screen="izba"] main.app{padding-bottom:calc(var(--tb) + 76px)}
   .wcard .wb>span{font-size:14px;line-height:1.45}
 
   /* квиз */
-  .rounds{gap:10px;margin:6px 0}
-  .rnd{gap:12px;padding:10px 14px 10px 10px;transition:box-shadow .2s}
-  .rnd:hover:not([disabled]){box-shadow:inset 0 0 0 1px var(--gold-hi)}
-  .rnd .rn{width:40px;height:40px;font-size:15px}
-  .rnd .rt b{font-size:17px}
-  .rnd .rt small{font-size:13px}
-  .rnd .rs{font-size:16px}
+  .rounds{gap:12px;margin:6px 0}
+  .rnd{gap:10px;padding:14px;transition:box-shadow .2s}
+  .rnd:hover:not([disabled]):not(.on){box-shadow:inset 0 0 0 1px rgba(249,195,79,.5)}
+  .rnd .rpic{height:128px}
+  .rnd .rn{width:32px;height:32px;font-size:16px}
+  .rnd .rt b{font-size:20px;line-height:24px}
+  .rnd .rt small{margin-top:4px;font-size:14px;line-height:20px}
+  .rnd .rs{padding:3px 9px;font-size:14px;line-height:18px}
   .qword-wrap{margin:14px 0 6px}
   .plabel{margin:0 auto -14px;padding:6px 16px;font-size:11.5px;letter-spacing:.13em}
   .plabel::before,.plabel::after{content:"";display:inline-block;width:11px;height:11px;margin:0 8px;vertical-align:-1px;background:var(--p-flake) center/contain no-repeat}

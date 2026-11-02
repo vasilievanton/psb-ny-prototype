@@ -389,7 +389,7 @@ function qRulesHTML(){
     'После ответа Борис расскажет, откуда слово и что оно значит. Ошибаться не страшно.',
     again?'Повтор — для себя, без баллов: в зачете остается первая попытка.':`${n} вопросов, за каждый верный ответ с первой попытки — 20 баллов.`,
     'Бросил набор на середине — продолжи с того же вопроса.'];
-  return `<div class="info qrules"><h3 class="info-t">Начнем?</h3><p class="qr-set">Набор ${ROMAN[r]}, ${R.title}</p>
+  return `<div class="info qrules"><h3 class="info-t">Начнем?</h3><p class="qr-set">Набор ${ROMAN[r]}. ${R.title}</p>
     <ul class="info-l">${rows.map(x=>`<li>${nb(x)}</li>`).join('')}</ul>
     ${again?`<div class="ov-rec"><div class="ov-pill">${ICON_STAR}<div><span>В зачете</span><b>${qFirst(res)} из ${n}</b></div></div></div>`:''}
     <div class="qr-a">${btn({t:again?'Пройти еще раз':'Расспросить местных',act:'qGo',gold:1})}</div></div>`;
@@ -705,8 +705,10 @@ function actHero(k,say){
 /* ===== Спроси дорогу — квиз =====
    Шапка испытания, ниже — одно окно сверху вниз: слово или узор → варианты → пояснение с картинкой → «Следующий вопрос».
    Кнопка — после пояснения: так его читают */
+// Наборы — плитки по две в ряд: сверху картинка набора (PNG без фона; пока заглушки — чум, лодка, изба, печь),
+// на ней номер и статус: счет у пройденного, замок у закрытого
 function roundsList(R){
-  return `<div class="rounds">${D.QUIZ.map((r,i)=>{const lk=st.day<r.open;const res=st.quiz[i];return `<button class="rnd ${R===i?'on':''}" data-act="qRound" data-i="${i}" ${lk?'disabled':''}><span class="rn">${ROMAN[i]}</span><span class="rt"><b>${r.title}</b><small>${lk?'Откроется '+fmt(r.open):res&&res.done?`В зачете: ${qFirst(res)} из ${r.qs.length}, повтор без баллов`:qPend(i)?`Начат: вопрос ${qPend(i).i+1} из ${r.qs.length}`:r.qs.length+' вопросов'}</small></span>${res&&res.done?`<span class="rs">${qFirst(res)}/${r.qs.length}</span>`:''}</button>`;}).join('')}</div>`;
+  return `<div class="rounds">${D.QUIZ.map((r,i)=>{const lk=st.day<r.open;const res=st.quiz[i];return `<button class="rnd ${R===i?'on':''}" data-act="qRound" data-i="${i}" ${lk?'disabled':''}><span class="rpic"><img src="${A['set_'+(i+1)]}" alt=""><span class="rn">${ROMAN[i]}</span>${res&&res.done?`<span class="rs">${qFirst(res)}/${r.qs.length}</span>`:lk?`<span class="rl">${svg('lock')}</span>`:''}</span><span class="rt"><b>${r.title}</b><small>${lk?'Откроется '+fmt(r.open):res&&res.done?`В зачете: ${qFirst(res)} из ${r.qs.length}, повтор без баллов`:qPend(i)?`Начат: вопрос ${qPend(i).i+1} из ${r.qs.length}`:r.qs.length+' вопросов'}</small></span></button>`;}).join('')}</div>`;
 }
 function vQuiz(){
   bar('Спроси дорогу',null,'route');
@@ -724,7 +726,7 @@ function vQuiz(){
   const R=D.QUIZ[q.r], n=R.qs.length;
   if(q.finished){
     bar('Спроси дорогу',`Набор ${q.r+1}, итог`,'route');
-    const top=`${pt('Тропа найдена',`Набор ${q.r+1}, ${R.title}`,'h1')}
+    const top=`${pt('Тропа найдена',`Набор ${q.r+1}. ${R.title}`,'h1')}
       <div class="score"><span class="big">${q.correct}</span><span class="of">из ${n}</span></div>
       <p class="gain">${q.replay?`Повтор — без баллов. В зачете первая попытка: ${qFirst(st.quiz[q.r])} из ${n}`:q.gain>0?`+${q.gain} баллов в таблицу`:'В этот раз без баллов — зато теперь ты знаешь эти слова'}</p>
       ${say('m_mlad','Борис','местные показали дорогу! Папа уже в тайге — там его ждет мой старший брат Петр.','compact')}
@@ -1255,7 +1257,7 @@ function pointsBlocks(){
   const P=pts();
   // Спроси дорогу: четыре набора — пройден, начат, доступен или закрыт до даты
   const qmax=D.QUIZ.reduce((s,r)=>s+r.qs.length*20,0);
-  const qrows=D.QUIZ.map((r,i)=>{const res=st.quiz[i],n=r.qs.length,pq=qPend(i),name=`Набор ${i+1}, ${r.title}`;
+  const qrows=D.QUIZ.map((r,i)=>{const res=st.quiz[i],n=r.qs.length,pq=qPend(i),name=`Набор ${i+1}. ${r.title}`;
     if(st.day<r.open)return pbRow(name,`до ${n*20} баллов, откроется ${fmt(r.open)}`,pbLock(r.open),'locked');
     if(res&&res.done)return pbRow(name,`${qFirst(res)} из ${n} верных`,pbGot(qFirst(res)*20),'done');
     if(pq)return pbRow(name,`ты на вопросе ${pq.i+1} из ${n}`,pbBtn('Продолжить',{act:'goQuiz',i,gold:1}));
