@@ -359,8 +359,6 @@ body[data-screen="cover"] main.app,body[data-screen="prologue"] main.app{min-hei
 .info-l b{color:var(--gold-hi)}
 .ballv{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:4px 0 2px}
 .bv-img{width:min(220px,60vw);filter:drop-shadow(0 14px 22px rgba(0,0,0,.5))}
-.bv-ball{display:grid;place-items:center;width:150px;height:150px;margin:6px 0 10px;border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.5),transparent 32%),var(--c,#2f56c8);box-shadow:0 0 0 5px #d8b26a,0 16px 26px rgba(0,0,0,.45)}
-.bv-ball b{font:800 46px/1 var(--display);color:#fff}
 .bv-n{font:800 21px/1.2 var(--display);color:var(--gold-hi)}
 .bv-c{font:400 14px/1.4 var(--ui);color:var(--ink2)}
 /* персональный код: напоминание ввести его на внутренней платформе ПСБ — по нему пройдёт розыгрыш */

@@ -397,8 +397,7 @@ function qRulesHTML(){
 function ballHTML(){
   const b=ui.ball||{};
   if(b.me)return `<div class="info ballv"><img class="bv-img" src="${mineBall()}" alt=""><b class="bv-n">Твоя игрушка</b><span class="bv-c">${st.tree.ok?'Висит на общей елке — ее видят все':'На проверке — у всех появится после модерации'}</span></div>`;
-  const pic=b.b>=0?`<img class="bv-img" src="${A['toy'+b.b]}" alt="">`:`<span class="bv-ball" style="--c:${esc(b.col)}"><b>${esc(initials(b.n))}</b></span>`;
-  return `<div class="info ballv">${pic}<b class="bv-n">${esc(b.n)}</b>${b.c?`<span class="bv-c">${esc(b.c)}</span>`:''}</div>`;
+  return `<div class="info ballv"><img class="bv-img" src="${A['toy'+b.b]}" alt=""><b class="bv-n">${esc(b.n)}</b>${b.c?`<span class="bv-c">${esc(b.c)}</span>`:''}</div>`;
 }
 // окно поверх любого экрана: правила, поддержка, «Как играть» у испытаний, шар с елки
 function infoSheet(){
@@ -921,10 +920,10 @@ function startLite(){
    Ниже — общая елка банка с поворотом: своя игрушка у верхушки, на других сторонах — игрушки коллег */
 function doch(t,cls){return say('m_doch','София',t,cls);}
 function treeSides(){return Math.max(1,Math.ceil(treeCount()/40));}
-function sideLabel(){const n=treeSides();return `Сторона ${ui.treeSide+1} из ${num(n)}${ui.treeSide===0?' · новые':''}`;}
+function sideLabel(){return `Сторона ${ui.treeSide+1} из ${num(treeSides())}`;}
 function sideBalls(side){
   const r=rng(500+side*7);const out=[];const total=treeCount();const cnt=Math.min(40,Math.max(0,total-side*40-(side===0&&st.tree.on&&st.tree.ok?1:0)));
-  for(let i=0;i<cnt;i++){const N=NOUNS[Math.floor(r()*NOUNS.length)];out.push({nick:D.ADJ[Math.floor(r()*D.ADJ.length)][N.g]+' '+N.w,city:r()<.25?'Москва':D.CITIES[Math.floor(r()*60)][0],img:r()<.55?Math.floor(r()*6):-1});}
+  for(let i=0;i<cnt;i++){const N=NOUNS[Math.floor(r()*NOUNS.length)];out.push({nick:D.ADJ[Math.floor(r()*D.ADJ.length)][N.g]+' '+N.w,city:r()<.25?'Москва':D.CITIES[Math.floor(r()*60)][0],img:Math.floor(r()*6)});}
   return out;
 }
 function mineBall(){return st.tree.ball||null;}
@@ -982,7 +981,7 @@ function vTree(){
   const T=ui.tree, has=!!st.tree.ball, step=T.step||1;
   const head=actHero('tree',!has?'Нарядим вместе!':st.tree.on?'Красота!':'Повесим на елку?');
   const tc=treeCount();
-  const big=`${lbl('Общая елка банка')}<p class="tale small center">${nb(`${num(tc)} ${plural(tc,'игрушка','игрушки','игрушек')} от сотрудников со всей страны. Свежие — на передней стороне, остальные — если повернуть елку`)}</p>
+  const big=`${lbl('Общая елка банка')}<p class="tale small center">${nb(`${num(tc)} ${plural(tc,'игрушка','игрушки','игрушек')} от сотрудников со всей страны`)}</p>
     <div class="treebox" id="treebox">${treeBox()}</div>${treeSides()>1?treeRotHTML():''}
     <p class="note">${DESK?'Крути елку стрелками или свайпом. Нажми на игрушку — увидишь ее поближе':'Крути елку свайпом. Нажми на игрушку — увидишь ее поближе'}</p>${treeFindHTML()}`;
   if(has){

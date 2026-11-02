@@ -765,7 +765,6 @@ function treeSil(y){let l=-1e9,r=1e9,f=false;for(const [yy,a,b] of TREE_SIL)if(M
 const MINE_Y=272;   // своя игрушка — по центру, ближе к верхушке
 function treeSVG(mineSrc, balls, seed){
   const rr=rng(seed||77);
-  const cols=['#e2554e','#2f56c8','#e9bd68','#bcd3ff','#ee8a4f','#9a5bd6'];
   let bs='';const placed=[];
   for(let n=0;n<700&&placed.length<balls.length;n++){
     const y=150+rr()*450, s=treeSil(y); if(!s)continue;
@@ -774,10 +773,10 @@ function treeSVG(mineSrc, balls, seed){
     if(placed.some(p=>Math.hypot(p[0]-x,p[1]-y)<34))continue; if(mineSrc&&Math.hypot(x-300,(y-MINE_Y-14)*.8)<74)continue; placed.push([x,y]);
   }
   // каждый шар можно открыть: увидеть его поближе и кто его повесил
-  placed.forEach(([x,y],i)=>{const o=balls[i];const c=cols[i%cols.length];
-    const at=`class="tb" data-tip="${esc(o.nick)} · ${esc(o.city)}" data-act="ballView" data-i="${i}" data-n="${esc(o.nick)}" data-c="${esc(o.city)}" data-b="${o.img}" data-col="${c}" role="button" aria-label="Игрушка: ${esc(o.nick)}"`;
-    if(o.img>=0) bs+=`<g ${at}><use href="#tb${o.img}" x="${x-20}" y="${y-33}"/></g>`;
-    else bs+=`<g ${at}><line x1="${x}" y1="${y-16}" x2="${x}" y2="${y-11}" stroke="#d8b26a" stroke-width="2"/><circle cx="${x}" cy="${y}" r="12" fill="${c}"/><circle cx="${x-4}" cy="${y-4}" r="3.5" fill="#fff" opacity=".55"/><text x="${x}" y="${y+4}" text-anchor="middle" font-size="9" font-weight="800" font-family="PT Serif,Georgia,serif" fill="#fff">${esc(initials(o.nick))}</text></g>`;
+  // на елке только готовые игрушки: места под еще не сделанную игрушку не бронируем
+  placed.forEach(([x,y],i)=>{const o=balls[i];const from=o.city&&typeof cityGen==='function'?' из '+cityGen(o.city):'';
+    const at=`class="tb" data-tip="${esc(o.nick+from)}" data-act="ballView" data-i="${i}" data-n="${esc(o.nick)}" data-c="${esc(o.city)}" data-b="${o.img}" role="button" aria-label="Игрушка: ${esc(o.nick)}"`;
+    bs+=`<g ${at}><use href="#tb${o.img}" x="${x-20}" y="${y-33}"/></g>`;
   });
   let mine='';
   if(mineSrc) mine=`<g class="mine" data-tip="Твоя игрушка" data-act="ballView" data-me="1" role="button" aria-label="Твоя игрушка"><line x1="300" y1="${MINE_Y-64}" x2="300" y2="${MINE_Y-52}" stroke="#f3c96b" stroke-width="2"/><circle class="halo" cx="300" cy="${MINE_Y+8}" r="58" fill="url(#mh)"/><image href="${mineSrc}" x="260" y="${MINE_Y-52}" width="80" height="120"/></g>`;
