@@ -135,7 +135,7 @@ function vSerial(){
 function vQuiz(){
   const si=sel.set, S=D.QUIZ[si], qi=Math.min(sel.q,S.qs.length-1), Q=S.qs[qi], r=rng(si*31+7);
   const pct=S.qs.map(()=>Math.round(38+r()*52));
-  const sets=D.QUIZ.map((s,k)=>{const open=TODAY>=s.open;return `<tr class="click ${k===si?'on':''}" data-act="setSel" data-i="${k}"><td><b>${ROMAN[k]}</b></td><td>${esc(s.title)}</td><td>${fmt(s.open)}, 00:00</td><td>${s.qs.length}</td><td>${open?st(TODAY===s.open?'Открыт сегодня':'Открыт','ok'):st('Запланирован','acc')}</td><td class="num">${open?num(Math.round((2100+TODAY*520)*(.78-k*.12)*(TODAY===s.open?.2:1))):'—'}</td></tr>`;}).join('');
+  const sets=D.QUIZ.map((s,k)=>{const open=TODAY>=s.open;return `<tr class="click ${k===si?'on':''}" data-act="setSel" data-i="${k}"><td><b>${ROMAN[k]}</b></td><td><img src="${A['set_'+(k+1)]}" alt="" style="display:block;width:48px;height:40px;object-fit:contain"></td><td>${esc(s.title)}</td><td>${fmt(s.open)}, 00:00</td><td>${s.qs.length}</td><td>${open?st(TODAY===s.open?'Открыт сегодня':'Открыт','ok'):st('Запланирован','acc')}</td><td class="num">${open?num(Math.round((2100+TODAY*520)*(.78-k*.12)*(TODAY===s.open?.2:1))):'—'}</td></tr>`;}).join('');
   const qs=S.qs.map((q,k)=>`<tr class="click ${k===qi?'on':''}" data-act="qSel" data-i="${k}"><td>${k+1}</td><td>${q.t==='w'?'Слово':'Узор'}</td><td><b>${esc(q.t==='w'?q.w:'Узор на '+q.on)}</b></td><td>${esc(q.o[q.a])}</td><td>${esc(q.where)}</td><td class="num">${TODAY>=S.open?pct[k]+'%':'—'}</td></tr>`).join('');
   const ed=`<div class="panel"><h2>Вопрос ${qi+1}, редактирование</h2><div class="grid g2"><div>
       <label class="f"><span>Тип</span><select class="in"><option ${Q.t==='w'?'selected':''}>Слово на диалекте</option><option ${Q.t!=='w'?'selected':''}>Узор — угадать край</option></select></label>
@@ -145,8 +145,9 @@ function vQuiz(){
       <label class="f"><span>Пояснение после ответа</span><textarea class="in" rows="4" style="min-height:90px">${esc(Q.ex)}</textarea></label></div></div>
     <div class="row">${btn('Сохранить','save',{cls:'p'})}${TODAY>=S.open?'<span class="small muted">Набор уже открыт: правка не меняет начисленные баллы</span>':''}</div></div>`;
   return head('Квиз «Спроси дорогу»','Новый набор каждую неделю. 20 баллов за верный ответ с первой попытки; повторное прохождение — без баллов. Верный ответ участник узнаёт только после своего ответа.',btn('Добавить вопрос','save'))+
-    `<div class="panel scroll"><table class="tbl"><tr><th>Набор</th><th>Название</th><th>Открытие</th><th>Вопросов</th><th>Статус</th><th class="num">Прошли</th></tr>${sets}</table></div>
-    <div class="panel scroll"><h2>Набор ${ROMAN[si]} «${esc(S.title)}»</h2><table class="tbl"><tr><th>№</th><th>Тип</th><th>Вопрос</th><th>Верный ответ</th><th>Регион</th><th class="num">Верно с первой попытки</th></tr>${qs}</table></div>${ed}`;
+    `<div class="panel scroll"><table class="tbl"><tr><th>Набор</th><th>Картинка</th><th>Название</th><th>Открытие</th><th>Вопросов</th><th>Статус</th><th class="num">Прошли</th></tr>${sets}</table></div>
+    <div class="panel scroll"><h2>Набор ${ROMAN[si]} «${esc(S.title)}»</h2>
+    <div class="row" style="align-items:center;gap:12px;margin:0 0 12px"><img src="${A['set_'+(si+1)]}" alt="" style="width:72px;height:64px;object-fit:contain"><label class="btn sm">Заменить картинку набора<input type="file" accept="image/png" hidden></label><span class="small muted">PNG без фона — картинка на плитке набора в квизе</span></div><table class="tbl"><tr><th>№</th><th>Тип</th><th>Вопрос</th><th>Верный ответ</th><th>Регион</th><th class="num">Верно с первой попытки</th></tr>${qs}</table></div>${ed}`;
 }
 
 function vTales(){
