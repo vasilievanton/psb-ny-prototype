@@ -775,7 +775,7 @@ function treeSVG(mineSrc, balls, seed){
   }
   // каждый шар можно открыть: увидеть его поближе и кто его повесил
   placed.forEach(([x,y],i)=>{const o=balls[i];const c=cols[i%cols.length];
-    const at=`class="tb" data-tip="${esc(o.nick)} · ${esc(o.city)}" data-act="ballView" data-n="${esc(o.nick)}" data-c="${esc(o.city)}" data-b="${o.img}" data-col="${c}" role="button" aria-label="Игрушка: ${esc(o.nick)}"`;
+    const at=`class="tb" data-tip="${esc(o.nick)} · ${esc(o.city)}" data-act="ballView" data-i="${i}" data-n="${esc(o.nick)}" data-c="${esc(o.city)}" data-b="${o.img}" data-col="${c}" role="button" aria-label="Игрушка: ${esc(o.nick)}"`;
     if(o.img>=0) bs+=`<g ${at}><use href="#tb${o.img}" x="${x-20}" y="${y-33}"/></g>`;
     else bs+=`<g ${at}><line x1="${x}" y1="${y-16}" x2="${x}" y2="${y-11}" stroke="#d8b26a" stroke-width="2"/><circle cx="${x}" cy="${y}" r="12" fill="${c}"/><circle cx="${x-4}" cy="${y-4}" r="3.5" fill="#fff" opacity=".55"/><text x="${x}" y="${y+4}" text-anchor="middle" font-size="9" font-weight="800" font-family="PT Serif,Georgia,serif" fill="#fff">${esc(initials(o.nick))}</text></g>`;
   });

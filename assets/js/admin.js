@@ -20,8 +20,7 @@ const R=rng(4242), pick=a=>a[Math.floor(R()*a.length)];
 const NOUNS=D.NOUNS.map(([w,g])=>({w,g}));
 const CIT=D.CITIES.slice(0,90).map(c=>c[0]);
 const STYLES=BALL_STYLES.map(s=>s.n);
-const A1=D.ADJ.filter(a=>a[2]===0), A2=D.ADJ.filter(a=>a[2]>0);
-function mkNick(){const N=pick(NOUNS);return pick(A1)[N.g]+' '+pick(A2)[N.g]+' '+N.w;}
+function mkNick(){const N=pick(NOUNS);return pick(D.ADJ)[N.g]+' '+N.w;}
 function mkCode(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='PSB-';for(let i=0;i<8;i++){s+=a[Math.floor(R()*32)];if(i===3)s+='-';}return s;}
 
 /* ---------- данные-примеры ---------- */
@@ -228,12 +227,12 @@ function vDict(){
   const q=(sel.cq||'').trim().toLowerCase().replace(/ё/g,'е');
   const found=q?D.CITIES.filter(c=>c[0].toLowerCase().replace(/ё/g,'е').startsWith(q)).slice(0,12):[];
   const group=(names,items)=>names.map((g,k)=>{const w=items.filter(x=>x.g===k);return `<div style="margin:0 0 10px"><b class="small">${esc(g)} · ${w.length}</b><div class="chips" style="margin-top:4px">${w.slice(0,14).map(x=>`<span class="chip">${esc(x.w)}</span>`).join('')}${w.length>14?`<span class="chip">+${w.length-14}</span>`:''}</div></div>`;}).join('');
-  return head('Справочники','Имя героя собирается из трех слов: первое — черта характера; второе — зимнее, сказочное слово или цвет; третье — всегда персонаж: зверь, птица, сказочный или зимний герой. Слова участник не выбирает — только «Другое имя». Город — только из справочника.')+
-  `<div class="grid g2"><div class="panel"><h2>Первое и второе слово · ${A1.length} + ${A2.length}</h2>${group(D.ADJ_G,D.ADJ.map(a=>({w:a[0],g:a[2]})))}
+  return head('Справочники','Имя героя собирается из двух слов: первое — черта характера, цвет или зимнее, сказочное слово; второе — всегда персонаж: зверь, птица, сказочный или зимний герой. Сразу предлагается случайное имя, слова можно выбрать и вручную. Город — только из справочника.')+
+  `<div class="grid g2"><div class="panel"><h2>Первое слово · ${D.ADJ.length}</h2>${group(D.ADJ_G,D.ADJ.map(a=>({w:a[0],g:a[2]})))}
       <div class="grid g3"><input class="in" placeholder="мужской род"><input class="in" placeholder="женский род"><select class="in">${D.ADJ_G.map(g=>`<option>${esc(g)}</option>`).join('')}</select></div><div style="margin-top:8px">${btn('Добавить','save',{cls:'sm'})}</div></div>
-    <div class="panel"><h2>Третье слово · ${D.NOUNS.length}</h2>${group(D.NOUN_G,D.NOUNS.map(n=>({w:n[0],g:n[2]})))}
+    <div class="panel"><h2>Второе слово · ${D.NOUNS.length}</h2>${group(D.NOUN_G,D.NOUNS.map(n=>({w:n[0],g:n[2]})))}
       <div class="grid g3"><input class="in" placeholder="слово"><select class="in"><option>мужской род</option><option>женский род</option></select><select class="in">${D.NOUN_G.map(g=>`<option>${esc(g)}</option>`).join('')}</select></div><div style="margin-top:8px">${btn('Добавить','save',{cls:'sm'})}</div></div></div>
-  <div class="note i" style="margin:0 0 16px">Сочетаний: ${num(A1.length)} × ${num(A2.length)} × ${num(D.NOUNS.length)} = ${num(A1.length*A2.length*D.NOUNS.length)} — в пять раз больше, чем сотрудников банка. Имена не повторяются: новому участнику выдается только свободное сочетание.</div>
+  <div class="note i" style="margin:0 0 16px">Сочетаний: ${num(D.ADJ.length*D.NOUNS.length)}, а вместе с городом — в тысячу раз больше. Повторы допускаются: в турнирной таблице имя стоит вместе с городом, а участника однозначно определяет персональный код.</div>
   <div class="panel"><h2>Города · ${num(D.CITIES.length)}</h2><p class="muted">Справочник городов России (hflabs/city, CC BY-SA 4.0) с готовой формой «из …» для турнирной таблицы. Перед запуском сверяем со списком городов, где работают сотрудники банка, и добавляем недостающие.</p>
     <div class="grid g3" style="margin:0 0 10px"><input class="in" placeholder="Город"><input class="in" placeholder="Форма «из …», например «из Барнаула»"><div>${btn('Добавить город','save',{cls:'sm'})}</div></div>
     <input class="in" id="cq" placeholder="Найти город" value="${esc(sel.cq||'')}" style="max-width:320px">

@@ -191,10 +191,9 @@ function citiesCount(){return Math.min(74,31+st.day*2);}
 function treeCount(){const mine=st.tree.on&&st.tree.ok?1:0;return st.day<OPEN.tree?mine:Math.round(1200+(st.day-OPEN.tree)*610)+mine;}
 function quizWords(){return Object.values(st.quiz).reduce((s,r)=>s+(r.best||0),0);}
 const NOUNS=D.NOUNS.map(([w,g,gr])=>({w,g,gr}));
-// Имя — три слова: черта характера (A1), зимнее, сказочное или «цветное» слово (A2) и персонаж
-const A1=D.ADJ.map((x,i)=>x[2]===0?i:-1).filter(i=>i>=0), A2=D.ADJ.map((x,i)=>x[2]>0?i:-1).filter(i=>i>=0);
-const NAME_VARIANTS=A1.length*A2.length*NOUNS.length;
-const FAKES=(()=>{const r=rng(2026);const out=[];const used=new Set();while(out.length<48){const N=NOUNS[Math.floor(r()*NOUNS.length)];const nick=D.ADJ[A1[Math.floor(r()*A1.length)]][N.g]+' '+D.ADJ[A2[Math.floor(r()*A2.length)]][N.g]+' '+N.w;if(used.has(nick))continue;used.add(nick);out.push({nick,city:r()<.28?'Москва':D.CITIES[Math.floor(r()*60)][0],w:.3+r()*.7});}return out;})();
+// Имя — два слова: прилагательное (по роду персонажа) и персонаж, 72 × 84 = 6 048 сочетаний; повторы допускаются
+const NAME_VARIANTS=D.ADJ.length*NOUNS.length;
+const FAKES=(()=>{const r=rng(2026);const out=[];const used=new Set();while(out.length<48){const N=NOUNS[Math.floor(r()*NOUNS.length)];const nick=D.ADJ[Math.floor(r()*D.ADJ.length)][N.g]+' '+N.w;if(used.has(nick))continue;used.add(nick);out.push({nick,city:r()<.28?'Москва':D.CITIES[Math.floor(r()*60)][0],w:.3+r()*.7});}return out;})();
 function board(){
   const prog=Math.min(1,(st.day+1)/24);
   const list=FAKES.map(f=>({nick:f.nick,city:f.city,p:Math.round(f.w*prog*82)*10}));
@@ -203,14 +202,14 @@ function board(){
   list.forEach((x,i)=>x.place=i+1);
   return list;
 }
-function nickOf(n){const N=NOUNS[n.n];return {nick:D.ADJ[n.a][N.g]+' '+D.ADJ[n.b][N.g]+' '+N.w,g:N.g};}
-// Имена не повторяются: на платформе сервер выдает только свободное сочетание (в прототипе — случайное).
-// Вручную слова не выбираются — только кнопка «Другое имя».
+function nickOf(n){const N=NOUNS[n.n];return {nick:D.ADJ[n.a][N.g]+' '+N.w,g:N.g};}
+// Повторы имён допускаются: в турнирной таблице имя стоит вместе с городом, участника однозначно определяет код.
+// Сразу предлагается случайное имя: «Другое имя» дает новое, слова можно выбрать и вручную — из двух списков.
 // Случайное имя не предлагает тавтологий вроде «Морозный Мороз» или «Звездная Звезда»
 const ODD=new Set(['зимний|зима','вьюжный|вьюга','снежный|снеговик','снежный|снегурочка','лесной|леший']);
 function nameOdd(a,n){const x=D.ADJ[a][0].toLowerCase().replace(/ё/g,'е'),y=NOUNS[n].w.toLowerCase().replace(/ё/g,'е');return x.slice(0,4)===y.slice(0,4)||ODD.has(x+'|'+y);}
 const rndI=k=>Math.floor(Math.random()*k);
-function rndNick(){const taken=new Set(FAKES.map(f=>f.nick));for(let t=0;t<200;t++){const x={a:A1[rndI(A1.length)],b:A2[rndI(A2.length)],n:rndI(NOUNS.length)};if(!nameOdd(x.a,x.n)&&!nameOdd(x.b,x.n)&&!taken.has(nickOf(x).nick))return x;}return {a:A1[0],b:A2[0],n:0};}
+function rndNick(){for(let t=0;t<200;t++){const x={a:rndI(D.ADJ.length),n:rndI(NOUNS.length)};if(!nameOdd(x.a,x.n))return x;}return {a:0,n:0};}
 // Аватар — инициалы имени. Своя картинка не загружается: фото — персональные данные
 function ava(nick,size,me){return `<span class="ava${me?' me':''}" style="--s:${size}px"><b>${esc(initials(nick))}</b></span>`;}
 function genCode(prefix){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<8;i++){s+=a[Math.floor(Math.random()*a.length)];if(i===3)s+='-';}return prefix+'-'+s;}
@@ -369,7 +368,7 @@ const CODE_DEADLINE=OPEN.chest-1;          // ввести код на порт�
 function footLinks(){return `<p class="foot-l"><a class="link" href="#" data-act="sheetOpen" data-v="rules">Правила</a><span>·</span><a class="link" href="#" data-act="sheetOpen" data-v="support">Поддержка</a></p>`;}
 function rulesHTML(){
   return `<div class="info"><h3 class="info-t">Правила</h3><ul class="info-l">
-    <li><b>Кто участвует.</b> Сотрудники ПСБ. Участник — герой: имя из трех слов и персональный код. Регистрации нет, личных данных мы не собираем.</li>
+    <li><b>Кто участвует.</b> Сотрудники ПСБ. Участник — герой: имя из двух слов и персональный код. Регистрации нет, личных данных мы не собираем.</li>
     <li><b>Сроки.</b> ${fmt(0)} 2026 — ${fmt(LAST_DAY)} 2027. Всё новое открывается в 00:00 по Москве.</li>
     <li><b>Баллы.</b> Спроси дорогу — 20 за верный ответ с первой попытки. Лес — 10 за подарок в лучшем забеге. Елка — 100, когда впервые повесишь игрушку на общую елку. Сказка-сериал — ${VOTE_PTS} за голос. Баллы нужны только для турнирной таблицы и в баллы магазина мерча не переводятся.</li>
     <li><b>Турнирная таблица.</b> Десять лучших по итогам получают мерч. При равных баллах выше тот, кто набрал их раньше.</li>
@@ -414,12 +413,21 @@ const NK_AVA=()=>DESK?96:72;
 const lc=w=>String(w).toLowerCase().replace(/ё/g,'е');
 // Длинное имя («Смекалистый Можжевельник») — на табличке кегль меньше, чтобы слова не вылезали
 const nkLong=n=>n.length>=19||n.split(' ').some(w=>w.length>=11);
+function pkItem(k,i,w,on){return `<button class="pk-i${on?' on':''}" data-act="${k==='a'?'pickA':'pickN'}" data-i="${i}" data-w="${lc(w)}"><span>${w}</span></button>`;}
+// Списки слов по темам; у первого слова форма — по роду второго
+function pkItems(k){
+  const g=NOUNS[ui.nick.n].g;
+  if(k==='a')return D.ADJ_G.map((t,gi)=>`<div class="pk-g">${t}</div>`+D.ADJ.map((x,i)=>x[2]===gi?pkItem('a',i,x[g],i===ui.nick.a):'').join('')).join('');
+  return D.NOUN_G.map((t,gi)=>`<div class="pk-g">${t}</div>`+NOUNS.map((x,j)=>x.gr===gi?pkItem('n',j,x.w,j===ui.nick.n):'').join('')).join('');
+}
+function pkBox(k,head){return `<div class="pk-box">${head||''}<input class="input pk-q" type="search" placeholder="Найти слово" autocomplete="off" aria-label="Найти слово"><div class="pk-list" data-k="${k}">${pkItems(k)}</div></div>`;}
 function vNick(){
-  if(!ui.nick||ui.nick.b==null||ui.nick.a>=D.ADJ.length||ui.nick.b>=D.ADJ.length||ui.nick.n>=NOUNS.length)ui.nick=rndNick();
+  if(!ui.nick||ui.nick.a>=D.ADJ.length||ui.nick.n>=NOUNS.length)ui.nick=rndNick();
   const cur=nickOf(ui.nick);
   bar('Имя героя','Шаг 1 из 2','cover');
   const plate=`<div class="nickplate">${flowers()}<div class="hint">Твое игровое имя</div><div class="nk${nkLong(cur.nick)?' long':''}" id="nkText">${esc(cur.nick)}</div></div>`;
-  const hint=`<p class="note">${nb('Имя только твое — у других участников такого не будет. Его видно в турнирной таблице вместе с городом')}</p>`;
+  const hint=`<p class="note">Имя видно в турнирной таблице вместе с городом</p>`;
+  const dice=(act,l)=>`<button class="dice" data-act="${act}" aria-label="${l}" title="${l}">${svg('dice')}</button>`;
   const sug=citySugHTML();
   const city=`<div class="field"><span id="cityLbl">Твой город — по желанию</span>
       <div class="city-box"><input class="input${ui.cityErr?' err':''}" id="city" placeholder="Начни вводить, например, Казань" value="${esc(cityQ())}" autocomplete="off" autocorrect="off" spellcheck="false"
@@ -429,25 +437,43 @@ function vNick(){
   const preview=`${lbl('Так тебя увидят в турнирной таблице','s')}<div class="lbmini prev"><div class="r me" id="nkRow">${nkRow(cur.nick)}</div></div>`;
   const regen=`<button class="btn btn-ghost btn-block" data-act="regen">${svg('dice','width="18" height="18"')} Другое имя</button>`;
   const acts=[{t:'Дальше: персональный код',act:'saveNick',gold:1}];
-  // Компьютер: одна колонка сверху вниз, без деления на левую и правую части — табличка с именем, выбор слов, город, превью в таблице
+  // Компьютер: одна колонка сверху вниз, без деления на левую и правую части — табличка с именем, «Другое имя», два списка слов, город, превью в таблице
   if(DESK)return {
     one:`${pt('Имя героя','Шаг 1 из 2','h1')}
       <div class="nick-hero"><img class="mascot" src="${A.bear_juggler}" alt=""><div class="nick-prev"><span id="nkAva">${ava(cur.nick,NK_AVA(),true)}</span>${plate}</div></div>${hint}
       ${regen}
+      <div class="pk2">${pkBox('a',`<div class="phd"><span>Первое слово</span>${dice('rndA','Случайное первое слово')}</div>`)}${pkBox('n',`<div class="phd"><span>Второе слово</span>${dice('rndN','Случайное второе слово')}</div>`)}</div>
       ${city}${preview}`,
     acts,nbt:false,dnote:'Уже участвуешь? <a class="link" href="#" data-act="toLogin">Войти по коду</a>',cls:'onb nick',scene:1};
+  // Телефон: два поля-выбора; список слов с поиском — в шторке
+  const picker=(k,l,w)=>`<button class="picker" data-act="pkOpen" data-k="${k}"><span class="pk-tx"><span class="pk-l">${l}</span><b id="pk${k.toUpperCase()}">${esc(w)}</b></span>${svg('chev','width="18" height="18"')}</button>`;
+  const N=NOUNS[ui.nick.n];
+  const sh=ui.sheet==='pkA'||ui.sheet==='pkN'?sheet(`<h3 class="pk-t">${ui.sheet==='pkA'?'Первое слово':'Второе слово'}</h3>${pkBox(ui.sheet==='pkA'?'a':'n')}`,{cls:'pksheet'}):'';
   // табличка с именем стоит прямо на поляне, выбор слов — на снежной панели под ней
   return {stage:`<div class="nk-prev"><span id="nkAva">${ava(cur.nick,NK_AVA(),true)}</span>${plate}</div>`,
-    M:`${hint}${regen}
-    ${city}${preview}<p class="note">Уже участвуешь? <a class="link" href="#" data-act="toLogin">Войти по коду</a></p>`,acts,scene:1};
+    M:`${hint}${regen}<div class="pickers">${picker('a','Первое слово',D.ADJ[ui.nick.a][N.g])}${picker('n','Второе слово',N.w)}</div>
+    ${city}${preview}<p class="note">Уже участвуешь? <a class="link" href="#" data-act="toLogin">Войти по коду</a></p>`,acts,sheet:sh,scene:1};
 }
-// Другое имя без перерисовки экрана: обновляем табличку, аватар и превью в таблице
-function patchNick(){
-  const cur=nickOf(ui.nick);
+// Выбор слова без перерисовки экрана: обновляем табличку, превью, аватар и списки (прокрутка и поиск сохраняются)
+function patchNick(scroll){
+  const cur=nickOf(ui.nick), g=cur.g;
   saveDraft();
   const set=(sel,f)=>{const el=$(sel);if(el)f(el);};
   set('#nkRow',el=>el.innerHTML=nkRow(cur.nick));
   set('#nkText',el=>{el.textContent=cur.nick;el.classList.toggle('long',nkLong(cur.nick));});set('#nkAva',el=>el.innerHTML=ava(cur.nick,NK_AVA(),true));
+  set('#pkA',el=>el.textContent=D.ADJ[ui.nick.a][g]);set('#pkN',el=>el.textContent=NOUNS[ui.nick.n].w);
+  $$('.pk-list[data-k=a] .pk-i').forEach(b=>{const i=+b.dataset.i,w=D.ADJ[i][g];b.classList.toggle('on',i===ui.nick.a);b.dataset.w=lc(w);b.innerHTML=`<span>${w}</span>`;});
+  $$('.pk-list[data-k=n] .pk-i').forEach(b=>b.classList.toggle('on',+b.dataset.i===ui.nick.n));
+  $$('.pk-q').forEach(filterPk);
+  if(scroll)$$('.pk-list').forEach(l=>{const on=l.querySelector('.pk-i.on');if(on)l.scrollTop=on.offsetTop-l.offsetTop-l.clientHeight/2+on.offsetHeight/2;});
+}
+// Поиск по списку слов: прячем несовпавшие слова и пустые темы
+function filterPk(inp){
+  const box=inp.closest('.pk-box');if(!box)return;const q=lc(inp.value.trim());let head=null,any=false;
+  [...box.querySelector('.pk-list').children].forEach(el=>{
+    if(el.classList.contains('pk-g')){if(head)head.classList.toggle('hidden',!any);head=el;any=false;return;}
+    const ok=!q||el.dataset.w.includes(q);el.classList.toggle('hidden',!ok);if(ok)any=true;});
+  if(head)head.classList.toggle('hidden',!any);
 }
 
 /* ===== Формирование персонажа: шаг 2 — персональный код (регистрации нет) ===== */
@@ -899,7 +925,7 @@ function treeSides(){return Math.max(1,Math.ceil(treeCount()/40));}
 function sideLabel(){const n=treeSides();return `Сторона ${ui.treeSide+1} из ${num(n)}${ui.treeSide===0?' · новые':''}`;}
 function sideBalls(side){
   const r=rng(500+side*7);const out=[];const total=treeCount();const cnt=Math.min(40,Math.max(0,total-side*40-(side===0&&st.tree.on&&st.tree.ok?1:0)));
-  for(let i=0;i<cnt;i++){const N=NOUNS[Math.floor(r()*NOUNS.length)];out.push({nick:D.ADJ[A1[Math.floor(r()*A1.length)]][N.g]+' '+D.ADJ[A2[Math.floor(r()*A2.length)]][N.g]+' '+N.w,city:r()<.25?'Москва':D.CITIES[Math.floor(r()*60)][0],img:r()<.55?Math.floor(r()*6):-1});}
+  for(let i=0;i<cnt;i++){const N=NOUNS[Math.floor(r()*NOUNS.length)];out.push({nick:D.ADJ[Math.floor(r()*D.ADJ.length)][N.g]+' '+N.w,city:r()<.25?'Москва':D.CITIES[Math.floor(r()*60)][0],img:r()<.55?Math.floor(r()*6):-1});}
   return out;
 }
 function mineBall(){return st.tree.ball||null;}
@@ -913,7 +939,8 @@ function rotateTree(dir,to){
   setTimeout(()=>box.classList.remove('in-r','in-l'),560);
 }
 function treeRotHTML(){return `<div class="rot"><button class="btn btn-ghost btn-sm" data-act="treeRot" data-d="-1" aria-label="Повернуть влево">‹${DESK?' Повернуть':''}</button><div class="rotlab" id="tside">${sideLabel()}</div><button class="btn btn-ghost btn-sm" data-act="treeRot" data-d="1" aria-label="Повернуть вправо">${DESK?'Повернуть ':''}›</button></div>`;}
-// Найти игрушку: своя всегда на передней стороне у верхушки и подсвечена; чужую — по имени героя (имена не повторяются).
+// Найти игрушку: своя всегда на передней стороне у верхушки и подсвечена; чужую — по имени героя.
+// Имена могут повторяться: если игрушек с таким именем несколько, каждое следующее «Найти» показывает следующую.
 // На платформе поиск идет по базе игрушек, в прототипе — по сторонам этой елки
 function treeFindHTML(){
   const n=treeSides(), ex=n>2?sideBalls(2)[5]:null;
@@ -929,12 +956,16 @@ function treeHighlight(sel){
 }
 function treeFind(q){
   const k=normName(q);if(!k){toast('Впиши имя героя');return;}
-  if(st.user&&st.tree.on&&normName(st.user.nick)===k){ACT.treeMine();return;}
+  const hits=[];
+  if(st.user&&st.tree.on&&normName(st.user.nick)===k)hits.push({mine:true});
   const n=treeSides();
-  for(let side=0;side<n;side++){const L=sideBalls(side);const i=L.findIndex(b=>normName(b.nick)===k||normName(b.nick).includes(k));
-    if(i>=0){const b=L[i];ui._tfFrom=ui.treeSide;if(side!==ui.treeSide)rotateTree(side>ui.treeSide?1:-1,side);
-      treeHighlight(`.tb[data-n="${CSS.escape(b.nick)}"]`);toast(`${b.nick}: сторона ${side+1}`);return;}}
-  toast('Такой игрушки на елке нет — проверь имя');
+  for(let side=0;side<n;side++)sideBalls(side).forEach((b,i)=>{const m=normName(b.nick);if(m===k||m.includes(k))hits.push({side,i,b});});
+  if(!hits.length){toast('Такой игрушки на елке нет — проверь имя');return;}
+  const j=ui._tfq===k?((ui._tfj||0)+1)%hits.length:0;ui._tfq=k;ui._tfj=j;
+  const h=hits[j], more=hits.length>1?` · ${j+1} из ${hits.length}${j===0?'. Еще раз «Найти» — следующая':''}`:'';
+  if(h.mine){ACT.treeMine();if(more)toast('Твоя игрушка'+more);return;}
+  ui._tfFrom=ui.treeSide;if(h.side!==ui.treeSide)rotateTree(h.side>ui.treeSide?1:-1,h.side);
+  treeHighlight(`.tb[data-i="${h.i}"]`);toast(`${h.b.nick}${h.b.city?' из '+cityGen(h.b.city):''}: сторона ${h.side+1}${more}`);
 }
 // Модерация в прототипе: игрушка «проходит проверку» при следующем переходе между страницами. На платформе — очередь в админке
 function approveToy(){if(!st.tree.ball||!st.tree.on||st.tree.ok)return;st.tree.ok=true;save();flash('Твоя игрушка прошла проверку — теперь ее видят все на общей елке');}
@@ -1394,7 +1425,12 @@ const ACT={
   toast:(d,e,ev)=>{ev.preventDefault();toast(d.m);}, copy:d=>copy(d.t),
   startAuth:()=>{if(st.user){go('route');return;}st.draft=null;go('nick');},
   toNick:(d,e,ev)=>{ev.preventDefault();saveDraft();go('nick');},
-  regen:()=>{ui.nick=rndNick();patchNick();},
+  pickA:d=>{ui.nick.a=+d.i;if(ui.sheet){ui.sheet=null;render();}else patchNick(false);},
+  pickN:d=>{ui.nick.n=+d.i;if(ui.sheet){ui.sheet=null;render();}else patchNick(false);},
+  pkOpen:d=>{ui.sheet=d.k==='a'?'pkA':'pkN';render();const on=$('.sheet .pk-i.on');if(on){const l=on.closest('.pk-list');l.scrollTop=on.offsetTop-l.offsetTop-l.clientHeight/2+on.offsetHeight/2;}},
+  rndA:()=>{for(let t=0;t<100;t++){const a=rndI(D.ADJ.length);if(a!==ui.nick.a&&!nameOdd(a,ui.nick.n)){ui.nick.a=a;break;}}patchNick(true);},
+  rndN:()=>{for(let t=0;t<100;t++){const n=rndI(NOUNS.length);if(n!==ui.nick.n&&!nameOdd(ui.nick.a,n)){ui.nick.n=n;break;}}patchNick(true);},
+  regen:()=>{ui.nick=rndNick();patchNick(true);},
   saveNick:()=>{const q=cityQ();ui.city=cityFind(q);if(cityNorm(q)&&!ui.city){ui.cityErr=true;patchCity();const f=$('#city');if(f){f.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'});f.focus({preventScroll:true});}return;}
     ui.cityQ=ui.city;const city=ui.city;const n=nickOf(ui.nick);ui.pending={nick:n.nick,g:n.g,city};saveDraft();go('auth');},
   citySel:d=>{ui.city=d.v;ui.cityQ=d.v;ui.cityErr=false;saveDraft();const f=$('#city');if(f){f.value=d.v;f.blur();}patchCity();},
@@ -1499,6 +1535,7 @@ document.addEventListener('change',e=>{
   if(e.target.id==='file'){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>setTreeSrc(r.result);r.readAsDataURL(f);}
 });
 document.addEventListener('input',e=>{
+  if(e.target.classList.contains('pk-q')){filterPk(e.target);const l=e.target.closest('.pk-box').querySelector('.pk-list');if(l)l.scrollTop=0;}
   if(e.target.id==='city'){ui.cityQ=e.target.value;ui.city=cityFind(ui.cityQ);if(ui.city)ui.cityQ=ui.city;ui.cityErr=false;saveDraft();patchCity();}});
 // Поле города: стрелка вниз — к подсказкам, Esc — закрыть; при уходе из поля подсказки прячутся
 document.addEventListener('focusout',e=>{if(e.target.id==='city'||e.target.classList.contains('city-o'))setTimeout(()=>{const a=document.activeElement;if(a&&(a.id==='city'||a.classList.contains('city-o')))return;const b=$('#citySug');if(b){b.hidden=true;const i=$('#city');if(i)i.setAttribute('aria-expanded','false');}},150);});
