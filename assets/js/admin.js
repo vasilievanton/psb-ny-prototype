@@ -76,17 +76,17 @@ let cur=(location.hash||'#dash').slice(1);
 function vDash(){
   const nx=[[17,'Глава VI (финальная) — нужно загрузить до 17 декабря'],[21,'Набор IV квиза, сказки 9–10'],[CODE_DEADLINE,'Последний день ввести код на портале «Ньютон» — до 23:59'],[OPEN.chest,'Розыгрыш Сундука чудес по списку кодов от банка, цельная сказка (PDF)']];
   return head('Обзор',`Сегодня ${fmt(TODAY)}, ${NOW_T} мск. Разделы и главы открываются в 00:00 мск. Платформа работает до 17 января, после — архив.`)+
-  `<div class="grid g4">${kpi(num(2100+TODAY*520),'участников · +520 за сутки')}${kpi('63','города')}${kpi(num(waitToys()),plural(waitToys(),'игрушка ждет','игрушки ждут','игрушек ждут')+' проверки',waitToys()>0)}${kpi(num(waitSusp()),plural(waitSusp(),'подозрительный забег','подозрительных забега','подозрительных забегов')+' в Лесу',waitSusp()>0)}</div>
+  `<div class="grid g4">${kpi(num(2100+TODAY*520),'участников, +520 за сутки')}${kpi('63','города')}${kpi(num(waitToys()),plural(waitToys(),'игрушка ждет','игрушки ждут','игрушек ждут')+' проверки',waitToys()>0)}${kpi(num(waitSusp()),plural(waitSusp(),'подозрительный забег','подозрительных забега','подозрительных забегов')+' в Лесу',waitSusp()>0)}</div>
   <div class="grid g2" style="margin-top:12px">
     <div class="panel"><h2>Требует внимания</h2><table class="tbl">
       <tr class="click" data-go="tree"><td>Игрушки на модерации</td><td class="num">${st(waitToys(),waitToys()?'warn':'ok')}</td></tr>
       <tr class="click" data-go="rating"><td>Подозрительные результаты Леса</td><td class="num">${st(waitSusp(),waitSusp()?'warn':'ok')}</td></tr>
-      <tr class="click" data-go="serial"><td>Глава VI не загружена · выход ${fmt(17)}</td><td class="num">${CH[5].empty&&!CH[5].sched?st('нужно сделать','bad'):st('готово','ok')}</td></tr></table></div>
+      <tr class="click" data-go="serial"><td>Глава VI не загружена, выход ${fmt(17)}</td><td class="num">${CH[5].empty&&!CH[5].sched?st('нужно сделать','bad'):st('готово','ok')}</td></tr></table></div>
     <div class="panel"><h2>Сейчас на платформе</h2><table class="tbl">
-      <tr><td>Голосование главы V</td><td class="num">${num(votes(4).tot)} голосов · до ${fmt(15)}, 23:59</td></tr>
-      <tr><td>Квиз · набор III «${esc(D.QUIZ[2].title)}»</td><td class="num">открыт сегодня</td></tr>
+      <tr><td>Голосование главы V</td><td class="num">${num(votes(4).tot)} голосов, до ${fmt(15)}, 23:59</td></tr>
+      <tr><td>Квиз, набор III «${esc(D.QUIZ[2].title)}»</td><td class="num">открыт сегодня</td></tr>
       <tr><td>Елка</td><td class="num">открыта сегодня</td></tr>
-      <tr><td>Розыгрыш</td><td class="num">${fmt(OPEN.chest)} · через ${OPEN.chest-TODAY} ${plural(OPEN.chest-TODAY,'день','дня','дней')} · код — до ${fmt(CODE_DEADLINE)}, 23:59</td></tr></table></div>
+      <tr><td>Розыгрыш</td><td class="num">${fmt(OPEN.chest)}, через ${OPEN.chest-TODAY} ${plural(OPEN.chest-TODAY,'день','дня','дней')}, код — до ${fmt(CODE_DEADLINE)}, 23:59</td></tr></table></div>
   </div>
   <div class="panel"><h2>Ближайшие публикации</h2><table class="tbl">${nx.map(([d,t])=>`<tr><td style="width:150px">${fmt(d)}, 00:00</td><td>${t}</td></tr>`).join('')}</table>
     <p class="small muted" style="margin:10px 0 0">Полный календарь — в разделе <a href="#schedule">«Расписание»</a>.</p></div>`;
@@ -96,13 +96,13 @@ function vTree(){
   if(!toysReady){toysReady=true;TOYS.forEach(async t=>{t.img=await renderBall(AI[t.src],t.style);if(cur==='tree')render();});}
   const tab=sel.toyTab, list=TOYS.filter(t=>t.st===tab);
   const card=t=>`<div class="mod ${t.st!=='wait'?'done':''}"><div class="img">${t.img?`<img src="${t.img}" alt="">`:'<span class="small muted" style="color:#9aa">генерация…</span>'}</div>
-    <b>${esc(t.nick)}</b><span class="small muted">${esc(t.city||'город не указан')} · ${t.time} · ${STYLES[t.style]}</span>
+    <b>${esc(t.nick)}</b><span class="small muted">${esc(t.city||'город не указан')}, ${t.time}, ${STYLES[t.style]}</span>
     ${t.st==='wait'?`<select class="in sm" data-why="${t.id}" style="height:30px;font-size:12.5px"><option value="">Причина отказа…</option><option>Оскорбительное или неуместное</option><option>Чужие персональные данные, документы</option><option>Реклама, ссылки, QR-коды</option><option>Не удалось распознать картинку</option></select>
     <div class="acts">${btn('Одобрить','toyOk',{cls:'ok sm',d:{id:t.id}})}${btn('Отклонить','toyNo',{cls:'bad sm',d:{id:t.id}})}</div>`
     :t.st==='ok'?st('Одобрена — висит на елке','ok'):st('Отклонена: '+(t.why||'без причины'),'bad')}</div>`;
   return head('Модерация елки','100 баллов участник получает сразу, как повесит игрушку на елку, а коллеги видят ее после одобрения — до этого автор видит ее на елке сам. ИИ перерисовывает картинку в стиле елочной игрушки, это уже не фото — согласие на показ не нужно. Исходная картинка удаляется сразу после генерации: модератор видит только готовую игрушку.',
     btn('Одобрить все на странице','toyAll',{cls:'p',dis:tab!=='wait'||!list.length}))+
-  `<div class="tabs">${[['wait','На проверке',waitToys()],['ok','Одобрены',TOYS.filter(t=>t.st==='ok').length],['no','Отклонены',TOYS.filter(t=>t.st==='no').length]].map(([k,l,n])=>`<button class="${tab===k?'on':''}" data-act="toyTab" data-k="${k}">${l} · ${n}</button>`).join('')}</div>
+  `<div class="tabs">${[['wait','На проверке',waitToys()],['ok','Одобрены',TOYS.filter(t=>t.st==='ok').length],['no','Отклонены',TOYS.filter(t=>t.st==='no').length]].map(([k,l,n])=>`<button class="${tab===k?'on':''}" data-act="toyTab" data-k="${k}">${l}, ${n}</button>`).join('')}</div>
   ${list.length?`<div class="mods">${list.map(card).join('')}</div>`:`<div class="note">Здесь пусто.</div>`}
   <p class="note" style="margin-top:14px">Отклоненная игрушка снимается с общей елки, автор видит причину и может сделать новую — единственный случай второй генерации. Начисленные 100 баллов остаются. Срок проверки (SLA) и состав модераторов — уточняются.</p>`;
 }
@@ -111,10 +111,10 @@ function vSerial(){
   const i=sel.ch, c=CH[i], s=chState(i), v=votes(i);
   const prev=i>0?votes(i-1):null, pc=i>0?D.CHAPTERS[i-1]:null;
   const brief=pc&&prev?`<div class="note i" style="margin:0 0 12px"><b>Основа сюжета:</b> ${prev.done?`в главе ${ROMAN[i-1]} победил вариант «${esc(pc.o[prev.lead])}» — ${pc.pct[prev.lead]}%.`:`голосование главы ${ROMAN[i-1]} идет до ${fmt(pc.day+1)}, 23:59. Сейчас лидирует «${esc(pc.o[prev.lead])}».`} Страницы комикса и карточки вариантов генерируем в нейросети по этому выбору, правим вручную и проверяем по канону персонажей.</div>`:'';
-  const rows=CH.map((x,k)=>{const s2=chState(k),v2=votes(k);return `<tr class="click ${k===i?'on':''}" data-act="chSel" data-i="${k}"><td><b>${ROMAN[k]}</b></td><td>${x.t?esc(x.t):D.CHAPTERS[k].stub&&!x.empty?'<span class="muted">заглушка прототипа — страницы после выбора стиля</span>':'<span class="muted">не загружена</span>'}${x.final?' <span class="small muted">· финальная, голосование для настроения</span>':''}</td><td>${fmt(x.day)}, 00:00</td><td>${st(s2[0],s2[1])}</td><td class="num">${v2?num(v2.tot):'—'}</td></tr>`;}).join('');
-  const res=v?`<div class="panel"><h2>${v.done?'Итоги голосования':'Голосование идет'} · ${num(v.tot)} голосов</h2><div class="bars">${D.CHAPTERS[i].o.map((o,k)=>{const p=Math.round(v.cnt[k]/v.tot*100);return `<div class="bar ${v.done&&k===v.lead?'win':''}"><i style="width:${p}%"></i><span>${'АБВ'[k]}. ${esc(o)}</span><b>${p}%</b></div>`;}).join('')}</div>
+  const rows=CH.map((x,k)=>{const s2=chState(k),v2=votes(k);return `<tr class="click ${k===i?'on':''}" data-act="chSel" data-i="${k}"><td><b>${ROMAN[k]}</b></td><td>${x.t?esc(x.t):D.CHAPTERS[k].stub&&!x.empty?'<span class="muted">заглушка прототипа — страницы после выбора стиля</span>':'<span class="muted">не загружена</span>'}${x.final?' <span class="small muted">(финальная, голосование для настроения)</span>':''}</td><td>${fmt(x.day)}, 00:00</td><td>${st(s2[0],s2[1])}</td><td class="num">${v2?num(v2.tot):'—'}</td></tr>`;}).join('');
+  const res=v?`<div class="panel"><h2>${v.done?'Итоги голосования':'Голосование идет'}, ${num(v.tot)} голосов</h2><div class="bars">${D.CHAPTERS[i].o.map((o,k)=>{const p=Math.round(v.cnt[k]/v.tot*100);return `<div class="bar ${v.done&&k===v.lead?'win':''}"><i style="width:${p}%"></i><span>${'АБВ'[k]}. ${esc(o)}</span><b>${p}%</b></div>`;}).join('')}</div>
     <p class="small muted" style="margin:10px 0 0">${v.done?(D.CHAPTERS[i].final?'Голосование для настроения: на сюжет не влияет.':`Победивший вариант — основа главы ${ROMAN[i+1]||''}.`):`Участники видят распределение голосов сразу после своего голоса. Голосование закрывается ${fmt(D.CHAPTERS[i].day+1)} в 23:59 мск.`}</p></div>`:'';
-  const ed=`<div class="panel"><div class="row" style="margin:0 0 10px"><h2 style="margin:0">Глава ${ROMAN[i]} · ${c.empty&&!c.sched?'загрузка':'редактирование'}</h2><span class="sp"></span>${st(s[0],s[1])}</div>
+  const ed=`<div class="panel"><div class="row" style="margin:0 0 10px"><h2 style="margin:0">Глава ${ROMAN[i]}, ${c.empty&&!c.sched?'загрузка':'редактирование'}</h2><span class="sp"></span>${st(s[0],s[1])}</div>
     ${brief}${c.day<=TODAY?'<div class="note" style="margin:0 0 12px">Глава уже опубликована: исправления появятся у участников сразу после сохранения.</div>':''}
     <div class="grid g2"><div>
       <label class="f"><span>Название</span><input class="in" id="chT" value="${esc(c.t)}" placeholder="Например, «Последнее слово»"></label>
@@ -129,7 +129,7 @@ function vSerial(){
     <div class="row">${btn('Сохранить','chSave',{cls:'p'})}<a class="btn" href="chapter.html?ch=${i+1}" target="_blank" rel="noopener">Предпросмотр на платформе ↗</a>${c.day>TODAY?btn(c.sched?'Снять с публикации':'Запланировать на '+fmt(c.day)+', 00:00','chSched',{cls:c.sched?'':'ok'}):''}</div></div>`;
   return head('Сказка-сериал','Сказка выходит комиксом. Главы генерируем в нейросети и немного правим. Глава = страницы комикса + три варианта продолжения карточками. Голосование — 48 часов, до 23:59 мск следующего дня; результаты участники видят сразу после голоса. За голос — 100 баллов в турнирную таблицу. В финальной главе — голосование для настроения: «Ура, класс!» или «Эх, а я думал, будет по-другому».')+
     `<div class="panel scroll"><table class="tbl"><tr><th>Глава</th><th>Название</th><th>Выход</th><th>Статус</th><th class="num">Голосов</th></tr>${rows}</table></div>${res}${ed}
-    <div class="panel"><h2>Цельная сказка · ${fmt(D.FULL_TALE_DAY)}</h2><p class="muted">Собирается автоматически из опубликованных глав: страницы комикса и итоги голосований. Читается на платформе и скачивается в PDF.</p>${btn('Собрать предпросмотр PDF','pdf')}</div>`;
+    <div class="panel"><h2>Цельная сказка, ${fmt(D.FULL_TALE_DAY)}</h2><p class="muted">Собирается автоматически из опубликованных глав: страницы комикса и итоги голосований. Читается на платформе и скачивается в PDF.</p>${btn('Собрать предпросмотр PDF','pdf')}</div>`;
 }
 
 function vQuiz(){
@@ -137,22 +137,22 @@ function vQuiz(){
   const pct=S.qs.map(()=>Math.round(38+r()*52));
   const sets=D.QUIZ.map((s,k)=>{const open=TODAY>=s.open;return `<tr class="click ${k===si?'on':''}" data-act="setSel" data-i="${k}"><td><b>${ROMAN[k]}</b></td><td>${esc(s.title)}</td><td>${fmt(s.open)}, 00:00</td><td>${s.qs.length}</td><td>${open?st(TODAY===s.open?'Открыт сегодня':'Открыт','ok'):st('Запланирован','acc')}</td><td class="num">${open?num(Math.round((2100+TODAY*520)*(.78-k*.12)*(TODAY===s.open?.2:1))):'—'}</td></tr>`;}).join('');
   const qs=S.qs.map((q,k)=>`<tr class="click ${k===qi?'on':''}" data-act="qSel" data-i="${k}"><td>${k+1}</td><td>${q.t==='w'?'Слово':'Узор'}</td><td><b>${esc(q.t==='w'?q.w:'Узор на '+q.on)}</b></td><td>${esc(q.o[q.a])}</td><td>${esc(q.where)}</td><td class="num">${TODAY>=S.open?pct[k]+'%':'—'}</td></tr>`).join('');
-  const ed=`<div class="panel"><h2>Вопрос ${qi+1} · редактирование</h2><div class="grid g2"><div>
+  const ed=`<div class="panel"><h2>Вопрос ${qi+1}, редактирование</h2><div class="grid g2"><div>
       <label class="f"><span>Тип</span><select class="in"><option ${Q.t==='w'?'selected':''}>Слово на диалекте</option><option ${Q.t!=='w'?'selected':''}>Узор — угадать край</option></select></label>
       ${Q.t==='w'?`<label class="f"><span>Слово</span><input class="in" value="${esc(Q.w)}"></label>`:`<div class="f"><span>Узор</span><div style="width:120px;height:120px;border-radius:8px;background:#121a3a;padding:8px">${patternSVG(Q.p)}</div><label class="btn sm" style="margin-top:6px;align-self:flex-start">Загрузить картинку узора<input type="file" accept="image/*" hidden></label></div><label class="f"><span>Где узор</span><input class="in" value="${esc(Q.on)}"></label>`}
       <label class="f"><span>Регион — показывается в пояснении</span><input class="in" value="${esc(Q.where)}"></label></div><div>
-      <div class="f"><span>Варианты ответа · отметьте верный</span>${Q.o.map((o,k)=>`<label class="opt"><input type="radio" name="qa" ${k===Q.a?'checked':''}><input class="in" value="${esc(o)}"></label>`).join('')}</div>
+      <div class="f"><span>Варианты ответа, отметьте верный</span>${Q.o.map((o,k)=>`<label class="opt"><input type="radio" name="qa" ${k===Q.a?'checked':''}><input class="in" value="${esc(o)}"></label>`).join('')}</div>
       <label class="f"><span>Пояснение после ответа</span><textarea class="in" rows="4" style="min-height:90px">${esc(Q.ex)}</textarea></label></div></div>
     <div class="row">${btn('Сохранить','save',{cls:'p'})}${TODAY>=S.open?'<span class="small muted">Набор уже открыт: правка не меняет начисленные баллы</span>':''}</div></div>`;
-  return head('Квиз · Спроси дорогу','Новый набор каждую неделю. 20 баллов за верный ответ с первой попытки; повторное прохождение — без баллов. Верный ответ участник узнаёт только после своего ответа.',btn('Добавить вопрос','save'))+
+  return head('Квиз, Спроси дорогу','Новый набор каждую неделю. 20 баллов за верный ответ с первой попытки; повторное прохождение — без баллов. Верный ответ участник узнаёт только после своего ответа.',btn('Добавить вопрос','save'))+
     `<div class="panel scroll"><table class="tbl"><tr><th>Набор</th><th>Название</th><th>Открытие</th><th>Вопросов</th><th>Статус</th><th class="num">Прошли</th></tr>${sets}</table></div>
     <div class="panel scroll"><h2>Набор ${ROMAN[si]} «${esc(S.title)}»</h2><table class="tbl"><tr><th>№</th><th>Тип</th><th>Вопрос</th><th>Верный ответ</th><th>Регион</th><th class="num">Верно с первой попытки</th></tr>${qs}</table></div>${ed}`;
 }
 
 function vTales(){
-  const rows=D.TALES.map((t,k)=>{const open=TODAY>=t.open;return `<tr><td>${k+1}</td><td><b>${esc(t.t)}</b><div class="small muted">${esc(t.n)}</div></td><td class="num">${t.d}:00</td><td>${st('mp3 · ИИ-озвучка','ok')}</td><td>${fmt(t.open)}</td><td>${open?st('Опубликована','ok'):st('Запланирована','acc')}</td>
+  const rows=D.TALES.map((t,k)=>{const open=TODAY>=t.open;return `<tr><td>${k+1}</td><td><b>${esc(t.t)}</b><div class="small muted">${esc(t.n)}</div></td><td class="num">${t.d}:00</td><td>${st('mp3, ИИ-озвучка','ok')}</td><td>${fmt(t.open)}</td><td>${open?st('Опубликована','ok'):st('Запланирована','acc')}</td>
     <td><input class="in" style="height:30px;min-width:150px" placeholder="vk.com/music/…" value="${open&&k<4?'vk.com/music/playlist/…':''}"></td><td><input class="in" style="height:30px;min-width:150px" placeholder="music.yandex.ru/album/…" value="${open&&k<4?'music.yandex.ru/album/…':''}"></td></tr>`;}).join('');
-  return head('Аудиосказки · Пряничная избушка','10 сказок народов России, по две в неделю, — из коллекции Марии, жены Михаила; озвучка — нейросеть. На платформе сказка открывается окном: обложка, подводка Марии и плеер. Вне платформы — плейлисты в VK Музыке и Яндекс Музыке (варианты публикации — в README, раздел 6.10).',btn('Загрузить сказку','save',{cls:'p'}))+
+  return head('Аудиосказки, Пряничная избушка','10 сказок народов России, по две в неделю, — из коллекции Марии, жены Михаила; озвучка — нейросеть. На платформе сказка открывается окном: обложка, подводка Марии и плеер. Вне платформы — плейлисты в VK Музыке и Яндекс Музыке (варианты публикации — в README, раздел 6.10).',btn('Загрузить сказку','save',{cls:'p'}))+
   `<div class="panel scroll"><table class="tbl"><tr><th>№</th><th>Сказка</th><th class="num">Длит.</th><th>Аудио</th><th>Открытие</th><th>Статус</th><th>VK Музыка</th><th>Яндекс Музыка</th></tr>${rows}</table></div>
   <div class="panel"><h2>Новая сказка</h2><div class="grid g3">
     <label class="f"><span>Название</span><input class="in" placeholder="Например, «Морозко»"></label><label class="f"><span>Источник</span><input class="in" placeholder="русская народная сказка"></label><label class="f"><span>Открытие</span><input class="in" value="${dd(21)} 00:00 мск"></label>
@@ -164,12 +164,12 @@ function vTales(){
 
 function vDraw(){
   const before=TODAY<OPEN.chest, L=codeList;
-  const res=drawRes?`<div class="panel scroll"><div class="row" style="margin:0 0 10px"><h2 style="margin:0">Победители · ${DRAW_N} из ${num(L.ok)}</h2><span class="sp"></span>${drawPub?st('Опубликовано на платформе','ok'):st('Не опубликовано','warn')}</div>
+  const res=drawRes?`<div class="panel scroll"><div class="row" style="margin:0 0 10px"><h2 style="margin:0">Победители, ${DRAW_N} из ${num(L.ok)}</h2><span class="sp"></span>${drawPub?st('Опубликовано на платформе','ok'):st('Не опубликовано','warn')}</div>
     <table class="tbl"><tr><th>№</th><th>Герой</th><th>Город</th><th>Персональный код</th><th>Банк связался</th></tr>${drawRes.map((u,k)=>`<tr><td>${k+1}</td><td><b>${esc(u.nick)}</b></td><td>${esc(u.city||'—')}</td><td><code>${u.code}</code></td><td><input type="checkbox" data-conf="${k}" ${u.conf?'checked':''}></td></tr>`).join('')}</table>
-    <p class="small muted" style="margin:10px 0">Журнал: розыгрыш проведен ${fmt(TODAY)}, ${NOW_T} мск · в розыгрыше ${num(L.ok)} кодов из списка банка · зерно генератора <code>${drawRes.seed}</code> — по нему результат можно воспроизвести и проверить.</p>
+    <p class="small muted" style="margin:10px 0">Журнал: розыгрыш проведен ${fmt(TODAY)}, ${NOW_T} мск, в розыгрыше ${num(L.ok)} кодов из списка банка, зерно генератора <code>${drawRes.seed}</code> — по нему результат можно воспроизвести и проверить.</p>
     <div class="row">${btn('Опубликовать итоги на платформе','drawPub',{cls:'ok',dis:drawPub})}${btn('Выгрузить для банка (CSV)','drawCsv')}${btn('Провести заново','drawRun',{dis:drawPub})}</div></div>`:'';
   const list=L?`<table class="tbl"><tr><td>Кодов в списке банка</td><td class="num">${num(L.total)}</td></tr><tr><td>Найдены на платформе</td><td class="num">${num(L.found)}</td></tr><tr><td>Не найдены — опечатка или чужой код</td><td class="num">${num(L.miss)}</td></tr><tr><td>Заблокированы — не участвуют</td><td class="num">${num(L.blocked)}</td></tr><tr><td><b>Участвуют в розыгрыше</b></td><td class="num"><b>${num(L.ok)}</b></td></tr></table>
-      <p class="small muted" style="margin:10px 0">Файл ${esc(L.file)} · загружен ${fmt(TODAY)}, ${NOW_T}</p>`
+      <p class="small muted" style="margin:10px 0">Файл ${esc(L.file)}, загружен ${fmt(TODAY)}, ${NOW_T}</p>`
     :`<p class="muted">Банк присылает список после ${fmt(CODE_DEADLINE)}, 23:59 мск: CSV, один столбец — персональный код. Платформа сверяет коды со своими.</p>`;
   return head('Розыгрыш Сундука чудес',`Участвуют только те, кто до ${fmt(CODE_DEADLINE)}, 23:59 мск ввел свой персональный код на портале «Ньютон». Список введенных кодов присылает банк: загружаем его, платформа сверяет коды и случайно выбирает победителей. Победителям ничего делать не нужно — их код уже введен, банк свяжется с ними до ${fmt(PRIZE_DAY)}.`)+
   `<div class="grid g2"><div class="panel"><h2>1. Список кодов от банка</h2>${list}<div class="row">${btn(L?'Загрузить другой список':'Загрузить список (CSV)','codesLoad',{cls:L?'':'p'})}</div></div>
@@ -196,7 +196,7 @@ function vUsers(){
   const q=(sel.uq||'').trim().toLowerCase();
   const list=USERS.filter(u=>!q||u.nick.toLowerCase().includes(q)||u.code.toLowerCase().includes(q)||(u.city||'').toLowerCase().includes(q)).slice(0,40);
   const u=sel.user!=null?USERS.find(x=>x.id===sel.user):null;
-  const drawer=u?`<div class="drawer"><button class="btn sm x" data-act="uClose">Закрыть</button><h2>${esc(u.nick)}</h2><p class="muted">${esc(u.city||'город не указан')} · с ${fmt(u.day)}</p>
+  const drawer=u?`<div class="drawer"><button class="btn sm x" data-act="uClose">Закрыть</button><h2>${esc(u.nick)}</h2><p class="muted">${esc(u.city||'город не указан')}, с ${fmt(u.day)}</p>
     <table class="tbl"><tr><td>Персональный код</td><td><code>${u.code}</code></td></tr><tr><td>Квиз</td><td class="num">${u.q}</td></tr><tr><td>Лес</td><td class="num">${u.f}</td></tr><tr><td>Елка</td><td class="num">${u.t}</td></tr><tr><td>Сказка-сериал</td><td class="num">${u.s}</td></tr><tr><td><b>Итого</b></td><td class="num"><b>${u.pts}</b></td></tr><tr><td>Статус</td><td>${u.blocked?st('Заблокирован','bad'):st('Активен','ok')}</td></tr></table>
     <h3 style="margin-top:14px">История</h3><table class="tbl small">${[[u.day,'Создан герой'],[Math.min(TODAY,u.day+1),`Квиз: +${u.q}`],u.f?[Math.min(TODAY,u.day+2),`Лес: рекорд ${u.f/10} подарков`]:null,u.t?[TODAY,'Елка: игрушка на елке, +100']:null,u.s?[Math.min(TODAY,u.day+1),`Сказка-сериал: ${u.s/20} ${plural(u.s/20,'голос','голоса','голосов')}, +${u.s}`]:null].filter(Boolean).map(([d,t])=>`<tr><td>${fmt(d)}</td><td>${t}</td></tr>`).join('')}</table>
     <div class="row" style="margin-top:14px">${btn(u.blocked?'Разблокировать':'Заблокировать','uBlock',{cls:u.blocked?'':'bad',d:{id:u.id}})}${btn('Выгрузить данные участника','uCsv',{d:{id:u.id}})}</div>
@@ -226,14 +226,14 @@ function vSchedule(){
 function vDict(){
   const q=(sel.cq||'').trim().toLowerCase().replace(/ё/g,'е');
   const found=q?D.CITIES.filter(c=>c[0].toLowerCase().replace(/ё/g,'е').startsWith(q)).slice(0,12):[];
-  const group=(names,items)=>names.map((g,k)=>{const w=items.filter(x=>x.g===k);return `<div style="margin:0 0 10px"><b class="small">${esc(g)} · ${w.length}</b><div class="chips" style="margin-top:4px">${w.slice(0,14).map(x=>`<span class="chip">${esc(x.w)}</span>`).join('')}${w.length>14?`<span class="chip">+${w.length-14}</span>`:''}</div></div>`;}).join('');
+  const group=(names,items)=>names.map((g,k)=>{const w=items.filter(x=>x.g===k);return `<div style="margin:0 0 10px"><b class="small">${esc(g)}, ${w.length}</b><div class="chips" style="margin-top:4px">${w.slice(0,14).map(x=>`<span class="chip">${esc(x.w)}</span>`).join('')}${w.length>14?`<span class="chip">+${w.length-14}</span>`:''}</div></div>`;}).join('');
   return head('Справочники','Имя героя собирается из двух слов: первое — черта характера, цвет или зимнее, сказочное слово; второе — всегда персонаж: зверь, птица, сказочный или зимний герой. Сразу предлагается случайное имя, слова можно выбрать и вручную. Город — только из справочника.')+
-  `<div class="grid g2"><div class="panel"><h2>Первое слово · ${D.ADJ.length}</h2>${group(D.ADJ_G,D.ADJ.map(a=>({w:a[0],g:a[2]})))}
+  `<div class="grid g2"><div class="panel"><h2>Первое слово, ${D.ADJ.length}</h2>${group(D.ADJ_G,D.ADJ.map(a=>({w:a[0],g:a[2]})))}
       <div class="grid g3"><input class="in" placeholder="мужской род"><input class="in" placeholder="женский род"><select class="in">${D.ADJ_G.map(g=>`<option>${esc(g)}</option>`).join('')}</select></div><div style="margin-top:8px">${btn('Добавить','save',{cls:'sm'})}</div></div>
-    <div class="panel"><h2>Второе слово · ${D.NOUNS.length}</h2>${group(D.NOUN_G,D.NOUNS.map(n=>({w:n[0],g:n[2]})))}
+    <div class="panel"><h2>Второе слово, ${D.NOUNS.length}</h2>${group(D.NOUN_G,D.NOUNS.map(n=>({w:n[0],g:n[2]})))}
       <div class="grid g3"><input class="in" placeholder="слово"><select class="in"><option>мужской род</option><option>женский род</option></select><select class="in">${D.NOUN_G.map(g=>`<option>${esc(g)}</option>`).join('')}</select></div><div style="margin-top:8px">${btn('Добавить','save',{cls:'sm'})}</div></div></div>
   <div class="note i" style="margin:0 0 16px">Сочетаний: ${num(D.ADJ.length*D.NOUNS.length)}, а вместе с городом — в тысячу раз больше. Повторы допускаются: в турнирной таблице имя стоит вместе с городом, а участника однозначно определяет персональный код.</div>
-  <div class="panel"><h2>Города · ${num(D.CITIES.length)}</h2><p class="muted">Справочник городов России (hflabs/city, CC BY-SA 4.0) с готовой формой «из …» для турнирной таблицы. Перед запуском сверяем со списком городов, где работают сотрудники банка, и добавляем недостающие.</p>
+  <div class="panel"><h2>Города, ${num(D.CITIES.length)}</h2><p class="muted">Справочник городов России (hflabs/city, CC BY-SA 4.0) с готовой формой «из …» для турнирной таблицы. Перед запуском сверяем со списком городов, где работают сотрудники банка, и добавляем недостающие.</p>
     <div class="grid g3" style="margin:0 0 10px"><input class="in" placeholder="Город"><input class="in" placeholder="Форма «из …», например «из Барнаула»"><div>${btn('Добавить город','save',{cls:'sm'})}</div></div>
     <input class="in" id="cq" placeholder="Найти город" value="${esc(sel.cq||'')}" style="max-width:320px">
     ${found.length?`<table class="tbl" style="margin-top:10px"><tr><th>Город</th><th>В таблице</th></tr>${found.map(c=>`<tr><td>${esc(c[0])}</td><td>из ${esc(c[1])}</td></tr>`).join('')}</table>`:q?'<p class="muted" style="margin-top:10px">Нет в справочнике — такой город пройдет через проверку</p>':''}</div>`;

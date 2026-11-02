@@ -664,7 +664,7 @@ function ForestGame(canvas, hooks){
     ctx.setTransform(dpr,0,0,dpr,0,0);
     const x0=10, y0=10, hs=22, gap=4, rec=S.best>0;
     const giftX=x0+12+3*(hs+gap)+10, cnt=String(S.gifts), over=rec&&S.gifts>S.best;
-    const label=!rec?'Каждый подарок — 10 баллов':over?`Новый рекорд · +${(S.gifts-S.best)*10} баллов`:S.gifts===S.best?'Рекорд повторен · дальше +10 за подарок':`До рекорда ${S.best-S.gifts} ${plural(S.best-S.gifts,'подарок','подарка','подарков')}`;
+    const label=!rec?'Каждый подарок — 10 баллов':over?`Новый рекорд, +${(S.gifts-S.best)*10} баллов`:S.gifts===S.best?'Рекорд повторен, дальше +10 за подарок':`До рекорда ${S.best-S.gifts} ${plural(S.best-S.gifts,'подарок','подарка','подарков')}`;
     // таймер забега: время бега без пауз и экрана «Готовы?»
     const sec=Math.floor(S.rt||0), tm=Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
     ctx.font='500 11px '+UI_FONT; const lw=ctx.measureText(label).width;

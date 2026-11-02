@@ -349,7 +349,7 @@ body[data-screen="cover"] main.app,body[data-screen="prologue"] main.app{min-hei
 .cover-wrap{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:34px 10px 16px}
 .cvp{width:min(100%,560px)}
 .cvp .sp-in{padding:26px 14px 20px}
-.foot-l{display:flex;justify-content:center;align-items:center;gap:10px;margin:14px 0 0;font:400 13px/1.4 var(--ui);color:var(--muted)}
+.foot-l{display:flex;justify-content:center;align-items:center;gap:20px;margin:14px 0 0;font:400 13px/1.4 var(--ui);color:var(--muted)}
 .foot-l .link{font-weight:500;color:var(--ink2);text-decoration-color:rgba(255,255,255,.3)}
 .foot .foot-l{margin:0 0 8px}
 /* правила, поддержка, «Как играть», шар с ёлки — окно поверх экрана */
@@ -1858,10 +1858,28 @@ body[data-screen=forest] #app::before,body[data-screen=forest] #app::after{displ
 .codepg .note,.codepg .err-t{font-size:13px}
 .savecode .sv-w{font-size:15px}.savecode .note{font-size:13px}.savecode .chk{font-size:15px}
 .savecode .codebox .code{font-size:26px}
-/* Спроси дорогу: снежинка над словом, вариант — с новой строки по центру кнопки */
-.opt{flex-direction:column;justify-content:center;gap:4px;padding:10px 14px;text-align:center}
-.opt::before{width:18px;height:18px}
-.opt span{display:block;width:100%;text-align:center}
+/* Спроси дорогу: варианты как в макете дизайнера — темно-синяя плашка с тонкой обводкой, снежинка в золотом кольце слева, текст слева.
+   Верный — золотая подсветка и золотая галочка, неверный — серебро и крестик; остальные приглушены */
+.opt{flex-direction:row;justify-content:flex-start;align-items:center;gap:12px;min-height:65px;padding:13px 14px 13px 12px;border-radius:18px;
+  font:500 15px/1.35 var(--ui);color:rgba(255,255,255,.8);text-align:left;text-shadow:none;filter:none;
+  background:#000e5f;border:1.5px solid rgba(255,255,255,.2);box-shadow:none}
+.opt::before{width:34px;height:34px;border-radius:50%;background:var(--p-flake) center/18px no-repeat;box-shadow:inset 0 0 0 1px #ffba5b}
+.opt span{display:block;flex:1;min-width:0;text-align:left}
+.opt::after{content:"";display:none;flex:none;width:27px;height:27px;background:center/contain no-repeat}
+.opt:hover{transform:none;filter:none;background:linear-gradient(rgba(255,255,255,.06),rgba(255,255,255,.06)),#000e5f;border-color:rgba(255,255,255,.4)}
+.opt.right,.opt.right:hover{color:rgba(255,255,255,.9);text-shadow:none;background:linear-gradient(rgba(249,183,76,.3),rgba(249,183,76,.3)),#000e5f;border-color:#ffba5b}
+.opt.wrong,.opt.wrong:hover{filter:none;background:linear-gradient(rgba(195,195,195,.2),rgba(195,195,195,.2)),#000e5f;border-color:#c3c3c3}
+.opt.dim{opacity:.5}
+.opt.right::before,.opt.wrong::before{background:var(--p-flake) center/18px no-repeat}
+.opt.right::after{display:block;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23feea8f'/%3E%3Cstop offset='1' stop-color='%23f58a10'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='14' cy='14' r='13.5' fill='url(%23g)'/%3E%3Cpath d='M8.6 14.4l3.6 3.6 7.2-7.6' fill='none' stroke='%23000f3c' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+.opt.wrong::after{display:block;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23ffffff'/%3E%3Cstop offset='1' stop-color='%23c3c3c3'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='14' cy='14' r='13.5' fill='url(%23g)'/%3E%3Cpath d='M9.8 9.8l8.4 8.4M18.2 9.8l-8.4 8.4' fill='none' stroke='%23000f3c' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E")}
+/* реплики героев в мире — одна плашка как в макете: аватар внутри, без хвостика */
+.scene .say{align-items:center;gap:10px;padding:8px 12px 8px 8px;border-radius:16px;background:#000e5f;box-shadow:inset 0 0 0 1px #ffba5b}
+.scene .say .face,.scene .say.compact .face{width:48px;height:48px;background:#fff;box-shadow:0 0 0 1.2px #ffba5b}
+.scene .say .face img{object-position:50% 50%}
+.scene .say .bubble,.scene .say.compact .bubble{padding:0;border-radius:0;background:none;box-shadow:none;font:400 15px/1.4 var(--ui);color:rgba(255,255,255,.95)}
+.scene .say .bubble::before{display:none}
+.scene .say .bubble b{color:#ffba5b}
 /* Елка: пройденные шаги — лавандовые из брендбука, а не зеленые */
 .tsteps li.done i{background:var(--lav);border-color:var(--lav);color:#fff}
 /* Лес: окно перед стартом — крупнее текст */
@@ -1880,7 +1898,6 @@ body[data-screen=forest] #app::before,body[data-screen=forest] #app::after{displ
   /* первый экран главной: текст слева на темной подложке — справа светлое небо и снег; снег внизу притемнен — уходит в фон страницы без светлой полосы */
   .hero::before{background:linear-gradient(180deg,rgba(6,14,52,0) 55%,rgba(6,14,52,.5) 100%),linear-gradient(90deg,rgba(4,11,42,.95) 0%,rgba(4,11,42,.9) 34%,rgba(4,11,42,.72) 47%,rgba(4,11,42,.26) 61%,rgba(4,11,42,0) 72%)}
   .hero-in>*{max-width:520px}
-  .opt{gap:5px;min-height:74px;border-radius:22px}
   .rules b{font-size:17px}.rules span{font-size:15px}
   .overlay .ov-lead{font-size:18px}
 }
