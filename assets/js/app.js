@@ -746,14 +746,13 @@ function vQuiz(){
   const pic=`<div class="ex-pic">${Q.t==='w'?`<span class="ex-w">${Q.w}</span>`:`<span class="ex-p">${svg('photo','width="30" height="30"')}</span>`}<small>${Q.t==='w'?'Иллюстрация к слову':`Фото изделия: узор на ${Q.on}`}</small></div>`;
   const expl=ans?`<div class="parch explain-in" id="expl">${flowers()}<div class="explain">${pic}<div class="where">${Q.where}</div><div class="ttl2">${Q.t==='w'?Q.w:'Узор: '+Q.o[Q.a]}</div><p>${Q.ex}</p>
     <div class="verdict ${q.pick===Q.a?'ok':''}">${q.pick===Q.a?(q.replay?'Верно!':'Верно! +20 баллов'):`Правильный ответ — «${Q.o[Q.a]}». Теперь и ты знаешь!`}</div></div></div>
-    <button class="btn btn-gold btn-block q-next" data-act="qNext">${nextT} ${svg('arrow','width="18" height="18"')}</button>`:'<p class="note">Выбери вариант — после ответа Борис расскажет, что это значит</p>';
+    <button class="btn btn-gold btn-block q-next" data-act="qNext">${nextT} ${svg('arrow','width="18" height="18"')}</button>`:'';
   const win=`${word}${opts}${expl}`;
   const head=`<div class="act-head q">${DESK?`<h1 class="sc-t">Спроси дорогу</h1>${q.replay?'<p class="q-rep">Повтор набора — без баллов</p>':''}`:''}${qbar}${ask}</div>`;
   return {one:win,M:win,dstage:head,stage:head,acts:[],sun:false,cls:'quiz'};
 }
 
 /* ===== Лес ===== */
-const LITE_NOTE='<p class="note">Игра тормозит или не запускается? <a class="link" href="#" data-act="fLite">Альтернативная версия для старых браузеров и слабых компьютеров</a></p>';
 // Шапка Леса — общая шапка испытаний (actHero): Петр, старший сын, зовет собирать подарки.
 // Правила, баллы и рекорд — в окне перед стартом, прямо на поле
 // Перед стартом — на самом поле: коротко правила плитками с картинками из игры и кнопка старта.
@@ -796,12 +795,12 @@ function vForest(){
     const field=`<div class="stage" id="stage"><canvas id="cv" data-ratio=".5625" data-lw="840" data-lh="440"></canvas>
         <div class="overlay" id="ov">${forestRules(true)}</div>${sndBtn()}</div>
       <div class="ctrl" id="ctrl"><button class="btn btn-ghost" id="bJump">${svg('jump','width="18" height="18"')} Прыжок</button><button class="btn btn-ghost" id="bFwd">Ускорение ${svg('boost','width="18" height="18"')}</button></div>
-      <p class="note hidden" id="fin"><a class="link" href="#" data-act="fExit">Закончить забег</a> — собранные подарки засчитаются</p>${LITE_NOTE}`;
+      <p class="note hidden" id="fin"><a class="link" href="#" data-act="fExit">Закончить забег</a> — собранные подарки засчитаются</p>`;
     return {wide:[head,field],cls:'forest',scene:1};
   }
   if(ui.fmode)return {raw:gameMode()};
   return {scene:1,cls:'forest',
-    M:[head,`<p class="rot-hint">${svg('rotate')}<span>Играем горизонтально — поверни телефон</span></p>${LITE_NOTE}`],
+    M:[head,`<p class="rot-hint">${svg('rotate')}<span>Играем горизонтально — поверни телефон</span></p>`],
     acts:[{t:'Бежать!',act:'fPlay',gold:1}]};
 }
 // Телефон: игра во весь экран и только горизонтально. В центре поле (жизни и подарки — на нем), по бокам круглые кнопки без подписей под большие пальцы:
@@ -1341,7 +1340,7 @@ const WORLD=['route','quiz','forest','tree','chest','rating','profile'];
 const VIEWS={route:vRoute,profile:vProfile,quiz:vQuiz,forest:vForest,tree:vTree,serial:vSerial,chapter:vChapter,fulltale:vFullTale,izba:vIzba,chest:vChest,rating:vRating};
 const MOUNTS={route:()=>{if(location.hash==='#tree'){const t=$('#tree');if(t)setTimeout(()=>t.scrollIntoView({block:'start'}),60);}},
   profile:()=>{if(location.hash==='#points'&&!render._pts){render._pts=1;const t=$('#points');if(t)setTimeout(()=>{const y=t.getBoundingClientRect().top+scrollY-(DESK?96:70);window.scrollTo({top:Math.max(0,y)});},60);}},forest:()=>{if(DESK||ui.fmode)mountForest(); if(DESK&&ui.fauto&&game){ui.fauto=false;ACT.fStart();}},chapter:mountChapter,izba:mountIzba};
-const FOOT=()=>`<div class="foot"><i class="foot-orn" aria-hidden="true"></i>${footLinks()}<p>Прототип платформы · Deep × ПСБ · контент и цифры — примеры</p></div>`;
+const FOOT=()=>`<div class="foot"><i class="foot-orn" aria-hidden="true"></i>${footLinks()}</div>`;
 function render(){
   clearTimers();
   const app=$('#app'); ui.bar=null;
